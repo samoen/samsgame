@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	screenWidth  = 240
-	screenHeight = 240
-	padding      = 20
+	screenWidth  = 500
+	screenHeight = 500
 )
 
 type point struct {
@@ -29,10 +28,28 @@ type line struct {
 	p1, p2 point
 }
 
-func (l1 line) intersects(l2 line) bool {
-	denom := (l1.p1.x-l1.p2.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l1.p2.y)*(l2.p1.x-l2.p2.x)
-	tNum := (l1.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
-	uNum := -((l1.p1.x-l1.p2.x)*(l1.p1.y-l2.p1.y) - (l1.p1.y-l1.p2.y)*(l1.p1.x-l2.p1.x))
+func (l *line) shift(p point) {
+	l.p1.x -= p.x
+	l.p1.y -= p.y
+	l.p2.x -= p.x
+	l.p2.y -= p.y
+}
+
+// func (l *line) scaleUp(zoom int) {
+// 	p1xvec := (l.p2.x - l.p1.x) * -zoom
+// 	p1yvec := (l.p2.y - l.p1.y) * -zoom
+
+// 	p2xvec := (l.p1.x - l.p2.x) * -zoom
+// 	p2yvec := (l.p1.y - l.p2.y) * -zoom
+
+// 	l.p1 = point{l.p1.x + p1xvec, l.p1.y + p1yvec}
+// 	l.p2 = point{l.p2.x + p2xvec, l.p2.y + p2yvec}
+// }
+
+func (l line) intersects(l2 line) bool {
+	denom := (l.p1.x-l.p2.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l.p2.y)*(l2.p1.x-l2.p2.x)
+	tNum := (l.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
+	uNum := -((l.p1.x-l.p2.x)*(l.p1.y-l2.p1.y) - (l.p1.y-l.p2.y)*(l.p1.x-l2.p1.x))
 
 	if denom == 0 {
 		return false
@@ -53,6 +70,37 @@ func (l1 line) intersects(l2 line) bool {
 }
 
 type shape []line
+
+func clip(val, max int) int {
+	if val < 0 {
+		return 0
+	} else if val > max {
+		return max
+	}
+	return val
+}
+func (s shape) drawtoScreen(screen *ebiten.Image, vec point) {
+	vec.x -= 200
+	vec.y -= 200
+	for _, line := range s {
+		// line.scaleUp(screenHeight / camera.w)
+		line.shift(vec)
+		// x1, y1, x2, y2 :=
+		// 	float64(line.p1.x),
+		// 	float64(line.p1.y),
+		// 	float64(line.p2.x),
+		// 	float64(line.p2.y)
+
+		ebitenutil.DrawLine(
+			screen,
+			float64(clip(line.p1.x, screenWidth)),
+			float64(clip(line.p1.y, screenHeight)),
+			float64(clip(line.p2.x, screenWidth)),
+			float64(clip(line.p2.y, screenHeight)),
+			color.RGBA{255, 0, 0, 255},
+		)
+	}
+}
 
 type rectangle struct {
 	location point
@@ -151,44 +199,50 @@ func (p *playerent) handleMovement(entities []shape) {
 }
 
 func main() {
-	// img, _, _ := image.Decode(bytes.NewReader(images.Tile_png))
-	// bgImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 	bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	bgSizex, sgsizey := bgImage.Size()
 	bgOps := &ebiten.DrawImageOptions{}
 	bgOps.GeoM.Scale(float64(screenWidth)/float64(bgSizex), float64(screenHeight)/float64(sgsizey))
 
-	ents := []shape{}
 	player := playerent{
 		rectangle{
 			point{
-				screenWidth / 2,
-				screenHeight / 2,
+				50,
+				50,
 			},
 			6,
 			6,
 		},
 		mover{3},
 	}
+
 	mapBounds := rectangle{
-		point{
-			padding,
-			padding,
-		},
-		screenWidth - 2*padding,
-		screenHeight - 2*padding,
+		point{10, 10},
+		710,
+		710,
 	}.makeShape()
+
 	diagonalWall := shape{
 		line{
 			point{50, 110},
 			point{100, 150},
 		},
 	}
-	lilRoom := rectangle{point{
-		45, 50,
-	}, 70, 20}.makeShape()
-	anotherRoom := rectangle{point{150, 50}, 30, 60}.makeShape()
-	ents = append(ents, mapBounds, diagonalWall, lilRoom, anotherRoom)
+	lilRoom := rectangle{
+		point{45, 400},
+		70,
+		20,
+	}.makeShape()
+
+	anotherRoom := rectangle{point{300, 100}, 30, 60}.makeShape()
+	ents := []shape{
+		mapBounds,
+		diagonalWall,
+		lilRoom,
+		anotherRoom,
+	}
+
+	// camera := rectangle{point{}, screenWidth, screenHeight}
 
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -196,7 +250,8 @@ func main() {
 		}
 
 		player.handleMovement(ents)
-
+		// camera.location.x = player.location.x - (camera.w / 2)
+		// camera.location.y = player.location.y - (camera.h / 2)
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -204,19 +259,16 @@ func main() {
 		screen.DrawImage(bgImage, bgOps)
 
 		for _, shape := range ents {
-			for _, line := range shape {
-				ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
-			}
+			shape.drawtoScreen(screen, player.location)
 		}
-		for _, line := range player.makeShape() {
-			ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
-		}
+		// ebitenutil.DrawLine(screen, 30, 30, screenWidth, 30, color.White)
+		player.makeShape().drawtoScreen(screen, player.location)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 		return nil
 	}
 
-	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "sam's cool game"); err != nil {
+	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "sam's cool game"); err != nil {
 		log.Fatal(err)
 	}
 }
