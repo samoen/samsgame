@@ -24,12 +24,6 @@ const (
 	padding      = 20
 )
 
-var (
-	entities []shape
-	player   playerent
-	bgImage  *ebiten.Image
-)
-
 type point struct {
 	x, y int
 }
@@ -38,18 +32,7 @@ type line struct {
 	p1, p2 point
 }
 
-type shape []line
-
-type playerent struct {
-	rectangle
-	mover
-}
-
-type mover struct {
-	speed int
-}
-
-func intersection(l1, l2 line) bool {
+func (l1 line) intersects(l2 line) bool {
 	denom := (l1.p1.x-l1.p2.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l1.p2.y)*(l2.p1.x-l2.p2.x)
 	tNum := (l1.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
 	uNum := -((l1.p1.x-l1.p2.x)*(l1.p1.y-l2.p1.y) - (l1.p1.y-l1.p2.y)*(l1.p1.x-l2.p1.x))
@@ -72,13 +55,36 @@ func intersection(l1, l2 line) bool {
 	return true
 }
 
-func (p playerent) normalcollides() bool {
-	plines := p.makeShape()
+type shape []line
 
+type rectangle struct {
+	location point
+	w, h     int
+}
+
+func (r rectangle) makeShape() shape {
+	l1 := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
+	l2 := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
+	l3 := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
+	l4 := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
+	return shape{l1, l2, l3, l4}
+}
+
+type mover struct {
+	speed int
+}
+
+type playerent struct {
+	rectangle
+	mover
+}
+
+func (r rectangle) normalcollides(entities []shape) bool {
+	rectShape := r.makeShape()
 	for _, obj := range entities {
 		for _, subline := range obj {
-			for _, li := range plines {
-				if intersects := intersection(subline, li); intersects {
+			for _, li := range rectShape {
+				if intersects := subline.intersects(li); intersects {
 					return true
 				}
 			}
@@ -87,7 +93,7 @@ func (p playerent) normalcollides() bool {
 	return false
 }
 
-func handleMovement() {
+func (p *playerent) handleMovement(entities []shape) {
 
 	right, down, left, up := false, false, false, false
 
@@ -107,8 +113,13 @@ func handleMovement() {
 		up = true
 	}
 
-	for i := 1; i < player.speed+1; i++ {
-		checkpointx := player.location
+	diagonalCorrectedSpeed := p.speed
+	if (up || down) && (left || right) {
+		diagonalCorrectedSpeed = int(float32(p.speed) * 0.75)
+	}
+
+	for i := 1; i < diagonalCorrectedSpeed+1; i++ {
+		checkpointx := p.location
 		if right {
 			checkpointx.x++
 		}
@@ -117,13 +128,13 @@ func handleMovement() {
 			checkpointx.x--
 		}
 		if left || right {
-			checkplay := player
+			checkplay := *p
 			checkplay.location = checkpointx
-			if !checkplay.normalcollides() {
-				player.location = checkpointx
+			if !checkplay.normalcollides(entities) {
+				p.location = checkpointx
 			}
 		}
-		checkpointy := player.location
+		checkpointy := p.location
 		if down {
 			checkpointy.y++
 		}
@@ -133,60 +144,20 @@ func handleMovement() {
 		}
 
 		if up || down {
-			checkplay := player
+			checkplay := *p
 			checkplay.location = checkpointy
-			if !checkplay.normalcollides() {
-				player.location = checkpointy
+			if !checkplay.normalcollides(entities) {
+				p.location = checkpointy
 			}
 		}
 	}
 }
 
-func update(screen *ebiten.Image) error {
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		return errors.New("game ended by player")
-	}
-
-	handleMovement()
-
-	if ebiten.IsDrawingSkipped() {
-		return nil
-	}
-
-	// Draw background
-	screen.DrawImage(bgImage, nil)
-
-	for _, shape := range entities {
-		for _, line := range shape {
-			ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
-		}
-	}
-	for _, line := range player.makeShape() {
-		ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
-	}
-
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()), 51, 51)
-	return nil
-}
-
-type rectangle struct {
-	location point
-	w, h     int
-}
-
-func (r rectangle) makeShape() shape {
-	l1 := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
-	l2 := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
-	l3 := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
-	l4 := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
-	return shape{l1, l2, l3, l4}
-}
-
 func main() {
 	img, _, _ := image.Decode(bytes.NewReader(images.Tile_png))
-	bgImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
-
-	player = playerent{
+	bgImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	ents := []shape{}
+	player := playerent{
 		rectangle{
 			point{
 				screenWidth / 2,
@@ -197,7 +168,6 @@ func main() {
 		},
 		mover{3},
 	}
-
 	mapBounds := rectangle{
 		point{
 			padding,
@@ -212,17 +182,39 @@ func main() {
 			point{100, 150},
 		},
 	}
-
 	lilRoom := rectangle{point{
 		45, 50,
 	}, 70, 20}.makeShape()
 	anotherRoom := rectangle{point{150, 50}, 30, 60}.makeShape()
+	ents = append(ents, mapBounds, diagonalWall, lilRoom, anotherRoom)
 
-	entities = append(entities, mapBounds, diagonalWall, lilRoom, anotherRoom)
-	fmt.Println("before")
+	update := func(screen *ebiten.Image) error {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+			return errors.New("game ended by player")
+		}
 
-	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "Ray casting and shadows (Ebiten demo)"); err != nil {
+		player.handleMovement(ents)
+
+		if ebiten.IsDrawingSkipped() {
+			return nil
+		}
+
+		screen.DrawImage(bgImage, nil)
+
+		for _, shape := range ents {
+			for _, line := range shape {
+				ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
+			}
+		}
+		for _, line := range player.makeShape() {
+			ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
+		}
+
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()), 51, 51)
+		return nil
+	}
+
+	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "sam's cool game"); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after")
 }
