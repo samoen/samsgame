@@ -41,24 +41,15 @@ type line struct {
 type shape []line
 
 type playerent struct {
-	pos   point
-	size  int
+	rectangle
+	mover
+}
+
+type mover struct {
 	speed int
 }
 
-func (p *playerent) makeshape() shape {
-	s := rect(
-		p.pos.x,
-		p.pos.y,
-		p.size,
-		p.size,
-	)
-	return s
-}
-
-// intersection calculates the intersection of given two lines.
 func intersection(l1, l2 line) bool {
-	// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
 	denom := (l1.p1.x-l1.p2.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l1.p2.y)*(l2.p1.x-l2.p2.x)
 	tNum := (l1.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l1.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
 	uNum := -((l1.p1.x-l1.p2.x)*(l1.p1.y-l2.p1.y) - (l1.p1.y-l1.p2.y)*(l1.p1.x-l2.p1.x))
@@ -81,10 +72,8 @@ func intersection(l1, l2 line) bool {
 	return true
 }
 
-func normalcollides(pp point) bool {
-	checkplay := player
-	checkplay.pos = pp
-	plines := checkplay.makeshape()
+func (p playerent) normalcollides() bool {
+	plines := p.makeShape()
 
 	for _, obj := range entities {
 		for _, subline := range obj {
@@ -119,7 +108,7 @@ func handleMovement() {
 	}
 
 	for i := 1; i < player.speed+1; i++ {
-		checkpointx := player.pos
+		checkpointx := player.location
 		if right {
 			checkpointx.x++
 		}
@@ -128,11 +117,13 @@ func handleMovement() {
 			checkpointx.x--
 		}
 		if left || right {
-			if !normalcollides(checkpointx) {
-				player.pos = checkpointx
+			checkplay := player
+			checkplay.location = checkpointx
+			if !checkplay.normalcollides() {
+				player.location = checkpointx
 			}
 		}
-		checkpointy := player.pos
+		checkpointy := player.location
 		if down {
 			checkpointy.y++
 		}
@@ -142,8 +133,10 @@ func handleMovement() {
 		}
 
 		if up || down {
-			if !normalcollides(checkpointy) {
-				player.pos = checkpointy
+			checkplay := player
+			checkplay.location = checkpointy
+			if !checkplay.normalcollides() {
+				player.location = checkpointy
 			}
 		}
 	}
@@ -163,56 +156,73 @@ func update(screen *ebiten.Image) error {
 	// Draw background
 	screen.DrawImage(bgImage, nil)
 
-	// Draw entities
-	for _, obj := range entities {
-		for _, w := range obj {
-			ebitenutil.DrawLine(screen, float64(w.p1.x), float64(w.p1.y), float64(w.p2.x), float64(w.p2.y), color.RGBA{255, 0, 0, 255})
+	for _, shape := range entities {
+		for _, line := range shape {
+			ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
 		}
 	}
-	for _, w := range player.makeshape() {
-		ebitenutil.DrawLine(screen, float64(w.p1.x), float64(w.p1.y), float64(w.p2.x), float64(w.p2.y), color.RGBA{255, 0, 0, 255})
+	for _, line := range player.makeShape() {
+		ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
 	}
 
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()), 51, 51)
 	return nil
 }
 
-func rect(x, y, w, h int) shape {
-	l1 := line{point{x, y}, point{x, y + h}}
-	l2 := line{point{x, y + h}, point{x + w, y + h}}
-	l3 := line{point{x + w, y + h}, point{x + w, y}}
-	l4 := line{point{x + w, y}, point{x, y}}
+type rectangle struct {
+	location point
+	w, h     int
+}
+
+func (r rectangle) makeShape() shape {
+	l1 := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
+	l2 := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
+	l3 := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
+	l4 := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
 	return shape{l1, l2, l3, l4}
 }
 
-func runSamGame() {
+func main() {
 	img, _, _ := image.Decode(bytes.NewReader(images.Tile_png))
 	bgImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	player = playerent{
-		point{
-			screenWidth / 2,
-			screenHeight / 2,
+		rectangle{
+			point{
+				screenWidth / 2,
+				screenHeight / 2,
+			},
+			6,
+			6,
 		},
-		6,
-		3,
+		mover{3},
 	}
 
-	// Add outer walls
-	entities = append(entities, rect(padding, padding, screenWidth-2*padding, screenHeight-2*padding))
+	mapBounds := rectangle{
+		point{
+			padding,
+			padding,
+		},
+		screenWidth - 2*padding,
+		screenHeight - 2*padding,
+	}.makeShape()
+	diagonalWall := shape{
+		line{
+			point{50, 110},
+			point{100, 150},
+		},
+	}
 
-	entities = append(entities, shape{{point{50, 110}, point{100, 150}}})
-	entities = append(entities, rect(45, 50, 70, 20))
-	entities = append(entities, rect(150, 50, 30, 60))
+	lilRoom := rectangle{point{
+		45, 50,
+	}, 70, 20}.makeShape()
+	anotherRoom := rectangle{point{150, 50}, 30, 60}.makeShape()
+
+	entities = append(entities, mapBounds, diagonalWall, lilRoom, anotherRoom)
 	fmt.Println("before")
 
 	if err := ebiten.Run(update, screenWidth, screenHeight, 2, "Ray casting and shadows (Ebiten demo)"); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("after")
-
-}
-
-func main() {
-	runSamGame()
 }
