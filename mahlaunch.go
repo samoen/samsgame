@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"image"
 
 	"image/color"
 	_ "image/png"
@@ -13,7 +11,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/examples/resources/images"
 
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
@@ -154,8 +151,13 @@ func (p *playerent) handleMovement(entities []shape) {
 }
 
 func main() {
-	img, _, _ := image.Decode(bytes.NewReader(images.Tile_png))
-	bgImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	// img, _, _ := image.Decode(bytes.NewReader(images.Tile_png))
+	// bgImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	bgSizex, sgsizey := bgImage.Size()
+	bgOps := &ebiten.DrawImageOptions{}
+	bgOps.GeoM.Scale(float64(screenWidth)/float64(bgSizex), float64(screenHeight)/float64(sgsizey))
+
 	ents := []shape{}
 	player := playerent{
 		rectangle{
@@ -199,7 +201,7 @@ func main() {
 			return nil
 		}
 
-		screen.DrawImage(bgImage, nil)
+		screen.DrawImage(bgImage, bgOps)
 
 		for _, shape := range ents {
 			for _, line := range shape {
@@ -210,7 +212,7 @@ func main() {
 			ebitenutil.DrawLine(screen, float64(line.p1.x), float64(line.p1.y), float64(line.p2.x), float64(line.p2.y), color.RGBA{255, 0, 0, 255})
 		}
 
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()), 51, 51)
+		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 		return nil
 	}
 
