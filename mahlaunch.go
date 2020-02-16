@@ -28,12 +28,19 @@ type line struct {
 	p1, p2 point
 }
 
-func (l *line) shift(p point) {
-	l.p1.x -= p.x
-	l.p1.y -= p.y
-	l.p2.x -= p.x
-	l.p2.y -= p.y
-}
+// func (l *line) shift(p point) {
+// 	amtx := screenWidth / 2
+// 	amty := screenHeight / 2
+// 	l.p1.x += amtx
+// 	l.p1.y += amty
+// 	l.p2.x += amtx
+// 	l.p2.y += amty
+
+// 	l.p1.x -= p.x
+// 	l.p1.y -= p.y
+// 	l.p2.x -= p.x
+// 	l.p2.y -= p.y
+// }
 
 // func (l *line) scaleUp(zoom int) {
 // 	p1xvec := (l.p2.x - l.p1.x) * -zoom
@@ -46,57 +53,100 @@ func (l *line) shift(p point) {
 // 	l.p2 = point{l.p2.x + p2xvec, l.p2.y + p2yvec}
 // }
 
-func (l line) intersects(l2 line) bool {
+func (l line) intersects(l2 line) (int, int, bool) {
 	denom := (l.p1.x-l.p2.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l.p2.y)*(l2.p1.x-l2.p2.x)
 	tNum := (l.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
 	uNum := -((l.p1.x-l.p2.x)*(l.p1.y-l2.p1.y) - (l.p1.y-l.p2.y)*(l.p1.x-l2.p1.x))
 
 	if denom == 0 {
-		return false
+		return 0, 0, false
 	}
 
 	t := float64(tNum) / float64(denom)
 	if t > 1 || t < 0 {
-		return false
+		return 0, 0, false
 	}
 
 	u := float64(uNum) / float64(denom)
 	if u > 1 || u < 0 {
-		return false
+		return 0, 0, false
 	}
-	// x := l1.p1.x + t*(l1.p2.x-l1.p1.x)
-	// y := l1.Y1 + t*(l1.Y2-l1.Y1)
-	return true
+	x := l.p1.x + int(t*float64(l.p2.x-l.p1.x))
+	y := l.p1.y + int(t*float64(l.p2.y-l.p1.y))
+	return x, y, true
 }
 
 type shape []line
 
-func clip(val, max int) int {
-	if val < 0 {
-		return 0
-	} else if val > max {
-		return max
+// var screenlines = rectangle{point{0, 0}, screenWidth, screenHeight}.makeShape()
+var leftbound = line{point{0, 0}, point{0, screenHeight}}
+var rightbound = line{point{screenWidth, 0}, point{screenWidth, screenHeight}}
+var topbound = line{point{0, 0}, point{screenWidth, 0}}
+var bottombound = line{point{0, screenHeight}, point{screenWidth, screenHeight}}
+
+func clip(val line) line {
+	newpoint1 := val.p1
+	newpoint2 := val.p2
+
+	checkbound := func(bound line, extreme func(point) bool) {
+		if secx, secy, does := val.intersects(bound); does {
+			if extreme(newpoint1) {
+				newpoint1 = point{secx, secy}
+			}
+			if extreme(newpoint2) {
+				newpoint2 = point{secx, secy}
+			}
+		}
 	}
-	return val
+
+	checkbound(leftbound, func(p point) bool { return p.x < 0 })
+	checkbound(rightbound, func(p point) bool { return p.x > screenWidth })
+	checkbound(topbound, func(p point) bool { return p.y < 0 })
+	checkbound(bottombound, func(p point) bool { return p.y > screenHeight })
+	// if secx, secy, does := val.intersects(leftbound); does {
+	// 	if newpoint1.x < 0 {
+	// 		newpoint1 = point{secx, secy}
+	// 	}
+	// 	if newpoint2.x < 0 {
+	// 		newpoint2 = point{secx, secy}
+	// 	}
+	// }
+	// if secx, secy, does := val.intersects(rightbound); does {
+	// 	if newpoint1.x > screenWidth {
+	// 		newpoint1 = point{secx, secy}
+	// 	}
+	// 	if newpoint2.x > screenWidth {
+	// 		newpoint2 = point{secx, secy}
+	// 	}
+	// }
+	return line{newpoint1, newpoint2}
 }
+
 func (s shape) drawtoScreen(screen *ebiten.Image, vec point) {
-	vec.x -= 200
-	vec.y -= 200
+	// vec.x -= screenWidth / 2
+	// vec.y -= screenHeight / 2
 	for _, line := range s {
 		// line.scaleUp(screenHeight / camera.w)
-		line.shift(vec)
-		// x1, y1, x2, y2 :=
-		// 	float64(line.p1.x),
-		// 	float64(line.p1.y),
-		// 	float64(line.p2.x),
-		// 	float64(line.p2.y)
+		// line.shift(vec)
+		amtx := screenWidth / 2
+		amty := screenHeight / 2
+		line.p1.x += amtx
+		line.p1.y += amty
+		line.p2.x += amtx
+		line.p2.y += amty
+		line.p1.x -= vec.x
+		line.p1.y -= vec.y
+		line.p2.x -= vec.x
+		line.p2.y -= vec.y
+
+		newline := clip(line)
 
 		ebitenutil.DrawLine(
 			screen,
-			float64(clip(line.p1.x, screenWidth)),
-			float64(clip(line.p1.y, screenHeight)),
-			float64(clip(line.p2.x, screenWidth)),
-			float64(clip(line.p2.y, screenHeight)),
+			float64(newline.p1.x),
+			float64(newline.p1.y),
+			float64(newline.p2.x),
+			float64(newline.p2.y),
 			color.RGBA{255, 0, 0, 255},
 		)
 	}
@@ -108,11 +158,11 @@ type rectangle struct {
 }
 
 func (r rectangle) makeShape() shape {
-	l1 := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
-	l2 := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
-	l3 := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
-	l4 := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
-	return shape{l1, l2, l3, l4}
+	left := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
+	bottom := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
+	right := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
+	top := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
+	return shape{left, bottom, right, top}
 }
 
 type mover struct {
@@ -129,7 +179,7 @@ func (r rectangle) normalcollides(entities []shape) bool {
 	for _, obj := range entities {
 		for _, subline := range obj {
 			for _, li := range rectShape {
-				if intersects := subline.intersects(li); intersects {
+				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}
 			}
@@ -199,10 +249,6 @@ func (p *playerent) handleMovement(entities []shape) {
 }
 
 func main() {
-	bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-	bgSizex, sgsizey := bgImage.Size()
-	bgOps := &ebiten.DrawImageOptions{}
-	bgOps.GeoM.Scale(float64(screenWidth)/float64(bgSizex), float64(screenHeight)/float64(sgsizey))
 
 	player := playerent{
 		rectangle{
@@ -215,17 +261,22 @@ func main() {
 		},
 		mover{3},
 	}
-
-	mapBounds := rectangle{
+	maprect := rectangle{
 		point{10, 10},
 		710,
 		710,
-	}.makeShape()
+	}
+	mapBounds := maprect.makeShape()
+
+	bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// bgSizex, sgsizey := bgImage.Size()
+	bgOps := &ebiten.DrawImageOptions{}
+	// bgOps.GeoM.Scale(float64(maprect.w)/float64(bgSizex), float64(maprect.h)/float64(sgsizey))
 
 	diagonalWall := shape{
 		line{
-			point{50, 110},
-			point{100, 150},
+			point{350, 410},
+			point{400, 450},
 		},
 	}
 	lilRoom := rectangle{
@@ -256,7 +307,11 @@ func main() {
 			return nil
 		}
 
-		screen.DrawImage(bgImage, bgOps)
+		newops := *bgOps
+
+		newops.GeoM.Translate(float64(-player.location.x), float64(-player.location.y))
+
+		screen.DrawImage(bgImage, &newops)
 
 		for _, shape := range ents {
 			shape.drawtoScreen(screen, player.location)
