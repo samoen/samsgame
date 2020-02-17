@@ -15,11 +15,6 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-const (
-	screenWidth  = 1400
-	screenHeight = 1000
-)
-
 type point struct {
 	x, y int
 }
@@ -89,18 +84,18 @@ type shape []line
 // }
 
 func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebiten.DrawImageOptions) {
-	amtx := screenWidth / 2
-	amty := screenHeight / 2
+	// amtx := screenWidth / 2
+	// amty := screenHeight / 2
 
-	l.p1.x += amtx
-	l.p1.y += amty
-	l.p2.x += amtx
-	l.p2.y += amty
+	l.p1.x += center.x
+	l.p1.y += center.y
+	l.p2.x += center.x
+	l.p2.y += center.y
 
-	l.p1.x -= center.x
-	l.p1.y -= center.y
-	l.p2.x -= center.x
-	l.p2.y -= center.y
+	// l.p1.x -= center.x
+	// l.p1.y -= center.y
+	// l.p2.x -= center.x
+	// l.p2.y -= center.y
 
 	x1 := float64(l.p1.x)
 	x2 := float64(l.p2.x)
@@ -250,6 +245,8 @@ func (p *playerent) handleMovement(entities []shape) {
 }
 
 func main() {
+	const screenWidth = 1400
+	const screenHeight = 1000
 
 	player := playerent{
 		rectangle{
@@ -257,8 +254,8 @@ func main() {
 				50,
 				50,
 			},
-			6,
-			6,
+			90,
+			90,
 		},
 		mover{9},
 	}
@@ -276,8 +273,8 @@ func main() {
 
 	diagonalWall := shape{
 		line{
-			point{350, 410},
-			point{400, 450},
+			point{250, 310},
+			point{600, 655},
 		},
 	}
 	lilRoom := rectangle{
@@ -294,7 +291,6 @@ func main() {
 		anotherRoom,
 	}
 
-	// camera := rectangle{point{}, screenWidth, screenHeight}
 	emptyImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
 
@@ -307,8 +303,7 @@ func main() {
 		}
 
 		player.handleMovement(ents)
-		// camera.location.x = player.location.x - (camera.w / 2)
-		// camera.location.y = player.location.y - (camera.h / 2)
+
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -317,14 +312,16 @@ func main() {
 		// newops.GeoM.Translate(float64(-player.location.x), float64(-player.location.y))
 		// screen.DrawImage(bgImage, &newops)
 
+		renderOffset := point{(screenWidth / 2) - player.location.x - (player.w / 2), (screenHeight / 2) - player.location.y - (player.h / 2)}
+
 		for _, shape := range ents {
 			// shape.drawtoScreen(screen, player.location)
 			for _, l := range shape {
-				samDrawLine(screen, emptyImage, player.location, l, *emptyop)
+				samDrawLine(screen, emptyImage, renderOffset, l, *emptyop)
 			}
 		}
 		for _, l := range player.makeShape() {
-			samDrawLine(screen, emptyImage, player.location, l, *emptyop)
+			samDrawLine(screen, emptyImage, renderOffset, l, *emptyop)
 		}
 		// player.makeShape().drawtoScreen(screen, player.location)
 
