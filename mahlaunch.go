@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	screenWidth  = 500
-	screenHeight = 500
+	screenWidth  = 800
+	screenHeight = 800
 )
 
 type point struct {
@@ -78,69 +78,64 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-// var screenlines = rectangle{point{0, 0}, screenWidth, screenHeight}.makeShape()
-var leftbound = line{point{0, 0}, point{0, screenHeight}}
-var rightbound = line{point{screenWidth, 0}, point{screenWidth, screenHeight}}
-var topbound = line{point{0, 0}, point{screenWidth, 0}}
-var bottombound = line{point{0, screenHeight}, point{screenWidth, screenHeight}}
+var fogspace = 20
 
-func clip(val line) line {
+// var screenlines = rectangle{point{0, 0}, screenWidth, screenHeight}.makeShape()
+var leftbound = line{point{0 + fogspace, 0 + fogspace}, point{0 + fogspace, screenHeight - fogspace}}
+var rightbound = line{point{screenWidth - fogspace, 0 + fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
+var topbound = line{point{0 + fogspace, 0 + fogspace}, point{screenWidth - fogspace, 0 + fogspace}}
+var bottombound = line{point{0 + fogspace, screenHeight - fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
+
+func clip(val line) (line, bool) {
 	newpoint1 := val.p1
 	newpoint2 := val.p2
+	totallyOut := false
 
 	checkbound := func(bound line, extreme func(point) bool) {
-		if secx, secy, does := val.intersects(bound); does {
+		if extreme(newpoint1) && extreme(newpoint2) {
+			totallyOut = true
+			return
+		}
+		secx, secy, does := line{newpoint1, newpoint2}.intersects(bound)
+		if does {
 			if extreme(newpoint1) {
 				newpoint1 = point{secx, secy}
-			}
-			if extreme(newpoint2) {
+			} else if extreme(newpoint2) {
 				newpoint2 = point{secx, secy}
 			}
 		}
+
 	}
 
-	checkbound(leftbound, func(p point) bool { return p.x < 0 })
-	checkbound(rightbound, func(p point) bool { return p.x > screenWidth })
-	checkbound(topbound, func(p point) bool { return p.y < 0 })
-	checkbound(bottombound, func(p point) bool { return p.y > screenHeight })
-	// if secx, secy, does := val.intersects(leftbound); does {
-	// 	if newpoint1.x < 0 {
-	// 		newpoint1 = point{secx, secy}
-	// 	}
-	// 	if newpoint2.x < 0 {
-	// 		newpoint2 = point{secx, secy}
-	// 	}
-	// }
-	// if secx, secy, does := val.intersects(rightbound); does {
-	// 	if newpoint1.x > screenWidth {
-	// 		newpoint1 = point{secx, secy}
-	// 	}
-	// 	if newpoint2.x > screenWidth {
-	// 		newpoint2 = point{secx, secy}
-	// 	}
-	// }
-	return line{newpoint1, newpoint2}
+	checkbound(leftbound, func(p point) bool { return p.x < 0+fogspace })
+	checkbound(rightbound, func(p point) bool { return p.x > screenWidth-fogspace })
+	checkbound(topbound, func(p point) bool { return p.y < 0+fogspace })
+	checkbound(bottombound, func(p point) bool { return p.y > screenHeight-fogspace })
+
+	return line{newpoint1, newpoint2}, totallyOut
 }
 
-func (s shape) drawtoScreen(screen *ebiten.Image, vec point) {
-	// vec.x -= screenWidth / 2
-	// vec.y -= screenHeight / 2
+func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
 	for _, line := range s {
 		// line.scaleUp(screenHeight / camera.w)
-		// line.shift(vec)
+
 		amtx := screenWidth / 2
 		amty := screenHeight / 2
 		line.p1.x += amtx
 		line.p1.y += amty
 		line.p2.x += amtx
 		line.p2.y += amty
-		line.p1.x -= vec.x
-		line.p1.y -= vec.y
-		line.p2.x -= vec.x
-		line.p2.y -= vec.y
 
-		newline := clip(line)
+		line.p1.x -= center.x
+		line.p1.y -= center.y
+		line.p2.x -= center.x
+		line.p2.y -= center.y
 
+		newline, totallyOut := clip(line)
+		if totallyOut == true {
+			continue
+		}
+		// newline := line
 		ebitenutil.DrawLine(
 			screen,
 			float64(newline.p1.x),
@@ -262,9 +257,9 @@ func main() {
 		mover{3},
 	}
 	maprect := rectangle{
-		point{10, 10},
-		710,
-		710,
+		point{0, 0},
+		900,
+		900,
 	}
 	mapBounds := maprect.makeShape()
 
@@ -296,6 +291,8 @@ func main() {
 	// camera := rectangle{point{}, screenWidth, screenHeight}
 
 	update := func(screen *ebiten.Image) error {
+		// ht, wd = screen.Size()
+		// fmt.Println(ht, wd)
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
 		}
@@ -327,3 +324,5 @@ func main() {
 		log.Fatal(err)
 	}
 }
+
+var ht, wd int
