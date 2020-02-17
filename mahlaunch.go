@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"image/color"
 	_ "image/png"
 	"log"
 
@@ -54,44 +53,42 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-var fogspace = 20
+// var fogspace = 20
+// var leftbound = line{point{0 + fogspace, 0 + fogspace}, point{0 + fogspace, screenHeight - fogspace}}
+// var rightbound = line{point{screenWidth - fogspace, 0 + fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
+// var topbound = line{point{0 + fogspace, 0 + fogspace}, point{screenWidth - fogspace, 0 + fogspace}}
+// var bottombound = line{point{0 + fogspace, screenHeight - fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
 
-// var screenlines = rectangle{point{0, 0}, screenWidth, screenHeight}.makeShape()
-var leftbound = line{point{0 + fogspace, 0 + fogspace}, point{0 + fogspace, screenHeight - fogspace}}
-var rightbound = line{point{screenWidth - fogspace, 0 + fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
-var topbound = line{point{0 + fogspace, 0 + fogspace}, point{screenWidth - fogspace, 0 + fogspace}}
-var bottombound = line{point{0 + fogspace, screenHeight - fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
+// func clip(val line) (line, bool) {
+// 	newpoint1 := val.p1
+// 	newpoint2 := val.p2
+// 	totallyOut := false
 
-func clip(val line) (line, bool) {
-	newpoint1 := val.p1
-	newpoint2 := val.p2
-	totallyOut := false
+// 	checkbound := func(bound line, extreme func(point) bool) {
+// 		if extreme(newpoint1) && extreme(newpoint2) {
+// 			totallyOut = true
+// 			return
+// 		}
+// 		secx, secy, does := line{newpoint1, newpoint2}.intersects(bound)
+// 		if does {
+// 			if extreme(newpoint1) {
+// 				newpoint1 = point{secx, secy}
+// 			} else if extreme(newpoint2) {
+// 				newpoint2 = point{secx, secy}
+// 			}
+// 		}
 
-	checkbound := func(bound line, extreme func(point) bool) {
-		if extreme(newpoint1) && extreme(newpoint2) {
-			totallyOut = true
-			return
-		}
-		secx, secy, does := line{newpoint1, newpoint2}.intersects(bound)
-		if does {
-			if extreme(newpoint1) {
-				newpoint1 = point{secx, secy}
-			} else if extreme(newpoint2) {
-				newpoint2 = point{secx, secy}
-			}
-		}
+// 	}
 
-	}
+// 	checkbound(leftbound, func(p point) bool { return p.x < 0+fogspace })
+// 	checkbound(rightbound, func(p point) bool { return p.x > screenWidth-fogspace })
+// 	checkbound(topbound, func(p point) bool { return p.y < 0+fogspace })
+// 	checkbound(bottombound, func(p point) bool { return p.y > screenHeight-fogspace })
 
-	checkbound(leftbound, func(p point) bool { return p.x < 0+fogspace })
-	checkbound(rightbound, func(p point) bool { return p.x > screenWidth-fogspace })
-	checkbound(topbound, func(p point) bool { return p.y < 0+fogspace })
-	checkbound(bottombound, func(p point) bool { return p.y > screenHeight-fogspace })
+// 	return line{newpoint1, newpoint2}, totallyOut
+// }
 
-	return line{newpoint1, newpoint2}, totallyOut
-}
-func drawImageLines(screen, emptyImage *ebiten.Image, center point, l line) {
-	// for _, line := range s {
+func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebiten.DrawImageOptions) {
 	amtx := screenWidth / 2
 	amty := screenHeight / 2
 
@@ -110,56 +107,51 @@ func drawImageLines(screen, emptyImage *ebiten.Image, center point, l line) {
 	y1 := float64(l.p1.y)
 	y2 := float64(l.p2.y)
 	imgToDraw := *emptyImage
+
 	ew, eh := imgToDraw.Size()
 	length := math.Hypot(x2-x1, y2-y1)
-	op := &ebiten.DrawImageOptions{}
+	// op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(
 		length/float64(ew),
 		1/float64(eh),
-		// 1.0,
 	)
 	op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
 	op.GeoM.Translate(x1, y1)
-	screen.DrawImage(&imgToDraw, op)
+	screen.DrawImage(&imgToDraw, &op)
+	// ebitenutil.DrawLine()
 
-	// newline, totallyOut := clip(line)
-	// if totallyOut == true {
-	// 	continue
-	// }
-	// newline := line
-
-	// }
 }
-func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
-	for _, line := range s {
 
-		// amtx := screenWidth / 2
-		// amty := screenHeight / 2
-		// line.p1.x += amtx
-		// line.p1.y += amty
-		// line.p2.x += amtx
-		// line.p2.y += amty
+// func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
+// 	for _, line := range s {
 
-		// line.p1.x -= center.x
-		// line.p1.y -= center.y
-		// line.p2.x -= center.x
-		// line.p2.y -= center.y
+// 		amtx := screenWidth / 2
+// 		amty := screenHeight / 2
+// 		line.p1.x += amtx
+// 		line.p1.y += amty
+// 		line.p2.x += amtx
+// 		line.p2.y += amty
 
-		// newline, totallyOut := clip(line)
-		// if totallyOut == true {
-		// 	continue
-		// }
-		newline := line
-		ebitenutil.DrawLine(
-			screen,
-			float64(newline.p1.x),
-			float64(newline.p1.y),
-			float64(newline.p2.x),
-			float64(newline.p2.y),
-			color.White,
-		)
-	}
-}
+// 		line.p1.x -= center.x
+// 		line.p1.y -= center.y
+// 		line.p2.x -= center.x
+// 		line.p2.y -= center.y
+
+// 		newline, totallyOut := clip(line)
+// 		if totallyOut == true {
+// 			continue
+// 		}
+// 		newline := line
+// 		ebitenutil.DrawLine(
+// 			screen,
+// 			float64(newline.p1.x),
+// 			float64(newline.p1.y),
+// 			float64(newline.p2.x),
+// 			float64(newline.p2.y),
+// 			color.White,
+// 		)
+// 	}
+// }
 
 type rectangle struct {
 	location point
@@ -304,6 +296,10 @@ func main() {
 
 	// camera := rectangle{point{}, screenWidth, screenHeight}
 	emptyImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
+
+	emptyop := &ebiten.DrawImageOptions{}
+	emptyop.ColorM.Scale(0, 230, 64, 1)
 
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -324,11 +320,11 @@ func main() {
 		for _, shape := range ents {
 			// shape.drawtoScreen(screen, player.location)
 			for _, l := range shape {
-				drawImageLines(screen, emptyImage, player.location, l)
+				samDrawLine(screen, emptyImage, player.location, l, *emptyop)
 			}
 		}
 		for _, l := range player.makeShape() {
-			drawImageLines(screen, emptyImage, player.location, l)
+			samDrawLine(screen, emptyImage, player.location, l, *emptyop)
 		}
 		// player.makeShape().drawtoScreen(screen, player.location)
 
