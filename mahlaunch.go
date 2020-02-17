@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"image/color"
 	_ "image/png"
@@ -16,8 +17,8 @@ import (
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 800
+	screenWidth  = 1400
+	screenHeight = 1000
 )
 
 type point struct {
@@ -27,31 +28,6 @@ type point struct {
 type line struct {
 	p1, p2 point
 }
-
-// func (l *line) shift(p point) {
-// 	amtx := screenWidth / 2
-// 	amty := screenHeight / 2
-// 	l.p1.x += amtx
-// 	l.p1.y += amty
-// 	l.p2.x += amtx
-// 	l.p2.y += amty
-
-// 	l.p1.x -= p.x
-// 	l.p1.y -= p.y
-// 	l.p2.x -= p.x
-// 	l.p2.y -= p.y
-// }
-
-// func (l *line) scaleUp(zoom int) {
-// 	p1xvec := (l.p2.x - l.p1.x) * -zoom
-// 	p1yvec := (l.p2.y - l.p1.y) * -zoom
-
-// 	p2xvec := (l.p1.x - l.p2.x) * -zoom
-// 	p2yvec := (l.p1.y - l.p2.y) * -zoom
-
-// 	l.p1 = point{l.p1.x + p1xvec, l.p1.y + p1yvec}
-// 	l.p2 = point{l.p2.x + p2xvec, l.p2.y + p2yvec}
-// }
 
 func (l line) intersects(l2 line) (int, int, bool) {
 	denom := (l.p1.x-l.p2.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l.p2.y)*(l2.p1.x-l2.p2.x)
@@ -114,35 +90,73 @@ func clip(val line) (line, bool) {
 
 	return line{newpoint1, newpoint2}, totallyOut
 }
+func drawImageLines(screen, emptyImage *ebiten.Image, center point, l line) {
+	// for _, line := range s {
+	amtx := screenWidth / 2
+	amty := screenHeight / 2
 
+	l.p1.x += amtx
+	l.p1.y += amty
+	l.p2.x += amtx
+	l.p2.y += amty
+
+	l.p1.x -= center.x
+	l.p1.y -= center.y
+	l.p2.x -= center.x
+	l.p2.y -= center.y
+
+	x1 := float64(l.p1.x)
+	x2 := float64(l.p2.x)
+	y1 := float64(l.p1.y)
+	y2 := float64(l.p2.y)
+	imgToDraw := *emptyImage
+	ew, eh := imgToDraw.Size()
+	length := math.Hypot(x2-x1, y2-y1)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(
+		length/float64(ew),
+		1/float64(eh),
+		// 1.0,
+	)
+	op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
+	op.GeoM.Translate(x1, y1)
+	screen.DrawImage(&imgToDraw, op)
+
+	// newline, totallyOut := clip(line)
+	// if totallyOut == true {
+	// 	continue
+	// }
+	// newline := line
+
+	// }
+}
 func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
 	for _, line := range s {
-		// line.scaleUp(screenHeight / camera.w)
 
-		amtx := screenWidth / 2
-		amty := screenHeight / 2
-		line.p1.x += amtx
-		line.p1.y += amty
-		line.p2.x += amtx
-		line.p2.y += amty
+		// amtx := screenWidth / 2
+		// amty := screenHeight / 2
+		// line.p1.x += amtx
+		// line.p1.y += amty
+		// line.p2.x += amtx
+		// line.p2.y += amty
 
-		line.p1.x -= center.x
-		line.p1.y -= center.y
-		line.p2.x -= center.x
-		line.p2.y -= center.y
+		// line.p1.x -= center.x
+		// line.p1.y -= center.y
+		// line.p2.x -= center.x
+		// line.p2.y -= center.y
 
-		newline, totallyOut := clip(line)
-		if totallyOut == true {
-			continue
-		}
-		// newline := line
+		// newline, totallyOut := clip(line)
+		// if totallyOut == true {
+		// 	continue
+		// }
+		newline := line
 		ebitenutil.DrawLine(
 			screen,
 			float64(newline.p1.x),
 			float64(newline.p1.y),
 			float64(newline.p2.x),
 			float64(newline.p2.y),
-			color.RGBA{255, 0, 0, 255},
+			color.White,
 		)
 	}
 }
@@ -254,18 +268,18 @@ func main() {
 			6,
 			6,
 		},
-		mover{3},
+		mover{9},
 	}
 	maprect := rectangle{
-		point{0, 0},
-		900,
-		900,
+		point{20, 20},
+		2000,
+		2000,
 	}
 	mapBounds := maprect.makeShape()
 
-	bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// bgSizex, sgsizey := bgImage.Size()
-	bgOps := &ebiten.DrawImageOptions{}
+	// bgOps := &ebiten.DrawImageOptions{}
 	// bgOps.GeoM.Scale(float64(maprect.w)/float64(bgSizex), float64(maprect.h)/float64(sgsizey))
 
 	diagonalWall := shape{
@@ -289,10 +303,9 @@ func main() {
 	}
 
 	// camera := rectangle{point{}, screenWidth, screenHeight}
+	emptyImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 
 	update := func(screen *ebiten.Image) error {
-		// ht, wd = screen.Size()
-		// fmt.Println(ht, wd)
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
 		}
@@ -304,17 +317,20 @@ func main() {
 			return nil
 		}
 
-		newops := *bgOps
-
-		newops.GeoM.Translate(float64(-player.location.x), float64(-player.location.y))
-
-		screen.DrawImage(bgImage, &newops)
+		// newops := *bgOps
+		// newops.GeoM.Translate(float64(-player.location.x), float64(-player.location.y))
+		// screen.DrawImage(bgImage, &newops)
 
 		for _, shape := range ents {
-			shape.drawtoScreen(screen, player.location)
+			// shape.drawtoScreen(screen, player.location)
+			for _, l := range shape {
+				drawImageLines(screen, emptyImage, player.location, l)
+			}
 		}
-		// ebitenutil.DrawLine(screen, 30, 30, screenWidth, 30, color.White)
-		player.makeShape().drawtoScreen(screen, player.location)
+		for _, l := range player.makeShape() {
+			drawImageLines(screen, emptyImage, player.location, l)
+		}
+		// player.makeShape().drawtoScreen(screen, player.location)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 		return nil
@@ -324,5 +340,3 @@ func main() {
 		log.Fatal(err)
 	}
 }
-
-var ht, wd int
