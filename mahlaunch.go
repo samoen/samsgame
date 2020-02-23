@@ -84,37 +84,29 @@ type shape []line
 // }
 
 func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebiten.DrawImageOptions) {
-	// amtx := screenWidth / 2
-	// amty := screenHeight / 2
 
 	l.p1.x += center.x
 	l.p1.y += center.y
 	l.p2.x += center.x
 	l.p2.y += center.y
 
-	// l.p1.x -= center.x
-	// l.p1.y -= center.y
-	// l.p2.x -= center.x
-	// l.p2.y -= center.y
-
 	x1 := float64(l.p1.x)
 	x2 := float64(l.p2.x)
 	y1 := float64(l.p1.y)
 	y2 := float64(l.p2.y)
+
 	imgToDraw := *emptyImage
 
 	ew, eh := imgToDraw.Size()
 	length := math.Hypot(x2-x1, y2-y1)
-	// op := &ebiten.DrawImageOptions{}
+
 	op.GeoM.Scale(
 		length/float64(ew),
-		1/float64(eh),
+		2/float64(eh),
 	)
 	op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
 	op.GeoM.Translate(x1, y1)
 	screen.DrawImage(&imgToDraw, &op)
-	// ebitenutil.DrawLine()
-
 }
 
 // func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
@@ -172,9 +164,10 @@ type playerent struct {
 
 func (r rectangle) normalcollides(entities []shape) bool {
 	rectShape := r.makeShape()
-	for _, obj := range entities {
-		for _, subline := range obj {
-			for _, li := range rectShape {
+
+	for _, li := range rectShape {
+		for _, obj := range entities {
+			for _, subline := range obj {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}
@@ -184,12 +177,38 @@ func (r rectangle) normalcollides(entities []shape) bool {
 	return false
 }
 
+// func movercollides(oldMe, newMe rectangle, entities []shape) bool {
+
+// 	oldShape := oldMe.makeShape()
+// 	newShape := newMe.makeShape()
+
+// 	moveLines := shape{}
+
+// 	for i, oldline := range oldShape {
+// 		newline := newShape[i]
+// 		resultline := line{oldline.p1, newline.p1}
+// 		moveLines = append(moveLines, resultline)
+// 	}
+
+// 	for _, li := range moveLines {
+// 		for _, obj := range entities {
+// 			for _, subline := range obj {
+// 				if _, _, intersects := subline.intersects(li); intersects {
+// 					return true
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return false
+// }
+
 func (p *playerent) handleMovement(entities []shape) {
 
 	right, down, left, up := false, false, false, false
 
 	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight) {
 		right = true
+
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown) {
@@ -208,6 +227,25 @@ func (p *playerent) handleMovement(entities []shape) {
 	if (up || down) && (left || right) {
 		diagonalCorrectedSpeed = int(float32(p.speed) * 0.75)
 	}
+
+	// optimisticPlayer := *p
+	// if right {
+	// 	optimisticPlayer.location.x += diagonalCorrectedSpeed
+	// }
+	// if down {
+	// 	optimisticPlayer.location.y += diagonalCorrectedSpeed
+	// }
+	// if left {
+	// 	optimisticPlayer.location.x -= diagonalCorrectedSpeed
+	// }
+	// if up {
+	// 	optimisticPlayer.location.y -= diagonalCorrectedSpeed
+	// }
+
+	// if !movercollides(p.rectangle, optimisticPlayer.rectangle, entities) {
+	// 	p.location = optimisticPlayer.location
+	// 	return
+	// }
 
 	for i := 1; i < diagonalCorrectedSpeed+1; i++ {
 		checkpointx := p.location
@@ -251,16 +289,16 @@ func main() {
 	player := playerent{
 		rectangle{
 			point{
-				50,
-				50,
+				1,
+				1,
 			},
-			90,
-			90,
+			20,
+			20,
 		},
 		mover{9},
 	}
 	maprect := rectangle{
-		point{20, 20},
+		point{0, 0},
 		2000,
 		2000,
 	}
@@ -270,6 +308,11 @@ func main() {
 	// bgSizex, sgsizey := bgImage.Size()
 	// bgOps := &ebiten.DrawImageOptions{}
 	// bgOps.GeoM.Scale(float64(maprect.w)/float64(bgSizex), float64(maprect.h)/float64(sgsizey))
+
+	pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	pSizex, pSizey := pImage.Size()
+	pOps := &ebiten.DrawImageOptions{}
+	pOps.GeoM.Scale(float64(player.w)/float64(pSizex), float64(player.h)/float64(pSizey))
 
 	diagonalWall := shape{
 		line{
@@ -323,6 +366,9 @@ func main() {
 		for _, l := range player.makeShape() {
 			samDrawLine(screen, emptyImage, renderOffset, l, *emptyop)
 		}
+		newPOps := *pOps
+		newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
+		screen.DrawImage(pImage, &newPOps)
 		// player.makeShape().drawtoScreen(screen, player.location)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
