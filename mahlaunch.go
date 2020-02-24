@@ -249,6 +249,7 @@ func (p *playerent) handleMovement(entities []shape) {
 
 	for i := 1; i < diagonalCorrectedSpeed+1; i++ {
 		checkpointx := p.location
+		xcollided := false
 		if right {
 			checkpointx.x++
 		}
@@ -261,9 +262,12 @@ func (p *playerent) handleMovement(entities []shape) {
 			checkplay.location = checkpointx
 			if !checkplay.normalcollides(entities) {
 				p.location = checkpointx
+			} else {
+				xcollided = true
 			}
 		}
 		checkpointy := p.location
+		ycollided := false
 		if down {
 			checkpointy.y++
 		}
@@ -277,7 +281,12 @@ func (p *playerent) handleMovement(entities []shape) {
 			checkplay.location = checkpointy
 			if !checkplay.normalcollides(entities) {
 				p.location = checkpointy
+			} else {
+				ycollided = true
 			}
+		}
+		if xcollided && ycollided {
+			break
 		}
 	}
 }
