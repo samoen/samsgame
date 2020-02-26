@@ -101,11 +101,11 @@ func (r *rectangle) movePlayer(newpoint location) {
 	r.shape = shape{left, bottom, right, top}
 }
 
-func (s shape) normalcollides(entities []*shape) bool {
+func (s shape) normalcollides(entities []shape) bool {
 
 	for _, li := range s {
 		for _, obj := range entities {
-			for _, subline := range *obj {
+			for _, subline := range obj {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}
@@ -141,10 +141,23 @@ func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
 }
 func (c *collisionSystem) work() {
-	for _, p := range c.movers {
+	for i, p := range c.movers {
 		diagonalCorrectedSpeed := p.moveSpeed
 		if (p.directions.up || p.directions.down) && (p.directions.left || p.directions.right) {
 			diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
+		}
+
+		var totalSolids []shape
+
+		for _, sol := range c.solids {
+			totalSolids = append(totalSolids, *sol)
+		}
+
+		for j, movingSolid := range c.movers {
+			if i == j {
+				continue
+			}
+			totalSolids = append(totalSolids, movingSolid.shape)
 		}
 
 		for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
@@ -160,7 +173,7 @@ func (c *collisionSystem) work() {
 			if p.directions.left || p.directions.right {
 				checkplay := *p
 				checkplay.movePlayer(checkpointx)
-				if !checkplay.shape.normalcollides(c.solids) {
+				if !checkplay.shape.normalcollides(totalSolids) {
 					p.movePlayer(checkpointx)
 				} else {
 					xcollided = true
@@ -179,7 +192,7 @@ func (c *collisionSystem) work() {
 			if p.directions.up || p.directions.down {
 				checkplay := *p
 				checkplay.movePlayer(checkpointy)
-				if !checkplay.shape.normalcollides(c.solids) {
+				if !checkplay.shape.normalcollides(totalSolids) {
 					p.movePlayer(checkpointy)
 				} else {
 					ycollided = true
@@ -188,56 +201,6 @@ func (c *collisionSystem) work() {
 			if xcollided && ycollided {
 				break
 			}
-		}
-	}
-}
-func (p *playerent) handleMovement(entities []*shape, right, down, left, up bool) {
-
-	diagonalCorrectedSpeed := p.moveSpeed
-	if (up || down) && (left || right) {
-		diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
-	}
-
-	for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
-		checkpointx := p.location
-		xcollided := false
-		if right {
-			checkpointx.x++
-		}
-
-		if left {
-			checkpointx.x--
-		}
-		if left || right {
-			checkplay := *p
-			checkplay.movePlayer(checkpointx)
-			if !checkplay.shape.normalcollides(entities) {
-				p.movePlayer(checkpointx)
-			} else {
-				xcollided = true
-			}
-		}
-		checkpointy := p.location
-		ycollided := false
-		if down {
-			checkpointy.y++
-		}
-
-		if up {
-			checkpointy.y--
-		}
-
-		if up || down {
-			checkplay := *p
-			checkplay.movePlayer(checkpointy)
-			if !checkplay.shape.normalcollides(entities) {
-				p.movePlayer(checkpointy)
-			} else {
-				ycollided = true
-			}
-		}
-		if xcollided && ycollided {
-			break
 		}
 	}
 }
@@ -286,7 +249,7 @@ func main() {
 	}
 	renderingSystem.addShape(&player.shape)
 	collideSystem.addMover(&player)
-	collideSystem.addSolid(&player.shape)
+
 	// enemy := playerent{
 	// 	rectangle{
 	// 		point{
@@ -335,12 +298,12 @@ func main() {
 	anotherRoom := newRectangle(location{900, 1200}, 90, 150)
 	renderingSystem.addShape(&anotherRoom.shape)
 	collideSystem.addSolid(&anotherRoom.shape)
-	ents := []*shape{
-		&mapBounds.shape,
-		&diagonalWall,
-		&lilRoom.shape,
-		&anotherRoom.shape,
-	}
+	// ents := []*shape{
+	// 	&mapBounds.shape,
+	// 	&diagonalWall,
+	// 	&lilRoom.shape,
+	// 	&anotherRoom.shape,
+	// }
 
 	// renderingSystem.shapes = append(renderingSystem.shapes, ents...)
 
@@ -358,15 +321,7 @@ func main() {
 			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
 		}
 
-		// collideSystem.work()
-
-		player.handleMovement(
-			ents,
-			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
-			ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
-			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
-			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
-		)
+		collideSystem.work()
 
 		if ebiten.IsDrawingSkipped() {
 			return nil
