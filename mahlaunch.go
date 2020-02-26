@@ -232,19 +232,38 @@ func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
 }
 
-// type botMovementSystem struct {
-// 	bots []*playerent
-// }
+type botMovementSystem struct {
+	bots []*playerent
+}
 
-// func (b *botMovementSystem)addBot(m *playerent){
-// 	b.bots = append(b.bots,m)
-// }
+func (b *botMovementSystem) addBot(m *playerent) {
+	b.bots = append(b.bots, m)
+}
+
+var enemyChange = 0
+
+func (b *botMovementSystem) work() {
+	enemyChange++
+
+	if enemyChange > 30 {
+		enemyChange = 0
+		for _, bot := range b.bots {
+			bot.directions = directions{
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+			}
+		}
+	}
+
+}
 
 func main() {
 
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
-	// botsMoveSystem := botMovementSystem{}
+	botsMoveSystem := botMovementSystem{}
 
 	player := playerent{
 		newRectangle(
@@ -260,21 +279,25 @@ func main() {
 	}
 	renderingSystem.addShape(&player.shape)
 	collideSystem.addMover(&player)
-	enemy := playerent{
-		newRectangle(
-			location{
-				90,
-				1,
-			},
-			20,
-			20,
-		),
-		moveSpeed(5),
-		directions{},
-	}
 
-	renderingSystem.addShape(&enemy.shape)
-	collideSystem.addMover(&enemy)
+	for i := 1; i < 50; i++ {
+		enemy := playerent{
+			newRectangle(
+				location{
+					i * 30,
+					1,
+				},
+				20,
+				20,
+			),
+			moveSpeed(5),
+			directions{},
+		}
+
+		renderingSystem.addShape(&enemy.shape)
+		collideSystem.addMover(&enemy)
+		botsMoveSystem.addBot(&enemy)
+	}
 
 	mapBounds := newRectangle(
 		location{0, 0},
@@ -283,6 +306,7 @@ func main() {
 	)
 	renderingSystem.addShape(&mapBounds.shape)
 	collideSystem.addSolid(&mapBounds.shape)
+
 	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// bgSizex, sgsizey := bgImage.Size()
 	// bgOps := &ebiten.DrawImageOptions{}
@@ -309,21 +333,10 @@ func main() {
 	)
 	renderingSystem.addShape(&lilRoom.shape)
 	collideSystem.addSolid(&lilRoom.shape)
+
 	anotherRoom := newRectangle(location{900, 1200}, 90, 150)
 	renderingSystem.addShape(&anotherRoom.shape)
 	collideSystem.addSolid(&anotherRoom.shape)
-	// ents := []*shape{
-	// 	&mapBounds.shape,
-	// 	&diagonalWall,
-	// 	&lilRoom.shape,
-	// 	&anotherRoom.shape,
-	// }
-
-	// renderingSystem.shapes = append(renderingSystem.shapes, ents...)
-
-	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
-
-	enemyChange := 0
 
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -336,16 +349,8 @@ func main() {
 			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
 			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
 		}
-		enemyChange++
-		if enemyChange > 60 {
-			enemyChange = 0
-			enemy.directions = directions{
-				rand.Intn(2) == 0,
-				rand.Intn(2) == 0,
-				rand.Intn(2) == 0,
-				rand.Intn(2) == 0,
-			}
-		}
+
+		botsMoveSystem.work()
 		collideSystem.work()
 
 		if ebiten.IsDrawingSkipped() {
