@@ -48,41 +48,6 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-// var fogspace = 20
-// var leftbound = line{point{0 + fogspace, 0 + fogspace}, point{0 + fogspace, screenHeight - fogspace}}
-// var rightbound = line{point{screenWidth - fogspace, 0 + fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
-// var topbound = line{point{0 + fogspace, 0 + fogspace}, point{screenWidth - fogspace, 0 + fogspace}}
-// var bottombound = line{point{0 + fogspace, screenHeight - fogspace}, point{screenWidth - fogspace, screenHeight - fogspace}}
-
-// func clip(val line) (line, bool) {
-// 	newpoint1 := val.p1
-// 	newpoint2 := val.p2
-// 	totallyOut := false
-
-// 	checkbound := func(bound line, extreme func(point) bool) {
-// 		if extreme(newpoint1) && extreme(newpoint2) {
-// 			totallyOut = true
-// 			return
-// 		}
-// 		secx, secy, does := line{newpoint1, newpoint2}.intersects(bound)
-// 		if does {
-// 			if extreme(newpoint1) {
-// 				newpoint1 = point{secx, secy}
-// 			} else if extreme(newpoint2) {
-// 				newpoint2 = point{secx, secy}
-// 			}
-// 		}
-
-// 	}
-
-// 	checkbound(leftbound, func(p point) bool { return p.x < 0+fogspace })
-// 	checkbound(rightbound, func(p point) bool { return p.x > screenWidth-fogspace })
-// 	checkbound(topbound, func(p point) bool { return p.y < 0+fogspace })
-// 	checkbound(bottombound, func(p point) bool { return p.y > screenHeight-fogspace })
-
-// 	return line{newpoint1, newpoint2}, totallyOut
-// }
-
 func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebiten.DrawImageOptions) {
 
 	l.p1.x += center.x
@@ -109,40 +74,10 @@ func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebit
 	screen.DrawImage(&imgToDraw, &op)
 }
 
-// func (s shape) drawtoScreen(screen *ebiten.Image, center point) {
-// 	for _, line := range s {
-
-// 		amtx := screenWidth / 2
-// 		amty := screenHeight / 2
-// 		line.p1.x += amtx
-// 		line.p1.y += amty
-// 		line.p2.x += amtx
-// 		line.p2.y += amty
-
-// 		line.p1.x -= center.x
-// 		line.p1.y -= center.y
-// 		line.p2.x -= center.x
-// 		line.p2.y -= center.y
-
-// 		newline, totallyOut := clip(line)
-// 		if totallyOut == true {
-// 			continue
-// 		}
-// 		newline := line
-// 		ebitenutil.DrawLine(
-// 			screen,
-// 			float64(newline.p1.x),
-// 			float64(newline.p1.y),
-// 			float64(newline.p2.x),
-// 			float64(newline.p2.y),
-// 			color.White,
-// 		)
-// 	}
-// }
-
 type rectangle struct {
 	location point
 	w, h     int
+	shape
 }
 
 func (r rectangle) makeShape() shape {
@@ -162,12 +97,16 @@ type playerent struct {
 	mover
 }
 
-func (r rectangle) normalcollides(entities []shape) bool {
-	rectShape := r.makeShape()
+func (r *rectangle) movePlayer(newpoint point) {
+	r.location = newpoint
+	r.shape = r.makeShape()
+}
 
-	for _, li := range rectShape {
+func (s shape) normalcollides(entities []*shape) bool {
+
+	for _, li := range s {
 		for _, obj := range entities {
-			for _, subline := range obj {
+			for _, subline := range *obj {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}
@@ -177,32 +116,20 @@ func (r rectangle) normalcollides(entities []shape) bool {
 	return false
 }
 
-// func movercollides(oldMe, newMe rectangle, entities []shape) bool {
+type renderSystem struct {
+	shapes []*shape
+}
 
-// 	oldShape := oldMe.makeShape()
-// 	newShape := newMe.makeShape()
+func (r renderSystem) work(s, i *ebiten.Image, o point, op ebiten.DrawImageOptions) {
+	for _, shape := range r.shapes {
+		// shape.drawtoScreen(screen, player.location)
+		for _, l := range *shape {
+			samDrawLine(s, i, o, l, op)
+		}
+	}
+}
 
-// 	moveLines := shape{}
-
-// 	for i, oldline := range oldShape {
-// 		newline := newShape[i]
-// 		resultline := line{oldline.p1, newline.p1}
-// 		moveLines = append(moveLines, resultline)
-// 	}
-
-// 	for _, li := range moveLines {
-// 		for _, obj := range entities {
-// 			for _, subline := range obj {
-// 				if _, _, intersects := subline.intersects(li); intersects {
-// 					return true
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return false
-// }
-
-func (p *playerent) handleMovement(entities []shape) {
+func (p *playerent) handleMovement(entities []*shape) {
 
 	right, down, left, up := false, false, false, false
 
@@ -259,9 +186,11 @@ func (p *playerent) handleMovement(entities []shape) {
 		}
 		if left || right {
 			checkplay := *p
-			checkplay.location = checkpointx
-			if !checkplay.normalcollides(entities) {
-				p.location = checkpointx
+			checkplay.movePlayer(checkpointx)
+			// checkplay.location = checkpointx
+			if !checkplay.shape.normalcollides(entities) {
+				p.movePlayer(checkpointx)
+				// p.location = checkpointx
 			} else {
 				xcollided = true
 			}
@@ -278,9 +207,11 @@ func (p *playerent) handleMovement(entities []shape) {
 
 		if up || down {
 			checkplay := *p
-			checkplay.location = checkpointy
-			if !checkplay.normalcollides(entities) {
-				p.location = checkpointy
+			checkplay.movePlayer(checkpointy)
+			// checkplay.location = checkpointy
+			if !checkplay.shape.normalcollides(entities) {
+				// p.location = checkpointy
+				p.movePlayer(checkpointy)
 			} else {
 				ycollided = true
 			}
@@ -291,27 +222,51 @@ func (p *playerent) handleMovement(entities []shape) {
 	}
 }
 
+func newRectangle(loc point, w, h int) rectangle {
+	r := rectangle{}
+	r.w = w
+	r.h = h
+	r.movePlayer(loc)
+	return r
+}
+
 func main() {
 	const screenWidth = 1400
 	const screenHeight = 1000
 
+	renderingSystem := renderSystem{}
+
 	player := playerent{
-		rectangle{
+		newRectangle(
 			point{
 				1,
 				1,
 			},
 			20,
 			20,
-		},
+		),
 		mover{9},
 	}
-	maprect := rectangle{
+
+	renderingSystem.shapes = append(renderingSystem.shapes, &player.shape)
+
+	// enemy := playerent{
+	// 	rectangle{
+	// 		point{
+	// 			30,
+	// 			1,
+	// 		},
+	// 		15,
+	// 		215,
+	// 	},
+	// 	mover{9},
+	// }
+
+	mapBounds := newRectangle(
 		point{0, 0},
 		2000,
 		2000,
-	}
-	mapBounds := maprect.makeShape()
+	)
 
 	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// bgSizex, sgsizey := bgImage.Size()
@@ -329,19 +284,21 @@ func main() {
 			point{600, 655},
 		},
 	}
-	lilRoom := rectangle{
+	lilRoom := newRectangle(
 		point{45, 400},
 		70,
 		20,
-	}.makeShape()
+	)
 
-	anotherRoom := rectangle{point{300, 100}, 30, 60}.makeShape()
-	ents := []shape{
-		mapBounds,
-		diagonalWall,
-		lilRoom,
-		anotherRoom,
+	anotherRoom := newRectangle(point{900, 1200}, 90, 150)
+	ents := []*shape{
+		&mapBounds.shape,
+		&diagonalWall,
+		&lilRoom.shape,
+		&anotherRoom.shape,
 	}
+
+	renderingSystem.shapes = append(renderingSystem.shapes, ents...)
 
 	emptyImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
@@ -366,19 +323,11 @@ func main() {
 
 		renderOffset := point{(screenWidth / 2) - player.location.x - (player.w / 2), (screenHeight / 2) - player.location.y - (player.h / 2)}
 
-		for _, shape := range ents {
-			// shape.drawtoScreen(screen, player.location)
-			for _, l := range shape {
-				samDrawLine(screen, emptyImage, renderOffset, l, *emptyop)
-			}
-		}
-		for _, l := range player.makeShape() {
-			samDrawLine(screen, emptyImage, renderOffset, l, *emptyop)
-		}
-		newPOps := *pOps
-		newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
-		screen.DrawImage(pImage, &newPOps)
-		// player.makeShape().drawtoScreen(screen, player.location)
+		renderingSystem.work(screen, emptyImage, renderOffset, *emptyop)
+
+		// newPOps := *pOps
+		// newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
+		// screen.DrawImage(pImage, &newPOps)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 		return nil
