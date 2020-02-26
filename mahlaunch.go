@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/rand"
 
 	_ "image/png"
 	"log"
@@ -231,10 +232,20 @@ func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
 }
 
+// type botMovementSystem struct {
+// 	bots []*playerent
+// }
+
+// func (b *botMovementSystem)addBot(m *playerent){
+// 	b.bots = append(b.bots,m)
+// }
+
 func main() {
 
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
+	// botsMoveSystem := botMovementSystem{}
+
 	player := playerent{
 		newRectangle(
 			location{
@@ -249,18 +260,21 @@ func main() {
 	}
 	renderingSystem.addShape(&player.shape)
 	collideSystem.addMover(&player)
+	enemy := playerent{
+		newRectangle(
+			location{
+				90,
+				1,
+			},
+			20,
+			20,
+		),
+		moveSpeed(5),
+		directions{},
+	}
 
-	// enemy := playerent{
-	// 	rectangle{
-	// 		point{
-	// 			30,
-	// 			1,
-	// 		},
-	// 		15,
-	// 		215,
-	// 	},
-	// 	mover{9},
-	// }
+	renderingSystem.addShape(&enemy.shape)
+	collideSystem.addMover(&enemy)
 
 	mapBounds := newRectangle(
 		location{0, 0},
@@ -309,6 +323,8 @@ func main() {
 
 	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
 
+	enemyChange := 0
+
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
@@ -320,7 +336,16 @@ func main() {
 			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
 			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
 		}
-
+		enemyChange++
+		if enemyChange > 60 {
+			enemyChange = 0
+			enemy.directions = directions{
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+				rand.Intn(2) == 0,
+			}
+		}
 		collideSystem.work()
 
 		if ebiten.IsDrawingSkipped() {
