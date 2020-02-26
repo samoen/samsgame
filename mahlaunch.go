@@ -101,7 +101,11 @@ type playerent struct {
 
 func (r *rectangle) movePlayer(newpoint location) {
 	r.location = newpoint
-	r.shape = r.makeShape()
+	left := line{location{r.x, r.y}, location{r.x, r.y + r.height}}
+	bottom := line{location{r.x, r.y + r.height}, location{r.x + r.width, r.y + r.height}}
+	right := line{location{r.x + r.width, r.y + r.height}, location{r.x + r.width, r.y}}
+	top := line{location{r.x + r.width, r.y}, location{r.x, r.y}}
+	r.shape = shape{left, bottom, right, top}
 }
 
 func (s shape) normalcollides(entities []*shape) bool {
@@ -122,35 +126,16 @@ type renderSystem struct {
 	shapes []*shape
 }
 
-func (r renderSystem) work(s, i *ebiten.Image, o location, op ebiten.DrawImageOptions) {
+func (r renderSystem) work(s, i *ebiten.Image, centerOn rectangle, op ebiten.DrawImageOptions) {
+	o := location{(screenWidth / 2) - centerOn.x - (centerOn.width / 2), (screenHeight / 2) - centerOn.y - (centerOn.height / 2)}
 	for _, shape := range r.shapes {
-		// shape.drawtoScreen(screen, player.location)
 		for _, l := range *shape {
 			samDrawLine(s, i, o, l, op)
 		}
 	}
 }
 
-func (p *playerent) handleMovement(entities []*shape) {
-
-	right, down, left, up := false, false, false, false
-
-	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight) {
-		right = true
-
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown) {
-		down = true
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		left = true
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp) {
-		up = true
-	}
+func (p *playerent) handleMovement(entities []*shape, right, down, left, up bool) {
 
 	diagonalCorrectedSpeed := p.moveSpeed
 	if (up || down) && (left || right) {
@@ -209,9 +194,17 @@ func newRectangle(loc location, w, h int) rectangle {
 	return r
 }
 
+const screenWidth = 1400
+const screenHeight = 1000
+
+var emptyImage *ebiten.Image
+
+func init() {
+	emptyImagea, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	emptyImage = emptyImagea
+}
+
 func main() {
-	const screenWidth = 1400
-	const screenHeight = 1000
 
 	renderingSystem := renderSystem{}
 
@@ -279,7 +272,6 @@ func main() {
 
 	renderingSystem.shapes = append(renderingSystem.shapes, ents...)
 
-	emptyImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
 
 	emptyop := &ebiten.DrawImageOptions{}
@@ -290,8 +282,13 @@ func main() {
 			return errors.New("game ended by player")
 		}
 
-		player.handleMovement(ents)
-
+		player.handleMovement(
+			ents,
+			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
+			ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
+			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
+			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
+		)
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -300,9 +297,7 @@ func main() {
 		// newops.GeoM.Translate(float64(-player.x), float64(-player.y))
 		// screen.DrawImage(bgImage, &newops)
 
-		renderOffset := location{(screenWidth / 2) - player.x - (player.width / 2), (screenHeight / 2) - player.y - (player.height / 2)}
-
-		renderingSystem.work(screen, emptyImage, renderOffset, *emptyop)
+		renderingSystem.work(screen, emptyImage, player.rectangle, *emptyop)
 
 		// newPOps := *pOps
 		// newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
