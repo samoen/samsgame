@@ -48,7 +48,7 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-func samDrawLine(screen, emptyImage *ebiten.Image, center location, l line, op ebiten.DrawImageOptions) {
+func samDrawLine(screen *ebiten.Image, center location, l line, op ebiten.DrawImageOptions) {
 
 	l.p1.x += center.x
 	l.p1.y += center.y
@@ -84,19 +84,12 @@ type rectangle struct {
 	shape
 }
 
-func (r rectangle) makeShape() shape {
-	left := line{location{r.x, r.y}, location{r.x, r.y + r.height}}
-	bottom := line{location{r.x, r.y + r.height}, location{r.x + r.width, r.y + r.height}}
-	right := line{location{r.x + r.width, r.y + r.height}, location{r.x + r.width, r.y}}
-	top := line{location{r.x + r.width, r.y}, location{r.x, r.y}}
-	return shape{left, bottom, right, top}
-}
-
 type moveSpeed int
 
 type playerent struct {
 	rectangle
 	moveSpeed
+	directions
 }
 
 func (r *rectangle) movePlayer(newpoint location) {
@@ -126,15 +119,78 @@ type renderSystem struct {
 	shapes []*shape
 }
 
-func (r renderSystem) work(s, i *ebiten.Image, centerOn rectangle, op ebiten.DrawImageOptions) {
+func (r renderSystem) work(s *ebiten.Image, centerOn rectangle) {
+	op := *emptyop
 	o := location{(screenWidth / 2) - centerOn.x - (centerOn.width / 2), (screenHeight / 2) - centerOn.y - (centerOn.height / 2)}
 	for _, shape := range r.shapes {
 		for _, l := range *shape {
-			samDrawLine(s, i, o, l, op)
+			samDrawLine(s, o, l, op)
 		}
 	}
 }
 
+type collisionSystem struct {
+	movers []*playerent
+	solids []*shape
+}
+
+func (c *collisionSystem) addMover(p *playerent) {
+	c.movers = append(c.movers, p)
+}
+func (c *collisionSystem) addSolid(s *shape) {
+	c.solids = append(c.solids, s)
+}
+func (c *collisionSystem) work() {
+	for _, p := range c.movers {
+		diagonalCorrectedSpeed := p.moveSpeed
+		if (p.directions.up || p.directions.down) && (p.directions.left || p.directions.right) {
+			diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
+		}
+
+		for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
+			checkpointx := p.location
+			xcollided := false
+			if p.directions.right {
+				checkpointx.x++
+			}
+
+			if p.directions.left {
+				checkpointx.x--
+			}
+			if p.directions.left || p.directions.right {
+				checkplay := *p
+				checkplay.movePlayer(checkpointx)
+				if !checkplay.shape.normalcollides(c.solids) {
+					p.movePlayer(checkpointx)
+				} else {
+					xcollided = true
+				}
+			}
+			checkpointy := p.location
+			ycollided := false
+			if p.directions.down {
+				checkpointy.y++
+			}
+
+			if p.directions.up {
+				checkpointy.y--
+			}
+
+			if p.directions.up || p.directions.down {
+				checkplay := *p
+				checkplay.movePlayer(checkpointy)
+				if !checkplay.shape.normalcollides(c.solids) {
+					p.movePlayer(checkpointy)
+				} else {
+					ycollided = true
+				}
+			}
+			if xcollided && ycollided {
+				break
+			}
+		}
+	}
+}
 func (p *playerent) handleMovement(entities []*shape, right, down, left, up bool) {
 
 	diagonalCorrectedSpeed := p.moveSpeed
@@ -198,16 +254,24 @@ const screenWidth = 1400
 const screenHeight = 1000
 
 var emptyImage *ebiten.Image
+var emptyop *ebiten.DrawImageOptions
 
 func init() {
 	emptyImagea, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	emptyImage = emptyImagea
+
+	emptyop = &ebiten.DrawImageOptions{}
+	emptyop.ColorM.Scale(0, 230, 64, 1)
+}
+
+func (r *renderSystem) addShape(s *shape) {
+	r.shapes = append(r.shapes, s)
 }
 
 func main() {
 
 	renderingSystem := renderSystem{}
-
+	collideSystem := collisionSystem{}
 	player := playerent{
 		newRectangle(
 			location{
@@ -218,10 +282,11 @@ func main() {
 			20,
 		),
 		moveSpeed(9),
+		directions{},
 	}
-
-	renderingSystem.shapes = append(renderingSystem.shapes, &player.shape)
-
+	renderingSystem.addShape(&player.shape)
+	collideSystem.addMover(&player)
+	collideSystem.addSolid(&player.shape)
 	// enemy := playerent{
 	// 	rectangle{
 	// 		point{
@@ -239,16 +304,17 @@ func main() {
 		2000,
 		2000,
 	)
-
+	renderingSystem.addShape(&mapBounds.shape)
+	collideSystem.addSolid(&mapBounds.shape)
 	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	// bgSizex, sgsizey := bgImage.Size()
 	// bgOps := &ebiten.DrawImageOptions{}
 	// bgOps.GeoM.Scale(float64(maprect.w)/float64(bgSizex), float64(maprect.h)/float64(sgsizey))
 
-	pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-	pSizex, pSizey := pImage.Size()
-	pOps := &ebiten.DrawImageOptions{}
-	pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
+	// pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// pSizex, pSizey := pImage.Size()
+	// pOps := &ebiten.DrawImageOptions{}
+	// pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
 
 	diagonalWall := shape{
 		line{
@@ -256,13 +322,19 @@ func main() {
 			location{600, 655},
 		},
 	}
+	renderingSystem.addShape(&diagonalWall)
+	collideSystem.addSolid(&diagonalWall)
+
 	lilRoom := newRectangle(
 		location{45, 400},
 		70,
 		20,
 	)
-
+	renderingSystem.addShape(&lilRoom.shape)
+	collideSystem.addSolid(&lilRoom.shape)
 	anotherRoom := newRectangle(location{900, 1200}, 90, 150)
+	renderingSystem.addShape(&anotherRoom.shape)
+	collideSystem.addSolid(&anotherRoom.shape)
 	ents := []*shape{
 		&mapBounds.shape,
 		&diagonalWall,
@@ -270,17 +342,23 @@ func main() {
 		&anotherRoom.shape,
 	}
 
-	renderingSystem.shapes = append(renderingSystem.shapes, ents...)
+	// renderingSystem.shapes = append(renderingSystem.shapes, ents...)
 
 	// emptyImage, _ := ebiten.NewImage(1, 1, ebiten.FilterDefault)
-
-	emptyop := &ebiten.DrawImageOptions{}
-	emptyop.ColorM.Scale(0, 230, 64, 1)
 
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
 		}
+
+		player.directions = directions{
+			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
+			ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
+			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
+			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
+		}
+
+		// collideSystem.work()
 
 		player.handleMovement(
 			ents,
@@ -289,6 +367,7 @@ func main() {
 			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
 			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
 		)
+
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -297,7 +376,7 @@ func main() {
 		// newops.GeoM.Translate(float64(-player.x), float64(-player.y))
 		// screen.DrawImage(bgImage, &newops)
 
-		renderingSystem.work(screen, emptyImage, player.rectangle, *emptyop)
+		renderingSystem.work(screen, player.rectangle)
 
 		// newPOps := *pOps
 		// newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
@@ -310,4 +389,8 @@ func main() {
 	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "sam's cool game"); err != nil {
 		log.Fatal(err)
 	}
+}
+
+type directions struct {
+	right, down, left, up bool
 }
