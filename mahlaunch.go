@@ -15,12 +15,12 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-type point struct {
+type location struct {
 	x, y int
 }
 
 type line struct {
-	p1, p2 point
+	p1, p2 location
 }
 
 func (l line) intersects(l2 line) (int, int, bool) {
@@ -48,7 +48,7 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebiten.DrawImageOptions) {
+func samDrawLine(screen, emptyImage *ebiten.Image, center location, l line, op ebiten.DrawImageOptions) {
 
 	l.p1.x += center.x
 	l.p1.y += center.y
@@ -74,30 +74,32 @@ func samDrawLine(screen, emptyImage *ebiten.Image, center point, l line, op ebit
 	screen.DrawImage(&imgToDraw, &op)
 }
 
+type dimens struct {
+	width, height int
+}
+
 type rectangle struct {
-	location point
-	w, h     int
+	location
+	dimens
 	shape
 }
 
 func (r rectangle) makeShape() shape {
-	left := line{point{r.location.x, r.location.y}, point{r.location.x, r.location.y + r.h}}
-	bottom := line{point{r.location.x, r.location.y + r.h}, point{r.location.x + r.w, r.location.y + r.h}}
-	right := line{point{r.location.x + r.w, r.location.y + r.h}, point{r.location.x + r.w, r.location.y}}
-	top := line{point{r.location.x + r.w, r.location.y}, point{r.location.x, r.location.y}}
+	left := line{location{r.x, r.y}, location{r.x, r.y + r.height}}
+	bottom := line{location{r.x, r.y + r.height}, location{r.x + r.width, r.y + r.height}}
+	right := line{location{r.x + r.width, r.y + r.height}, location{r.x + r.width, r.y}}
+	top := line{location{r.x + r.width, r.y}, location{r.x, r.y}}
 	return shape{left, bottom, right, top}
 }
 
-type mover struct {
-	speed int
-}
+type moveSpeed int
 
 type playerent struct {
 	rectangle
-	mover
+	moveSpeed
 }
 
-func (r *rectangle) movePlayer(newpoint point) {
+func (r *rectangle) movePlayer(newpoint location) {
 	r.location = newpoint
 	r.shape = r.makeShape()
 }
@@ -120,7 +122,7 @@ type renderSystem struct {
 	shapes []*shape
 }
 
-func (r renderSystem) work(s, i *ebiten.Image, o point, op ebiten.DrawImageOptions) {
+func (r renderSystem) work(s, i *ebiten.Image, o location, op ebiten.DrawImageOptions) {
 	for _, shape := range r.shapes {
 		// shape.drawtoScreen(screen, player.location)
 		for _, l := range *shape {
@@ -150,31 +152,12 @@ func (p *playerent) handleMovement(entities []*shape) {
 		up = true
 	}
 
-	diagonalCorrectedSpeed := p.speed
+	diagonalCorrectedSpeed := p.moveSpeed
 	if (up || down) && (left || right) {
-		diagonalCorrectedSpeed = int(float32(p.speed) * 0.75)
+		diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
 	}
 
-	// optimisticPlayer := *p
-	// if right {
-	// 	optimisticPlayer.location.x += diagonalCorrectedSpeed
-	// }
-	// if down {
-	// 	optimisticPlayer.location.y += diagonalCorrectedSpeed
-	// }
-	// if left {
-	// 	optimisticPlayer.location.x -= diagonalCorrectedSpeed
-	// }
-	// if up {
-	// 	optimisticPlayer.location.y -= diagonalCorrectedSpeed
-	// }
-
-	// if !movercollides(p.rectangle, optimisticPlayer.rectangle, entities) {
-	// 	p.location = optimisticPlayer.location
-	// 	return
-	// }
-
-	for i := 1; i < diagonalCorrectedSpeed+1; i++ {
+	for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
 		checkpointx := p.location
 		xcollided := false
 		if right {
@@ -187,10 +170,8 @@ func (p *playerent) handleMovement(entities []*shape) {
 		if left || right {
 			checkplay := *p
 			checkplay.movePlayer(checkpointx)
-			// checkplay.location = checkpointx
 			if !checkplay.shape.normalcollides(entities) {
 				p.movePlayer(checkpointx)
-				// p.location = checkpointx
 			} else {
 				xcollided = true
 			}
@@ -208,9 +189,7 @@ func (p *playerent) handleMovement(entities []*shape) {
 		if up || down {
 			checkplay := *p
 			checkplay.movePlayer(checkpointy)
-			// checkplay.location = checkpointy
 			if !checkplay.shape.normalcollides(entities) {
-				// p.location = checkpointy
 				p.movePlayer(checkpointy)
 			} else {
 				ycollided = true
@@ -222,10 +201,10 @@ func (p *playerent) handleMovement(entities []*shape) {
 	}
 }
 
-func newRectangle(loc point, w, h int) rectangle {
+func newRectangle(loc location, w, h int) rectangle {
 	r := rectangle{}
-	r.w = w
-	r.h = h
+	r.width = w
+	r.height = h
 	r.movePlayer(loc)
 	return r
 }
@@ -238,14 +217,14 @@ func main() {
 
 	player := playerent{
 		newRectangle(
-			point{
+			location{
 				1,
 				1,
 			},
 			20,
 			20,
 		),
-		mover{9},
+		moveSpeed(9),
 	}
 
 	renderingSystem.shapes = append(renderingSystem.shapes, &player.shape)
@@ -263,7 +242,7 @@ func main() {
 	// }
 
 	mapBounds := newRectangle(
-		point{0, 0},
+		location{0, 0},
 		2000,
 		2000,
 	)
@@ -276,21 +255,21 @@ func main() {
 	pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	pSizex, pSizey := pImage.Size()
 	pOps := &ebiten.DrawImageOptions{}
-	pOps.GeoM.Scale(float64(player.w)/float64(pSizex), float64(player.h)/float64(pSizey))
+	pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
 
 	diagonalWall := shape{
 		line{
-			point{250, 310},
-			point{600, 655},
+			location{250, 310},
+			location{600, 655},
 		},
 	}
 	lilRoom := newRectangle(
-		point{45, 400},
+		location{45, 400},
 		70,
 		20,
 	)
 
-	anotherRoom := newRectangle(point{900, 1200}, 90, 150)
+	anotherRoom := newRectangle(location{900, 1200}, 90, 150)
 	ents := []*shape{
 		&mapBounds.shape,
 		&diagonalWall,
@@ -318,10 +297,10 @@ func main() {
 		}
 
 		// newops := *bgOps
-		// newops.GeoM.Translate(float64(-player.location.x), float64(-player.location.y))
+		// newops.GeoM.Translate(float64(-player.x), float64(-player.y))
 		// screen.DrawImage(bgImage, &newops)
 
-		renderOffset := point{(screenWidth / 2) - player.location.x - (player.w / 2), (screenHeight / 2) - player.location.y - (player.h / 2)}
+		renderOffset := location{(screenWidth / 2) - player.x - (player.width / 2), (screenHeight / 2) - player.y - (player.height / 2)}
 
 		renderingSystem.work(screen, emptyImage, renderOffset, *emptyop)
 
