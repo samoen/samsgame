@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"time"
 
 	_ "image/png"
 	"log"
@@ -49,32 +50,6 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 type shape []line
 
-func samDrawLine(screen *ebiten.Image, center location, l line, op ebiten.DrawImageOptions) {
-
-	l.p1.x += center.x
-	l.p1.y += center.y
-	l.p2.x += center.x
-	l.p2.y += center.y
-
-	x1 := float64(l.p1.x)
-	x2 := float64(l.p2.x)
-	y1 := float64(l.p1.y)
-	y2 := float64(l.p2.y)
-
-	imgToDraw := *emptyImage
-
-	ew, eh := imgToDraw.Size()
-	length := math.Hypot(x2-x1, y2-y1)
-
-	op.GeoM.Scale(
-		length/float64(ew),
-		2/float64(eh),
-	)
-	op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
-	op.GeoM.Translate(x1, y1)
-	screen.DrawImage(&imgToDraw, &op)
-}
-
 type dimens struct {
 	width, height int
 }
@@ -103,7 +78,6 @@ func (r *rectangle) movePlayer(newpoint location) {
 }
 
 func (s shape) normalcollides(entities []shape) bool {
-
 	for _, li := range s {
 		for _, obj := range entities {
 			for _, subline := range obj {
@@ -121,11 +95,36 @@ type renderSystem struct {
 }
 
 func (r renderSystem) work(s *ebiten.Image, centerOn rectangle) {
-	op := *emptyop
-	o := location{(screenWidth / 2) - centerOn.x - (centerOn.width / 2), (screenHeight / 2) - centerOn.y - (centerOn.height / 2)}
+	center := location{(screenWidth / 2) - centerOn.x - (centerOn.width / 2), (screenHeight / 2) - centerOn.y - (centerOn.height / 2)}
+	samDrawLine := func(l line) {
+		op := *emptyop
+		l.p1.x += center.x
+		l.p1.y += center.y
+		l.p2.x += center.x
+		l.p2.y += center.y
+
+		x1 := float64(l.p1.x)
+		x2 := float64(l.p2.x)
+		y1 := float64(l.p1.y)
+		y2 := float64(l.p2.y)
+
+		imgToDraw := *emptyImage
+
+		ew, eh := imgToDraw.Size()
+		length := math.Hypot(x2-x1, y2-y1)
+
+		op.GeoM.Scale(
+			length/float64(ew),
+			2/float64(eh),
+		)
+		op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
+		op.GeoM.Translate(x1, y1)
+		s.DrawImage(&imgToDraw, &op)
+	}
+
 	for _, shape := range r.shapes {
 		for _, l := range *shape {
-			samDrawLine(s, o, l, op)
+			samDrawLine(l)
 		}
 	}
 }
@@ -217,20 +216,23 @@ func (r *renderSystem) addShape(s *shape) {
 }
 
 type botMovementSystem struct {
-	bots []*playerent
+	events <-chan time.Time
+	bots   []*playerent
+}
+
+func newBotMovementSystem() botMovementSystem {
+	b := botMovementSystem{}
+	b.events = time.NewTicker(500 * time.Millisecond).C
+	return b
 }
 
 func (b *botMovementSystem) addBot(m *playerent) {
 	b.bots = append(b.bots, m)
 }
 
-var enemyChange = 0
-
 func (b *botMovementSystem) work() {
-	enemyChange++
-
-	if enemyChange > 30 {
-		enemyChange = 0
+	select {
+	case <-b.events:
 		for _, bot := range b.bots {
 			bot.directions = directions{
 				rand.Intn(2) == 0,
@@ -239,15 +241,14 @@ func (b *botMovementSystem) work() {
 				rand.Intn(2) == 0,
 			}
 		}
+	default:
 	}
-
 }
 
 func main() {
-
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
-	botsMoveSystem := botMovementSystem{}
+	botsMoveSystem := newBotMovementSystem()
 
 	player := playerent{
 		newRectangle(
