@@ -42,6 +42,7 @@ type rectangle struct {
 
 type moveSpeed struct {
 	currentSpeed int
+	maxSpeed     int
 }
 type playerent struct {
 	rectangle
@@ -234,6 +235,12 @@ func newPlayerMovementSystem() botMovementSystem {
 	return b
 }
 
+func accelerationSystem() botMovementSystem {
+	b := botMovementSystem{}
+	b.events = time.NewTicker(200 * time.Millisecond).C
+	return b
+}
+
 func (b *botMovementSystem) addBot(m *playerent) {
 	b.bots = append(b.bots, m)
 }
@@ -266,21 +273,41 @@ func (b *botMovementSystem) workForPlayer() {
 	default:
 	}
 }
+
+func (b *botMovementSystem) workForAccelerator() {
+	select {
+	case <-b.events:
+		for _, bot := range b.bots {
+			if !bot.down && !bot.left && !bot.right && !bot.up {
+				bot.currentSpeed = 0
+				continue
+			}
+			if bot.currentSpeed < bot.maxSpeed {
+				bot.currentSpeed++
+			}
+
+		}
+	default:
+	}
+}
+
 func main() {
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
 	botsMoveSystem := newBotMovementSystem()
 	playerMoveSystem := newPlayerMovementSystem()
+	accelerationSystem := accelerationSystem()
 
 	player := playerent{
 		newRectangle(
 			location{1, 1},
 			dimens{20, 20},
 		),
-		moveSpeed{9},
+		moveSpeed{9, 9},
 		directions{},
 	}
 	playerMoveSystem.addBot(&player)
+	accelerationSystem.addBot(&player)
 	renderingSystem.addShape(&player.shape)
 	collideSystem.addMover(&player)
 
@@ -293,7 +320,7 @@ func main() {
 				},
 				dimens{20, 20},
 			),
-			moveSpeed{5},
+			moveSpeed{5, 5},
 			directions{},
 		}
 
@@ -345,6 +372,7 @@ func main() {
 		}
 
 		playerMoveSystem.workForPlayer()
+		accelerationSystem.workForAccelerator()
 		botsMoveSystem.work()
 		collideSystem.work()
 
