@@ -35,9 +35,9 @@ type dimens struct {
 }
 
 type rectangle struct {
-	location
-	dimens
-	shape
+	location location
+	dimens   dimens
+	shape    shape
 }
 
 type moveSpeed struct {
@@ -45,9 +45,14 @@ type moveSpeed struct {
 	maxSpeed     int
 }
 type playerent struct {
-	rectangle
-	moveSpeed
-	directions
+	rectangle  rectangle
+	moveSpeed  moveSpeed
+	directions directions
+}
+
+type acceleratingEnt struct {
+	ent           *playerent
+	oldDirections directions
 }
 
 func (l line) intersects(l2 line) (int, int, bool) {
@@ -75,10 +80,10 @@ func (l line) intersects(l2 line) (int, int, bool) {
 
 func (r *rectangle) refreshShape(newpoint location) {
 	r.location = newpoint
-	left := line{location{r.x, r.y}, location{r.x, r.y + r.height}}
-	bottom := line{location{r.x, r.y + r.height}, location{r.x + r.width, r.y + r.height}}
-	right := line{location{r.x + r.width, r.y + r.height}, location{r.x + r.width, r.y}}
-	top := line{location{r.x + r.width, r.y}, location{r.x, r.y}}
+	left := line{location{r.location.x, r.location.y}, location{r.location.x, r.location.y + r.dimens.height}}
+	bottom := line{location{r.location.x, r.location.y + r.dimens.height}, location{r.location.x + r.dimens.width, r.location.y + r.dimens.height}}
+	right := line{location{r.location.x + r.dimens.width, r.location.y + r.dimens.height}, location{r.location.x + r.dimens.width, r.location.y}}
+	top := line{location{r.location.x + r.dimens.width, r.location.y}, location{r.location.x, r.location.y}}
 	r.shape = shape{left, bottom, right, top}
 }
 
@@ -100,7 +105,7 @@ type renderSystem struct {
 }
 
 func (r renderSystem) work(s *ebiten.Image, centerOn rectangle) {
-	center := location{(screenWidth / 2) - centerOn.x - (centerOn.width / 2), (screenHeight / 2) - centerOn.y - (centerOn.height / 2)}
+	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
 	samDrawLine := func(l line) {
 		op := *emptyop
 		l.p1.x += center.x
@@ -158,14 +163,14 @@ func (c *collisionSystem) work() {
 			if i == j {
 				continue
 			}
-			totalSolids = append(totalSolids, movingSolid.shape)
+			totalSolids = append(totalSolids, movingSolid.rectangle.shape)
 		}
 		for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
 			xcollided := false
 			ycollided := false
 
 			doaxis := func(pos *int, collided *bool, checkpoint *location, dir1, dir2 bool) {
-				*checkpoint = p.location
+				*checkpoint = p.rectangle.location
 				if dir1 {
 					*pos++
 				}
@@ -174,9 +179,9 @@ func (c *collisionSystem) work() {
 				}
 				if dir1 || dir2 {
 					checkplay := *p
-					checkplay.refreshShape(*checkpoint)
-					if !checkplay.shape.normalcollides(totalSolids) {
-						p.refreshShape(*checkpoint)
+					checkplay.rectangle.refreshShape(*checkpoint)
+					if !checkplay.rectangle.shape.normalcollides(totalSolids) {
+						p.rectangle.refreshShape(*checkpoint)
 					} else {
 						*collided = true
 					}
@@ -235,10 +240,20 @@ func newPlayerMovementSystem() botMovementSystem {
 	return b
 }
 
-func accelerationSystem() botMovementSystem {
-	b := botMovementSystem{}
-	b.events = time.NewTicker(200 * time.Millisecond).C
-	return b
+type accelerationSystem struct {
+	events <-chan time.Time
+	bots   []*acceleratingEnt
+}
+
+func newAccelerationSystem() accelerationSystem {
+	a := accelerationSystem{}
+	a.events = time.NewTicker(50 * time.Millisecond).C
+	return a
+}
+
+func (a *accelerationSystem) addAccelerator(m *playerent) {
+	aEnt := acceleratingEnt{m, directions{}}
+	a.bots = append(a.bots, &aEnt)
 }
 
 func (b *botMovementSystem) addBot(m *playerent) {
@@ -274,18 +289,36 @@ func (b *botMovementSystem) workForPlayer() {
 	}
 }
 
-func (b *botMovementSystem) workForAccelerator() {
+func (a *accelerationSystem) handleAcceleration() {
 	select {
-	case <-b.events:
-		for _, bot := range b.bots {
-			if !bot.down && !bot.left && !bot.right && !bot.up {
-				bot.currentSpeed = 0
-				continue
-			}
-			if bot.currentSpeed < bot.maxSpeed {
-				bot.currentSpeed++
-			}
+	case <-a.events:
+		for _, bot := range a.bots {
+			check := func(dir1, dir2, opp, side1, side2 bool) {
+				if opp && dir2 {
+					bot.ent.moveSpeed.currentSpeed = 0
+				} else if !dir1 && dir2 {
+					// if(bot.ent.moveSpeed.currentSpeed == bot.ent.moveSpeed.maxSpeed){
+					if side1 || side2 {
+						bot.ent.moveSpeed.currentSpeed = int(float32(bot.ent.moveSpeed.currentSpeed) / 2)
+					} else {
+						bot.ent.moveSpeed.currentSpeed = 0
+					}
 
+				}
+
+			}
+			check(bot.oldDirections.right, bot.ent.directions.right, bot.oldDirections.left, bot.oldDirections.up, bot.oldDirections.down)
+			check(bot.oldDirections.left, bot.ent.directions.left, bot.oldDirections.right, bot.oldDirections.up, bot.oldDirections.down)
+			check(bot.oldDirections.up, bot.ent.directions.up, bot.oldDirections.down, bot.oldDirections.right, bot.oldDirections.left)
+			check(bot.oldDirections.down, bot.ent.directions.down, bot.oldDirections.up, bot.oldDirections.right, bot.oldDirections.left)
+			// if !bot.ent.directions.down && !bot.ent.directions.left && !bot.ent.directions.right && !bot.ent.directions.up {
+			// 	bot.ent.moveSpeed.currentSpeed = 0
+			// 	continue
+			// }
+			if bot.ent.moveSpeed.currentSpeed < bot.ent.moveSpeed.maxSpeed {
+				bot.ent.moveSpeed.currentSpeed++
+			}
+			bot.oldDirections = bot.ent.directions
 		}
 	default:
 	}
@@ -296,7 +329,7 @@ func main() {
 	collideSystem := collisionSystem{}
 	botsMoveSystem := newBotMovementSystem()
 	playerMoveSystem := newPlayerMovementSystem()
-	accelerationSystem := accelerationSystem()
+	accelerationSystem := newAccelerationSystem()
 
 	player := playerent{
 		newRectangle(
@@ -307,8 +340,8 @@ func main() {
 		directions{},
 	}
 	playerMoveSystem.addBot(&player)
-	accelerationSystem.addBot(&player)
-	renderingSystem.addShape(&player.shape)
+	accelerationSystem.addAccelerator(&player)
+	renderingSystem.addShape(&player.rectangle.shape)
 	collideSystem.addMover(&player)
 
 	for i := 1; i < 50; i++ {
@@ -323,8 +356,8 @@ func main() {
 			moveSpeed{5, 5},
 			directions{},
 		}
-
-		renderingSystem.addShape(&enemy.shape)
+		accelerationSystem.addAccelerator(&enemy)
+		renderingSystem.addShape(&enemy.rectangle.shape)
 		collideSystem.addMover(&enemy)
 		botsMoveSystem.addBot(&enemy)
 	}
@@ -372,7 +405,7 @@ func main() {
 		}
 
 		playerMoveSystem.workForPlayer()
-		accelerationSystem.workForAccelerator()
+		accelerationSystem.handleAcceleration()
 		botsMoveSystem.work()
 		collideSystem.work()
 
