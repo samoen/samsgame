@@ -147,58 +147,42 @@ func (c *collisionSystem) work() {
 		if (p.directions.up || p.directions.down) && (p.directions.left || p.directions.right) {
 			diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
 		}
-
 		var totalSolids []shape
-
 		for _, sol := range c.solids {
 			totalSolids = append(totalSolids, *sol)
 		}
-
 		for j, movingSolid := range c.movers {
 			if i == j {
 				continue
 			}
 			totalSolids = append(totalSolids, movingSolid.shape)
 		}
-
 		for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
-			checkpointx := p.location
 			xcollided := false
-			if p.directions.right {
-				checkpointx.x++
-			}
-
-			if p.directions.left {
-				checkpointx.x--
-			}
-			if p.directions.left || p.directions.right {
-				checkplay := *p
-				checkplay.movePlayer(checkpointx)
-				if !checkplay.shape.normalcollides(totalSolids) {
-					p.movePlayer(checkpointx)
-				} else {
-					xcollided = true
-				}
-			}
-			checkpointy := p.location
 			ycollided := false
-			if p.directions.down {
-				checkpointy.y++
-			}
 
-			if p.directions.up {
-				checkpointy.y--
-			}
-
-			if p.directions.up || p.directions.down {
-				checkplay := *p
-				checkplay.movePlayer(checkpointy)
-				if !checkplay.shape.normalcollides(totalSolids) {
-					p.movePlayer(checkpointy)
-				} else {
-					ycollided = true
+			doaxis := func(pos *int, collided *bool, checkpoint *location, dir1, dir2 bool) {
+				*checkpoint = p.location
+				if dir1 {
+					*pos++
+				}
+				if dir2 {
+					*pos--
+				}
+				if dir1 || dir2 {
+					checkplay := *p
+					checkplay.movePlayer(*checkpoint)
+					if !checkplay.shape.normalcollides(totalSolids) {
+						p.movePlayer(*checkpoint)
+					} else {
+						*collided = true
+					}
 				}
 			}
+			loca := location{}
+
+			doaxis(&loca.x, &xcollided, &loca, p.directions.right, p.directions.left)
+			doaxis(&loca.y, &ycollided, &loca, p.directions.down, p.directions.up)
 			if xcollided && ycollided {
 				break
 			}
