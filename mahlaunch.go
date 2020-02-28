@@ -24,6 +24,30 @@ type location struct {
 type line struct {
 	p1, p2 location
 }
+type directions struct {
+	right, down, left, up bool
+}
+
+type shape []line
+
+type dimens struct {
+	width, height int
+}
+
+type rectangle struct {
+	location
+	dimens
+	shape
+}
+
+type moveSpeed struct {
+	currentSpeed int
+}
+type playerent struct {
+	rectangle
+	moveSpeed
+	directions
+}
 
 func (l line) intersects(l2 line) (int, int, bool) {
 	denom := (l.p1.x-l.p2.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l.p2.y)*(l2.p1.x-l2.p2.x)
@@ -48,27 +72,7 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
-type shape []line
-
-type dimens struct {
-	width, height int
-}
-
-type rectangle struct {
-	location
-	dimens
-	shape
-}
-
-type moveSpeed int
-
-type playerent struct {
-	rectangle
-	moveSpeed
-	directions
-}
-
-func (r *rectangle) movePlayer(newpoint location) {
+func (r *rectangle) refreshShape(newpoint location) {
 	r.location = newpoint
 	left := line{location{r.x, r.y}, location{r.x, r.y + r.height}}
 	bottom := line{location{r.x, r.y + r.height}, location{r.x + r.width, r.y + r.height}}
@@ -109,7 +113,6 @@ func (r renderSystem) work(s *ebiten.Image, centerOn rectangle) {
 		y2 := float64(l.p2.y)
 
 		imgToDraw := *emptyImage
-
 		ew, eh := imgToDraw.Size()
 		length := math.Hypot(x2-x1, y2-y1)
 
@@ -142,9 +145,9 @@ func (c *collisionSystem) addSolid(s *shape) {
 }
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
-		diagonalCorrectedSpeed := p.moveSpeed
+		diagonalCorrectedSpeed := p.moveSpeed.currentSpeed
 		if (p.directions.up || p.directions.down) && (p.directions.left || p.directions.right) {
-			diagonalCorrectedSpeed = moveSpeed(float32(p.moveSpeed) * 0.75)
+			diagonalCorrectedSpeed = int(float32(p.moveSpeed.currentSpeed) * 0.75)
 		}
 		var totalSolids []shape
 		for _, sol := range c.solids {
@@ -170,9 +173,9 @@ func (c *collisionSystem) work() {
 				}
 				if dir1 || dir2 {
 					checkplay := *p
-					checkplay.movePlayer(*checkpoint)
+					checkplay.refreshShape(*checkpoint)
 					if !checkplay.shape.normalcollides(totalSolids) {
-						p.movePlayer(*checkpoint)
+						p.refreshShape(*checkpoint)
 					} else {
 						*collided = true
 					}
@@ -189,11 +192,10 @@ func (c *collisionSystem) work() {
 	}
 }
 
-func newRectangle(loc location, w, h int) rectangle {
+func newRectangle(loc location, dims dimens) rectangle {
 	r := rectangle{}
-	r.width = w
-	r.height = h
-	r.movePlayer(loc)
+	r.dimens = dims
+	r.refreshShape(loc)
 	return r
 }
 
@@ -226,6 +228,12 @@ func newBotMovementSystem() botMovementSystem {
 	return b
 }
 
+func newPlayerMovementSystem() botMovementSystem {
+	b := botMovementSystem{}
+	b.events = time.NewTicker(50 * time.Millisecond).C
+	return b
+}
+
 func (b *botMovementSystem) addBot(m *playerent) {
 	b.bots = append(b.bots, m)
 }
@@ -244,24 +252,35 @@ func (b *botMovementSystem) work() {
 	default:
 	}
 }
-
+func (b *botMovementSystem) workForPlayer() {
+	select {
+	case <-b.events:
+		for _, bot := range b.bots {
+			bot.directions = directions{
+				ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
+				ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
+				ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
+				ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
+			}
+		}
+	default:
+	}
+}
 func main() {
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
 	botsMoveSystem := newBotMovementSystem()
+	playerMoveSystem := newPlayerMovementSystem()
 
 	player := playerent{
 		newRectangle(
-			location{
-				1,
-				1,
-			},
-			20,
-			20,
+			location{1, 1},
+			dimens{20, 20},
 		),
-		moveSpeed(9),
+		moveSpeed{9},
 		directions{},
 	}
+	playerMoveSystem.addBot(&player)
 	renderingSystem.addShape(&player.shape)
 	collideSystem.addMover(&player)
 
@@ -272,10 +291,9 @@ func main() {
 					i * 30,
 					1,
 				},
-				20,
-				20,
+				dimens{20, 20},
 			),
-			moveSpeed(5),
+			moveSpeed{5},
 			directions{},
 		}
 
@@ -286,8 +304,7 @@ func main() {
 
 	mapBounds := newRectangle(
 		location{0, 0},
-		2000,
-		2000,
+		dimens{2000, 2000},
 	)
 	renderingSystem.addShape(&mapBounds.shape)
 	collideSystem.addSolid(&mapBounds.shape)
@@ -313,13 +330,12 @@ func main() {
 
 	lilRoom := newRectangle(
 		location{45, 400},
-		70,
-		20,
+		dimens{70, 20},
 	)
 	renderingSystem.addShape(&lilRoom.shape)
 	collideSystem.addSolid(&lilRoom.shape)
 
-	anotherRoom := newRectangle(location{900, 1200}, 90, 150)
+	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
 	renderingSystem.addShape(&anotherRoom.shape)
 	collideSystem.addSolid(&anotherRoom.shape)
 
@@ -328,13 +344,7 @@ func main() {
 			return errors.New("game ended by player")
 		}
 
-		player.directions = directions{
-			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
-			ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
-			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
-			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
-		}
-
+		playerMoveSystem.workForPlayer()
 		botsMoveSystem.work()
 		collideSystem.work()
 
@@ -359,8 +369,4 @@ func main() {
 	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "sam's cool game"); err != nil {
 		log.Fatal(err)
 	}
-}
-
-type directions struct {
-	right, down, left, up bool
 }
