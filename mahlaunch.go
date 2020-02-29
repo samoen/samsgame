@@ -138,15 +138,74 @@ type collisionSystem struct {
 	solids []*shape
 }
 
-func (c *collisionSystem) addMover(p *playerent) {
-	a := acceleratingEnt{p, momentum{}}
-	c.movers = append(c.movers, &a)
+func (c *collisionSystem) addEnt(p *acceleratingEnt) {
+	c.movers = append(c.movers, p)
 }
+
+// func (c *collisionSystem) addMover(p *playerent) {
+// 	a := acceleratingEnt{p, momentum{}}
+// 	c.movers = append(c.movers, &a)
+// }
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
 }
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
+
+		// agility := 0.8
+		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
+		speedLimitx := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/2)
+		speedLimity := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/2)
+		if p.ent.directions.left {
+			if p.moment.xaxis > -speedLimitx {
+				p.moment.xaxis -= p.agility
+			}
+		}
+		if p.ent.directions.right {
+			if p.moment.xaxis < speedLimitx {
+				p.moment.xaxis += p.agility
+			}
+		}
+		if p.ent.directions.down {
+			if p.moment.yaxis < speedLimity {
+				p.moment.yaxis += p.agility
+			}
+		}
+		if p.ent.directions.up {
+			if p.moment.yaxis > -speedLimity {
+				p.moment.yaxis -= p.agility
+			}
+		}
+		// traction := float64(p.ent.moveSpeed.currentSpeed) / 50
+		if !p.ent.directions.left && !p.ent.directions.right {
+			if p.moment.xaxis > 0 {
+				p.moment.xaxis -= p.tracktion
+			}
+			if p.moment.xaxis < 0 {
+				p.moment.xaxis += p.tracktion
+			}
+		}
+		if !p.ent.directions.up && !p.ent.directions.down {
+			if p.moment.yaxis > 0 {
+				p.moment.yaxis -= p.tracktion
+			}
+			if p.moment.yaxis < 0 {
+				p.moment.yaxis += p.tracktion
+			}
+		}
+
+		unitmovex := 1
+		if p.moment.xaxis < 0 {
+			unitmovex = -1
+		}
+		unitmovey := 1
+		if p.moment.yaxis < 0 {
+			unitmovey = -1
+		}
+		absSpdx := math.Abs(p.moment.xaxis)
+		absSpdy := math.Abs(p.moment.yaxis)
+		maxSpd := math.Max(absSpdx, absSpdy)
+
 		var totalSolids []shape
 		for _, sol := range c.solids {
 			totalSolids = append(totalSolids, *sol)
@@ -158,58 +217,7 @@ func (c *collisionSystem) work() {
 			totalSolids = append(totalSolids, movingSolid.ent.rectangle.shape)
 		}
 
-		agility := 0.8
-		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
-		speedLimitx := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/2)
-		speedLimity := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/2)
-		if p.ent.directions.left {
-			if p.moment.xaxis > -speedLimitx {
-				p.moment.xaxis -= agility
-			}
-		}
-		if p.ent.directions.right {
-			if p.moment.xaxis < speedLimitx {
-				p.moment.xaxis += agility
-			}
-		}
-		if p.ent.directions.down {
-			if p.moment.yaxis < speedLimity {
-				p.moment.yaxis += agility
-			}
-		}
-		if p.ent.directions.up {
-			if p.moment.yaxis > -speedLimity {
-				p.moment.yaxis -= agility
-			}
-		}
-
-		if p.moment.xaxis > 0 {
-			p.moment.xaxis -= 0.6
-		}
-		if p.moment.xaxis < 0 {
-			p.moment.xaxis += 0.6
-		}
-		if p.moment.yaxis > 0 {
-			p.moment.yaxis -= 0.6
-		}
-		if p.moment.yaxis < 0 {
-			p.moment.yaxis += 0.6
-		}
-
-		effectiveSpeedx := p.moment.xaxis
-		unitmovex := 1
-		if effectiveSpeedx < 0 {
-			unitmovex = -1
-		}
-		effectiveSpeedy := p.moment.yaxis
-		unitmovey := 1
-		if effectiveSpeedy < 0 {
-			unitmovey = -1
-		}
-		absSpdx := math.Abs(effectiveSpeedx)
-		absSpdy := math.Abs(effectiveSpeedy)
-		maxSpd := math.Max(absSpdx, absSpdy)
-		for i := 1; i < int(math.Abs(maxSpd)+1); i++ {
+		for i := 1; i < int(maxSpd+1); i++ {
 			xcollided := false
 			ycollided := false
 			if int(absSpdx) > 0 {
@@ -325,7 +333,9 @@ func (b *botMovementSystem) workForPlayer() {
 type acceleratingEnt struct {
 	ent *playerent
 	// oldDirections directions
-	moment momentum
+	moment    momentum
+	tracktion float64
+	agility   float64
 }
 
 type momentum struct {
@@ -343,10 +353,10 @@ func newAccelerationSystem() accelerationSystem {
 	return a
 }
 
-func (a *accelerationSystem) addAccelerator(m *playerent) {
-	aEnt := acceleratingEnt{m, momentum{}}
-	a.bots = append(a.bots, &aEnt)
-}
+// func (a *accelerationSystem) addAccelerator(m *playerent) {
+// 	aEnt := acceleratingEnt{m, momentum{}}
+// 	a.bots = append(a.bots, &aEnt)
+// }
 
 func (a *accelerationSystem) handleAcceleration() {
 	select {
@@ -408,28 +418,35 @@ func main() {
 		moveSpeed{9, 9},
 		directions{},
 	}
+	accelplayer := acceleratingEnt{&player, momentum{}, 0.4, 0.5}
 	playerMoveSystem.addBot(&player)
 	// accelerationSystem.addAccelerator(&player)
 	renderingSystem.addShape(&player.rectangle.shape)
-	collideSystem.addMover(&player)
+	collideSystem.addEnt(&accelplayer)
 
-	// for i := 1; i < 50; i++ {
-	// 	enemy := playerent{
-	// 		newRectangle(
-	// 			location{
-	// 				i * 30,
-	// 				1,
-	// 			},
-	// 			dimens{20, 20},
-	// 		),
-	// 		moveSpeed{5, 5},
-	// 		directions{},
-	// 	}
-	// 	accelerationSystem.addAccelerator(&enemy)
-	// 	renderingSystem.addShape(&enemy.rectangle.shape)
-	// 	collideSystem.addMover(&enemy)
-	// 	botsMoveSystem.addBot(&enemy)
-	// }
+	for i := 1; i < 50; i++ {
+		enemy := playerent{
+			newRectangle(
+				location{
+					i * 30,
+					1,
+				},
+				dimens{20, 20},
+			),
+			moveSpeed{5, 5},
+			directions{},
+		}
+		moveEnemy := acceleratingEnt{
+			&enemy,
+			momentum{},
+			0.1,
+			0.9,
+		}
+		// accelerationSystem.addAccelerator(&enemy)
+		renderingSystem.addShape(&enemy.rectangle.shape)
+		collideSystem.addEnt(&moveEnemy)
+		botsMoveSystem.addBot(&enemy)
+	}
 
 	mapBounds := newRectangle(
 		location{0, 0},
