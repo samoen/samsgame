@@ -154,8 +154,10 @@ func (c *collisionSystem) work() {
 
 		// agility := 0.8
 		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
-		speedLimitx := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/2)
-		speedLimity := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/2)
+
+		speedLimitx := float64(p.ent.moveSpeed.currentSpeed)/2 + ((float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/1)) / 2)
+		speedLimity := float64(p.ent.moveSpeed.currentSpeed)/2 + ((float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/1)) / 2)
+
 		if p.ent.directions.left {
 			if p.moment.xaxis > -speedLimitx {
 				p.moment.xaxis -= p.agility
@@ -202,6 +204,7 @@ func (c *collisionSystem) work() {
 		if p.moment.yaxis < 0 {
 			unitmovey = -1
 		}
+
 		absSpdx := math.Abs(p.moment.xaxis)
 		absSpdy := math.Abs(p.moment.yaxis)
 		maxSpd := math.Max(absSpdx, absSpdy)
@@ -231,7 +234,6 @@ func (c *collisionSystem) work() {
 				} else {
 					p.moment.xaxis = 0
 					xcollided = true
-
 				}
 			}
 			if int(absSpdy) > 0 {
@@ -358,50 +360,14 @@ func newAccelerationSystem() accelerationSystem {
 // 	a.bots = append(a.bots, &aEnt)
 // }
 
-func (a *accelerationSystem) handleAcceleration() {
-	select {
-	case <-a.events:
-		for range a.bots {
-
-			// xspd := bot.ent.moveSpeed.currentSpeed
-			// if(bot.ent.directions.left){
-			// 	bot.moment.xaxis--
-			// }
-			// if(bot.ent.directions.right){
-			// 	bot.moment.xaxis++
-			// }
-			// if(bot.ent.directions.down){
-			// 	bot.moment.xaxis++
-			// }
-			// if(bot.ent.directions.up){
-			// 	bot.moment.yaxis--
-			// }
-			// check := func(dir1, dir2, opp, side1, side2 bool) {
-			// 	if opp && dir2 {
-			// 		bot.ent.moveSpeed.currentSpeed = 0
-			// 	} else if !dir1 && dir2 {
-			// 		if side1 || side2 {
-			// 			bot.ent.moveSpeed.currentSpeed = int(float32(bot.ent.moveSpeed.currentSpeed) / 2)
-			// 		} else {
-			// 			bot.ent.moveSpeed.currentSpeed = 0
-			// 		}
-
-			// 	}
-
-			// }
-			// check(bot.oldDirections.right, bot.ent.directions.right, bot.oldDirections.left, bot.oldDirections.up, bot.oldDirections.down)
-			// check(bot.oldDirections.left, bot.ent.directions.left, bot.oldDirections.right, bot.oldDirections.up, bot.oldDirections.down)
-			// check(bot.oldDirections.up, bot.ent.directions.up, bot.oldDirections.down, bot.oldDirections.right, bot.oldDirections.left)
-			// check(bot.oldDirections.down, bot.ent.directions.down, bot.oldDirections.up, bot.oldDirections.right, bot.oldDirections.left)
-
-			// if bot.ent.moveSpeed.currentSpeed < bot.ent.moveSpeed.maxSpeed {
-			// 	bot.ent.moveSpeed.currentSpeed++
-			// }
-			// bot.oldDirections = bot.ent.directions
-		}
-	default:
-	}
-}
+// func (a *accelerationSystem) handleAcceleration() {
+// 	select {
+// 	case <-a.events:
+// 		for range a.bots {
+// 		}
+// 	default:
+// 	}
+// }
 
 func main() {
 	renderingSystem := renderSystem{}
