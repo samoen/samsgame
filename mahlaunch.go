@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"image"
 	"math"
 	"math/rand"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/hajimehoshi/ebiten"
 
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/examples/resources/images"
 
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
@@ -264,20 +267,6 @@ func newRectangle(loc location, dims dimens) rectangle {
 	return r
 }
 
-const screenWidth = 1400
-const screenHeight = 1000
-
-var emptyImage *ebiten.Image
-var emptyop *ebiten.DrawImageOptions
-
-func init() {
-	emptyImagea, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-	emptyImage = emptyImagea
-
-	emptyop = &ebiten.DrawImageOptions{}
-	emptyop.ColorM.Scale(0, 230, 64, 1)
-}
-
 func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
 }
@@ -333,8 +322,7 @@ func (b *botMovementSystem) workForPlayer() {
 }
 
 type acceleratingEnt struct {
-	ent *playerent
-	// oldDirections directions
+	ent       *playerent
 	moment    momentum
 	tracktion float64
 	agility   float64
@@ -369,6 +357,54 @@ func newAccelerationSystem() accelerationSystem {
 // 	}
 // }
 
+const screenWidth = 1400
+const screenHeight = 1000
+
+var emptyImage *ebiten.Image
+var emptyop *ebiten.DrawImageOptions
+var (
+	layers = [][]int{
+		{
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 218, 243, 243, 243, 243, 243, 243, 243, 243, 243, 218, 243, 244, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 244, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 219, 243, 243, 243, 219, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+			243, 218, 243, 243, 243, 243, 243, 243, 243, 243, 243, 244, 243, 243, 243,
+			243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243, 243,
+		},
+		{
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 26, 27, 28, 29, 30, 31, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 51, 52, 53, 54, 55, 56, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 76, 77, 78, 79, 80, 81, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 101, 102, 103, 104, 105, 106, 0, 0, 0, 0,
+
+			0, 0, 0, 0, 0, 126, 127, 128, 129, 130, 131, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 303, 303, 245, 242, 303, 303, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 245, 242, 0, 0, 0, 0, 0, 0,
+		},
+	}
+)
+
 func main() {
 	renderingSystem := renderSystem{}
 	collideSystem := collisionSystem{}
@@ -384,7 +420,7 @@ func main() {
 		moveSpeed{9, 9},
 		directions{},
 	}
-	accelplayer := acceleratingEnt{&player, momentum{}, 0.4, 0.5}
+	accelplayer := acceleratingEnt{&player, momentum{}, 0.4, 0.4}
 	playerMoveSystem.addBot(&player)
 	// accelerationSystem.addAccelerator(&player)
 	renderingSystem.addShape(&player.rectangle.shape)
@@ -399,14 +435,14 @@ func main() {
 				},
 				dimens{20, 20},
 			),
-			moveSpeed{5, 5},
+			moveSpeed{9, 9},
 			directions{},
 		}
 		moveEnemy := acceleratingEnt{
 			&enemy,
 			momentum{},
-			0.1,
-			0.9,
+			0.4,
+			0.4,
 		}
 		// accelerationSystem.addAccelerator(&enemy)
 		renderingSystem.addShape(&enemy.rectangle.shape)
@@ -420,16 +456,6 @@ func main() {
 	)
 	renderingSystem.addShape(&mapBounds.shape)
 	collideSystem.addSolid(&mapBounds.shape)
-
-	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-	// bgSizex, sgsizey := bgImage.Size()
-	// bgOps := &ebiten.DrawImageOptions{}
-	// bgOps.GeoM.Scale(float64(maprect.w)/float64(bgSizex), float64(maprect.h)/float64(sgsizey))
-
-	// pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-	// pSizex, pSizey := pImage.Size()
-	// pOps := &ebiten.DrawImageOptions{}
-	// pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
 
 	diagonalWall := shape{
 		line{
@@ -451,6 +477,36 @@ func main() {
 	renderingSystem.addShape(&anotherRoom.shape)
 	collideSystem.addSolid(&anotherRoom.shape)
 
+	img, _, err := image.Decode(bytes.NewReader(images.Tiles_png))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	emptyImagea, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	emptyImage = emptyImagea
+	emptyop = &ebiten.DrawImageOptions{}
+	emptyop.ColorM.Scale(0, 230, 64, 1)
+
+	// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// bgSizex, sgsizey := bgImage.Size()
+	// bgOps := &ebiten.DrawImageOptions{}
+	// bgOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(bgSizex), float64(mapBounds.dimens.height)/float64(sgsizey))
+	// bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+	// pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+	// pSizex, pSizey := pImage.Size()
+	// pOps := &ebiten.DrawImageOptions{}
+	// pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
+
+	const (
+		tilescreenWidth  = 240
+		tilescreenHeight = 240
+		tileSize         = 16
+		tileXNum         = 25
+		xNum             = tilescreenWidth / tileSize
+	)
+
+	tilesImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+
 	update := func(screen *ebiten.Image) error {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
@@ -465,8 +521,27 @@ func main() {
 			return nil
 		}
 
+		for _, l := range layers {
+			for i, t := range l {
+				tileOps := &ebiten.DrawImageOptions{}
+				tileOps.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
+
+				tileOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+				tileOps.GeoM.Translate(float64(-player.rectangle.location.x), float64(-player.rectangle.location.y))
+				tileOps.GeoM.Translate(float64(-player.rectangle.dimens.width/2), float64(-player.rectangle.dimens.height/2))
+				// tileOps.GeoM.Scale(2, 2)
+				// tileOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(tileImSizex), float64(mapBounds.dimens.height)/float64(tileImSizey))
+
+				sx := (t % tileXNum) * tileSize
+				sy := (t / tileXNum) * tileSize
+				subImage := tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+				screen.DrawImage(subImage, tileOps)
+			}
+		}
+
 		// newops := *bgOps
-		// newops.GeoM.Translate(float64(-player.x), float64(-player.y))
+		// newops.GeoM.Translate(float64(-player.rectangle.location.x), float64(-player.rectangle.location.y))
+		// newops.GeoM.Translate(float64(-player.rectangle.dimens.width/2), float64(-player.rectangle.dimens.height/2))
 		// screen.DrawImage(bgImage, &newops)
 
 		renderingSystem.work(screen, player.rectangle)
