@@ -50,11 +50,6 @@ type playerent struct {
 	directions directions
 }
 
-type acceleratingEnt struct {
-	ent           *playerent
-	oldDirections directions
-}
-
 func (l line) intersects(l2 line) (int, int, bool) {
 	denom := (l.p1.x-l.p2.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l.p2.y)*(l2.p1.x-l2.p2.x)
 	tNum := (l.p1.x-l2.p1.x)*(l2.p1.y-l2.p2.y) - (l.p1.y-l2.p1.y)*(l2.p1.x-l2.p2.x)
@@ -139,22 +134,19 @@ func (r renderSystem) work(s *ebiten.Image, centerOn rectangle) {
 }
 
 type collisionSystem struct {
-	movers []*playerent
+	movers []*acceleratingEnt
 	solids []*shape
 }
 
 func (c *collisionSystem) addMover(p *playerent) {
-	c.movers = append(c.movers, p)
+	a := acceleratingEnt{p, momentum{}}
+	c.movers = append(c.movers, &a)
 }
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
 }
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
-		diagonalCorrectedSpeed := p.moveSpeed.currentSpeed
-		if (p.directions.up || p.directions.down) && (p.directions.left || p.directions.right) {
-			diagonalCorrectedSpeed = int(float32(p.moveSpeed.currentSpeed) * 0.75)
-		}
 		var totalSolids []shape
 		for _, sol := range c.solids {
 			totalSolids = append(totalSolids, *sol)
@@ -163,34 +155,91 @@ func (c *collisionSystem) work() {
 			if i == j {
 				continue
 			}
-			totalSolids = append(totalSolids, movingSolid.rectangle.shape)
+			totalSolids = append(totalSolids, movingSolid.ent.rectangle.shape)
 		}
-		for i := 1; i < int(diagonalCorrectedSpeed)+1; i++ {
+
+		agility := 0.8
+		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
+		speedLimitx := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/2)
+		speedLimity := float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/2)
+		if p.ent.directions.left {
+			if p.moment.xaxis > -speedLimitx {
+				p.moment.xaxis -= agility
+			}
+		}
+		if p.ent.directions.right {
+			if p.moment.xaxis < speedLimitx {
+				p.moment.xaxis += agility
+			}
+		}
+		if p.ent.directions.down {
+			if p.moment.yaxis < speedLimity {
+				p.moment.yaxis += agility
+			}
+		}
+		if p.ent.directions.up {
+			if p.moment.yaxis > -speedLimity {
+				p.moment.yaxis -= agility
+			}
+		}
+
+		if p.moment.xaxis > 0 {
+			p.moment.xaxis -= 0.6
+		}
+		if p.moment.xaxis < 0 {
+			p.moment.xaxis += 0.6
+		}
+		if p.moment.yaxis > 0 {
+			p.moment.yaxis -= 0.6
+		}
+		if p.moment.yaxis < 0 {
+			p.moment.yaxis += 0.6
+		}
+
+		effectiveSpeedx := p.moment.xaxis
+		unitmovex := 1
+		if effectiveSpeedx < 0 {
+			unitmovex = -1
+		}
+		effectiveSpeedy := p.moment.yaxis
+		unitmovey := 1
+		if effectiveSpeedy < 0 {
+			unitmovey = -1
+		}
+		absSpdx := math.Abs(effectiveSpeedx)
+		absSpdy := math.Abs(effectiveSpeedy)
+		maxSpd := math.Max(absSpdx, absSpdy)
+		for i := 1; i < int(math.Abs(maxSpd)+1); i++ {
 			xcollided := false
 			ycollided := false
+			if int(absSpdx) > 0 {
+				absSpdx--
+				checkrect := p.ent.rectangle
+				checklocx := checkrect.location
+				checklocx.x += unitmovex
+				checkrect.refreshShape(checklocx)
+				if !checkrect.shape.normalcollides(totalSolids) {
+					p.ent.rectangle.refreshShape(checklocx)
+				} else {
+					p.moment.xaxis = 0
+					xcollided = true
 
-			doaxis := func(pos *int, collided *bool, checkpoint *location, dir1, dir2 bool) {
-				*checkpoint = p.rectangle.location
-				if dir1 {
-					*pos++
-				}
-				if dir2 {
-					*pos--
-				}
-				if dir1 || dir2 {
-					checkplay := *p
-					checkplay.rectangle.refreshShape(*checkpoint)
-					if !checkplay.rectangle.shape.normalcollides(totalSolids) {
-						p.rectangle.refreshShape(*checkpoint)
-					} else {
-						*collided = true
-					}
 				}
 			}
-			loca := location{}
+			if int(absSpdy) > 0 {
+				absSpdy--
+				checkrecty := p.ent.rectangle
+				checklocy := checkrecty.location
+				checklocy.y += unitmovey
+				checkrecty.refreshShape(checklocy)
+				if !checkrecty.shape.normalcollides(totalSolids) {
+					p.ent.rectangle.refreshShape(checklocy)
+				} else {
+					p.moment.yaxis = 0
+					ycollided = true
+				}
+			}
 
-			doaxis(&loca.x, &xcollided, &loca, p.directions.right, p.directions.left)
-			doaxis(&loca.y, &ycollided, &loca, p.directions.down, p.directions.up)
 			if xcollided && ycollided {
 				break
 			}
@@ -240,22 +289,6 @@ func newPlayerMovementSystem() botMovementSystem {
 	return b
 }
 
-type accelerationSystem struct {
-	events <-chan time.Time
-	bots   []*acceleratingEnt
-}
-
-func newAccelerationSystem() accelerationSystem {
-	a := accelerationSystem{}
-	a.events = time.NewTicker(50 * time.Millisecond).C
-	return a
-}
-
-func (a *accelerationSystem) addAccelerator(m *playerent) {
-	aEnt := acceleratingEnt{m, directions{}}
-	a.bots = append(a.bots, &aEnt)
-}
-
 func (b *botMovementSystem) addBot(m *playerent) {
 	b.bots = append(b.bots, m)
 }
@@ -289,36 +322,72 @@ func (b *botMovementSystem) workForPlayer() {
 	}
 }
 
+type acceleratingEnt struct {
+	ent *playerent
+	// oldDirections directions
+	moment momentum
+}
+
+type momentum struct {
+	xaxis, yaxis float64
+}
+
+type accelerationSystem struct {
+	events <-chan time.Time
+	bots   []*acceleratingEnt
+}
+
+func newAccelerationSystem() accelerationSystem {
+	a := accelerationSystem{}
+	a.events = time.NewTicker(50 * time.Millisecond).C
+	return a
+}
+
+func (a *accelerationSystem) addAccelerator(m *playerent) {
+	aEnt := acceleratingEnt{m, momentum{}}
+	a.bots = append(a.bots, &aEnt)
+}
+
 func (a *accelerationSystem) handleAcceleration() {
 	select {
 	case <-a.events:
-		for _, bot := range a.bots {
-			check := func(dir1, dir2, opp, side1, side2 bool) {
-				if opp && dir2 {
-					bot.ent.moveSpeed.currentSpeed = 0
-				} else if !dir1 && dir2 {
-					// if(bot.ent.moveSpeed.currentSpeed == bot.ent.moveSpeed.maxSpeed){
-					if side1 || side2 {
-						bot.ent.moveSpeed.currentSpeed = int(float32(bot.ent.moveSpeed.currentSpeed) / 2)
-					} else {
-						bot.ent.moveSpeed.currentSpeed = 0
-					}
+		for range a.bots {
 
-				}
-
-			}
-			check(bot.oldDirections.right, bot.ent.directions.right, bot.oldDirections.left, bot.oldDirections.up, bot.oldDirections.down)
-			check(bot.oldDirections.left, bot.ent.directions.left, bot.oldDirections.right, bot.oldDirections.up, bot.oldDirections.down)
-			check(bot.oldDirections.up, bot.ent.directions.up, bot.oldDirections.down, bot.oldDirections.right, bot.oldDirections.left)
-			check(bot.oldDirections.down, bot.ent.directions.down, bot.oldDirections.up, bot.oldDirections.right, bot.oldDirections.left)
-			// if !bot.ent.directions.down && !bot.ent.directions.left && !bot.ent.directions.right && !bot.ent.directions.up {
-			// 	bot.ent.moveSpeed.currentSpeed = 0
-			// 	continue
+			// xspd := bot.ent.moveSpeed.currentSpeed
+			// if(bot.ent.directions.left){
+			// 	bot.moment.xaxis--
 			// }
-			if bot.ent.moveSpeed.currentSpeed < bot.ent.moveSpeed.maxSpeed {
-				bot.ent.moveSpeed.currentSpeed++
-			}
-			bot.oldDirections = bot.ent.directions
+			// if(bot.ent.directions.right){
+			// 	bot.moment.xaxis++
+			// }
+			// if(bot.ent.directions.down){
+			// 	bot.moment.xaxis++
+			// }
+			// if(bot.ent.directions.up){
+			// 	bot.moment.yaxis--
+			// }
+			// check := func(dir1, dir2, opp, side1, side2 bool) {
+			// 	if opp && dir2 {
+			// 		bot.ent.moveSpeed.currentSpeed = 0
+			// 	} else if !dir1 && dir2 {
+			// 		if side1 || side2 {
+			// 			bot.ent.moveSpeed.currentSpeed = int(float32(bot.ent.moveSpeed.currentSpeed) / 2)
+			// 		} else {
+			// 			bot.ent.moveSpeed.currentSpeed = 0
+			// 		}
+
+			// 	}
+
+			// }
+			// check(bot.oldDirections.right, bot.ent.directions.right, bot.oldDirections.left, bot.oldDirections.up, bot.oldDirections.down)
+			// check(bot.oldDirections.left, bot.ent.directions.left, bot.oldDirections.right, bot.oldDirections.up, bot.oldDirections.down)
+			// check(bot.oldDirections.up, bot.ent.directions.up, bot.oldDirections.down, bot.oldDirections.right, bot.oldDirections.left)
+			// check(bot.oldDirections.down, bot.ent.directions.down, bot.oldDirections.up, bot.oldDirections.right, bot.oldDirections.left)
+
+			// if bot.ent.moveSpeed.currentSpeed < bot.ent.moveSpeed.maxSpeed {
+			// 	bot.ent.moveSpeed.currentSpeed++
+			// }
+			// bot.oldDirections = bot.ent.directions
 		}
 	default:
 	}
@@ -329,7 +398,7 @@ func main() {
 	collideSystem := collisionSystem{}
 	botsMoveSystem := newBotMovementSystem()
 	playerMoveSystem := newPlayerMovementSystem()
-	accelerationSystem := newAccelerationSystem()
+	// accelerationSystem := newAccelerationSystem()
 
 	player := playerent{
 		newRectangle(
@@ -340,27 +409,27 @@ func main() {
 		directions{},
 	}
 	playerMoveSystem.addBot(&player)
-	accelerationSystem.addAccelerator(&player)
+	// accelerationSystem.addAccelerator(&player)
 	renderingSystem.addShape(&player.rectangle.shape)
 	collideSystem.addMover(&player)
 
-	for i := 1; i < 50; i++ {
-		enemy := playerent{
-			newRectangle(
-				location{
-					i * 30,
-					1,
-				},
-				dimens{20, 20},
-			),
-			moveSpeed{5, 5},
-			directions{},
-		}
-		accelerationSystem.addAccelerator(&enemy)
-		renderingSystem.addShape(&enemy.rectangle.shape)
-		collideSystem.addMover(&enemy)
-		botsMoveSystem.addBot(&enemy)
-	}
+	// for i := 1; i < 50; i++ {
+	// 	enemy := playerent{
+	// 		newRectangle(
+	// 			location{
+	// 				i * 30,
+	// 				1,
+	// 			},
+	// 			dimens{20, 20},
+	// 		),
+	// 		moveSpeed{5, 5},
+	// 		directions{},
+	// 	}
+	// 	accelerationSystem.addAccelerator(&enemy)
+	// 	renderingSystem.addShape(&enemy.rectangle.shape)
+	// 	collideSystem.addMover(&enemy)
+	// 	botsMoveSystem.addBot(&enemy)
+	// }
 
 	mapBounds := newRectangle(
 		location{0, 0},
@@ -405,7 +474,7 @@ func main() {
 		}
 
 		playerMoveSystem.workForPlayer()
-		accelerationSystem.handleAcceleration()
+		// accelerationSystem.handleAcceleration()
 		botsMoveSystem.work()
 		collideSystem.work()
 
