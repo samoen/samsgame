@@ -154,20 +154,17 @@ func (c *collisionSystem) addSolid(s *shape) {
 }
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
-
-		// agility := 0.8
-		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
-
-		//
-		// speedLimitx := float64(p.ent.moveSpeed.currentSpeed)/2 + (float64(p.ent.moveSpeed.currentSpeed)-math.Abs(p.moment.yaxis))
-		// speedLimity := float64(p.ent.moveSpeed.currentSpeed)/2 + (float64(p.ent.moveSpeed.currentSpeed)-math.Abs(p.moment.xaxis))
+		correctedAgilityX := p.agility
 		speedLimitx := float64(p.ent.moveSpeed.currentSpeed)
 		if p.ent.directions.down || p.ent.directions.up {
 			speedLimitx = speedLimitx * 0.707
+			correctedAgilityX = p.agility * 0.707
 		}
+		correctedAgilityY := p.agility
 		speedLimity := float64(p.ent.moveSpeed.currentSpeed)
 		if p.ent.directions.right || p.ent.directions.left {
 			speedLimity = speedLimity * 0.707
+			correctedAgilityY = p.agility * 0.707
 		}
 
 		movedx := false
@@ -175,7 +172,7 @@ func (c *collisionSystem) work() {
 		if p.ent.directions.left {
 			movedx = true
 			// diagCorrected:=p.agility
-			desired := p.moment.xaxis - p.agility
+			desired := p.moment.xaxis - correctedAgilityX
 			if desired > -speedLimitx {
 				p.moment.xaxis = desired
 			} else {
@@ -184,8 +181,9 @@ func (c *collisionSystem) work() {
 		}
 		if p.ent.directions.right {
 			movedx = true
-			if p.moment.xaxis+p.agility < speedLimitx {
-				p.moment.xaxis += p.agility
+			desired := p.moment.xaxis + correctedAgilityX
+			if desired < speedLimitx {
+				p.moment.xaxis = desired
 			} else {
 				p.moment.xaxis = speedLimitx
 			}
@@ -193,16 +191,18 @@ func (c *collisionSystem) work() {
 		movedy := false
 		if p.ent.directions.down {
 			movedy = true
-			if p.moment.yaxis+p.agility < speedLimity {
-				p.moment.yaxis += p.agility
+			desired := p.moment.yaxis + correctedAgilityY
+			if desired < speedLimity {
+				p.moment.yaxis = desired
 			} else {
 				p.moment.yaxis = speedLimity
 			}
 		}
 		if p.ent.directions.up {
 			movedy = true
-			if p.moment.yaxis-p.agility > -speedLimity {
-				p.moment.yaxis -= p.agility
+			desired := p.moment.yaxis - correctedAgilityY
+			if desired > -speedLimity {
+				p.moment.yaxis = desired
 			} else {
 				p.moment.yaxis = -speedLimity
 			}
