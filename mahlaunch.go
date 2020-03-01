@@ -158,31 +158,60 @@ func (c *collisionSystem) work() {
 		// agility := 0.8
 		// canGoFaster := math.Abs(p.moment.yaxis)+math.Abs(p.moment.xaxis) < float64(p.ent.moveSpeed.currentSpeed)
 
-		speedLimitx := float64(p.ent.moveSpeed.currentSpeed)/2 + ((float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.yaxis/1)) / 2)
-		speedLimity := float64(p.ent.moveSpeed.currentSpeed)/2 + ((float64(p.ent.moveSpeed.currentSpeed) - math.Abs(p.moment.xaxis/1)) / 2)
+		//
+		// speedLimitx := float64(p.ent.moveSpeed.currentSpeed)/2 + (float64(p.ent.moveSpeed.currentSpeed)-math.Abs(p.moment.yaxis))
+		// speedLimity := float64(p.ent.moveSpeed.currentSpeed)/2 + (float64(p.ent.moveSpeed.currentSpeed)-math.Abs(p.moment.xaxis))
+		speedLimitx := float64(p.ent.moveSpeed.currentSpeed)
+		if p.ent.directions.down || p.ent.directions.up {
+			speedLimitx = speedLimitx * 0.707
+		}
+		speedLimity := float64(p.ent.moveSpeed.currentSpeed)
+		if p.ent.directions.right || p.ent.directions.left {
+			speedLimity = speedLimity * 0.707
+		}
+
+		movedx := false
 
 		if p.ent.directions.left {
-			if p.moment.xaxis > -speedLimitx {
-				p.moment.xaxis -= p.agility
+			movedx = true
+			// diagCorrected:=p.agility
+			desired := p.moment.xaxis - p.agility
+			if desired > -speedLimitx {
+				p.moment.xaxis = desired
+			} else {
+				p.moment.xaxis = -speedLimitx
 			}
 		}
 		if p.ent.directions.right {
-			if p.moment.xaxis < speedLimitx {
+			movedx = true
+			if p.moment.xaxis+p.agility < speedLimitx {
 				p.moment.xaxis += p.agility
+			} else {
+				p.moment.xaxis = speedLimitx
 			}
 		}
+		movedy := false
 		if p.ent.directions.down {
-			if p.moment.yaxis < speedLimity {
+			movedy = true
+			if p.moment.yaxis+p.agility < speedLimity {
 				p.moment.yaxis += p.agility
+			} else {
+				p.moment.yaxis = speedLimity
 			}
 		}
 		if p.ent.directions.up {
-			if p.moment.yaxis > -speedLimity {
+			movedy = true
+			if p.moment.yaxis-p.agility > -speedLimity {
 				p.moment.yaxis -= p.agility
+			} else {
+				p.moment.yaxis = -speedLimity
 			}
 		}
+		if movedx && movedy {
+
+		}
 		// traction := float64(p.ent.moveSpeed.currentSpeed) / 50
-		if !p.ent.directions.left && !p.ent.directions.right {
+		if !movedx {
 			if p.moment.xaxis > 0 {
 				p.moment.xaxis -= p.tracktion
 			}
@@ -190,7 +219,7 @@ func (c *collisionSystem) work() {
 				p.moment.xaxis += p.tracktion
 			}
 		}
-		if !p.ent.directions.up && !p.ent.directions.down {
+		if !movedy {
 			if p.moment.yaxis > 0 {
 				p.moment.yaxis -= p.tracktion
 			}
@@ -417,7 +446,7 @@ func main() {
 			location{1, 1},
 			dimens{20, 20},
 		),
-		moveSpeed{9, 9},
+		moveSpeed{6, 6},
 		directions{},
 	}
 	accelplayer := acceleratingEnt{&player, momentum{}, 0.4, 0.4}
@@ -477,11 +506,6 @@ func main() {
 	renderingSystem.addShape(&anotherRoom.shape)
 	collideSystem.addSolid(&anotherRoom.shape)
 
-	img, _, err := image.Decode(bytes.NewReader(images.Tiles_png))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	emptyImagea, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 	emptyImage = emptyImagea
 	emptyop = &ebiten.DrawImageOptions{}
@@ -504,7 +528,10 @@ func main() {
 		tileXNum         = 25
 		xNum             = tilescreenWidth / tileSize
 	)
-
+	img, _, err := image.Decode(bytes.NewReader(images.Tiles_png))
+	if err != nil {
+		log.Fatal(err)
+	}
 	tilesImage, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	update := func(screen *ebiten.Image) error {
@@ -523,6 +550,7 @@ func main() {
 
 		for _, l := range layers {
 			for i, t := range l {
+
 				tileOps := &ebiten.DrawImageOptions{}
 				tileOps.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
 
