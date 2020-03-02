@@ -29,6 +29,18 @@ func newSlashAttackSystem() slashAttackSystem {
 	return s
 }
 
+func (s *slashAttackSystem) removeSlashee(p *playerent) {
+	for i, renderable := range s.slashees {
+		if p == renderable {
+			if i < len(s.slashees)-1 {
+				copy(s.slashees[i:], s.slashees[i+1:])
+			}
+			s.slashees[len(s.slashees)-1] = nil // or the zero value of T
+			s.slashees = s.slashees[:len(s.slashees)-1]
+		}
+	}
+}
+
 func (s *slashAttackSystem) work() {
 	// select {
 	// case <-s.events:
@@ -85,11 +97,16 @@ func (s *slashAttackSystem) work() {
 			}
 			if bot.animating {
 				keepOnPlayer()
+
+			found:
 				for _, slashee := range s.slashees {
 					for _, slasheeLine := range slashee.rectangle.shape.lines {
 						for _, bladeLine := range bot.slashLine.lines {
 							if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 								renderingSystem.removeShape(slashee.rectangle.shape)
+								collideSystem.removeMover(slashee)
+								s.removeSlashee(slashee)
+								break found
 							}
 						}
 					}

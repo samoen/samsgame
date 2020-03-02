@@ -25,10 +25,31 @@ func (c *collisionSystem) addEnt(p *acceleratingEnt) {
 	c.movers = append(c.movers, p)
 }
 
-// func (c *collisionSystem) addMover(p *playerent) {
-// 	a := acceleratingEnt{p, momentum{}}
-// 	c.movers = append(c.movers, &a)
-// }
+func (r *collisionSystem) removeMover(s *playerent) {
+	for i, renderable := range r.movers {
+		if s == renderable.ent {
+			if i < len(r.movers)-1 {
+				copy(r.movers[i:], r.movers[i+1:])
+			}
+			r.movers[len(r.movers)-1] = nil
+			r.movers = r.movers[:len(r.movers)-1]
+			break
+		}
+	}
+}
+
+func (r *collisionSystem) removeSolid(s *shape) {
+	for i, renderable := range r.solids {
+		if s == renderable {
+			if i < len(r.solids)-1 {
+				copy(r.solids[i:], r.solids[i+1:])
+			}
+			r.solids[len(r.solids)-1] = nil // or the zero value of T
+			r.solids = r.solids[:len(r.solids)-1]
+		}
+	}
+}
+
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
 }
