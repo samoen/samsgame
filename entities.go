@@ -29,7 +29,15 @@ func initEntities() {
 		0.4,
 	}
 
-	playerSlasher := slasher{accelplayer.ent, false, false}
+	playerSlasher := slasher{
+		accelplayer.ent,
+		false,
+		false,
+		&shape{
+			[]line{line{}},
+		},
+		directions{},
+	}
 
 	playerMoveSystem.addBot(accelplayer.ent)
 	renderingSystem.addShape(accelplayer.ent.rectangle.shape)
