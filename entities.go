@@ -26,11 +26,16 @@ func initEntities() {
 		},
 		momentum{},
 		0.4,
-		0.4}
+		0.4,
+	}
+
+	playerSlasher := slasher{&accelplayer.ent, false, false}
+
 	playerMoveSystem.addBot(&accelplayer.ent)
 	renderingSystem.addShape(&accelplayer.ent.rectangle.shape)
 	renderingSystem.CenterOn = &accelplayer.ent.rectangle
 	collideSystem.addEnt(&accelplayer)
+	slashSystem.slashers = append(slashSystem.slashers, &playerSlasher)
 
 	for i := 1; i < 50; i++ {
 		moveEnemy := acceleratingEnt{
@@ -60,6 +65,8 @@ func initEntities() {
 		renderingSystem.addShape(&moveEnemy.ent.rectangle.shape)
 		collideSystem.addEnt(&moveEnemy)
 		botsMoveSystem.addBot(&moveEnemy.ent)
+		slashSystem.slashees = append(slashSystem.slashees, &moveEnemy.ent)
+
 	}
 	mapBounds := newRectangle(
 		location{0, 0},

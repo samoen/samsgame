@@ -30,6 +30,7 @@ func main() {
 		playerMoveSystem.work()
 		botsMoveSystem.work()
 		collideSystem.work()
+		slashSystem.work()
 
 		if ebiten.IsDrawingSkipped() {
 			return nil

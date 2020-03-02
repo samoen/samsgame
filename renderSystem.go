@@ -41,6 +41,18 @@ type renderSystem struct {
 	CenterOn *rectangle
 }
 
+func (r *renderSystem) removeShape(s *shape) {
+	for i, renderable := range r.shapes {
+		if s == renderable {
+			if i < len(r.shapes)-1 {
+				copy(r.shapes[i:], r.shapes[i+1:])
+			}
+			r.shapes[len(r.shapes)-1] = nil // or the zero value of T
+			r.shapes = r.shapes[:len(r.shapes)-1]
+		}
+	}
+}
+
 func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
 }
