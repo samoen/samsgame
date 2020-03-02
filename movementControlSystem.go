@@ -17,7 +17,7 @@ type moveSpeed struct {
 }
 
 type playerent struct {
-	rectangle  rectangle
+	rectangle  *rectangle
 	moveSpeed  moveSpeed
 	directions directions
 	getNewDirs func() directions

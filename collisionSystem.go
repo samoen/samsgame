@@ -10,7 +10,7 @@ type momentum struct {
 	xaxis, yaxis float64
 }
 type acceleratingEnt struct {
-	ent       playerent
+	ent       *playerent
 	moment    momentum
 	tracktion float64
 	agility   float64
@@ -121,11 +121,12 @@ func (c *collisionSystem) work() {
 		absSpdy := math.Abs(p.moment.yaxis)
 		maxSpd := math.Max(absSpdx, absSpdy)
 
-		var totalSolids []shape
+		var totalSolids []*shape
 		for _, sol := range c.solids {
-			totalSolids = append(totalSolids, *sol)
+			totalSolids = append(totalSolids, sol)
 		}
 		for j, movingSolid := range c.movers {
+
 			if i == j {
 				continue
 			}
@@ -137,20 +138,21 @@ func (c *collisionSystem) work() {
 			ycollided := false
 			if int(absSpdx) > 0 {
 				absSpdx--
-				checkrect := p.ent.rectangle
-				checklocx := checkrect.location
+				checklocx := p.ent.rectangle.location
 				checklocx.x += unitmovex
-				checkrect.refreshShape(checklocx)
-				if !checkrect.shape.normalcollides(totalSolids) {
+				checkRect := newRectangle(checklocx, p.ent.rectangle.dimens)
+				if !checkRect.shape.normalcollides(totalSolids) {
 					p.ent.rectangle.refreshShape(checklocx)
 				} else {
 					p.moment.xaxis = 0
 					xcollided = true
 				}
 			}
+
 			if int(absSpdy) > 0 {
 				absSpdy--
-				checkrecty := p.ent.rectangle
+				checkrecty := *p.ent.rectangle
+				checkrecty.shape = &shape{}
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)

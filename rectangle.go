@@ -31,12 +31,14 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
-type shape []line
+type shape struct {
+	lines []line
+}
 
-func (s shape) normalcollides(entities []shape) bool {
-	for _, li := range s {
+func (s shape) normalcollides(entities []*shape) bool {
+	for _, li := range s.lines {
 		for _, obj := range entities {
-			for _, subline := range obj {
+			for _, subline := range obj.lines {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}
@@ -53,14 +55,15 @@ type dimens struct {
 type rectangle struct {
 	location location
 	dimens   dimens
-	shape    shape
+	shape    *shape
 }
 
-func newRectangle(loc location, dims dimens) rectangle {
+func newRectangle(loc location, dims dimens) *rectangle {
 	r := rectangle{}
 	r.dimens = dims
+	r.shape = &shape{}
 	r.refreshShape(loc)
-	return r
+	return &r
 }
 
 func (r *rectangle) refreshShape(newpoint location) {
@@ -69,5 +72,5 @@ func (r *rectangle) refreshShape(newpoint location) {
 	bottom := line{location{r.location.x, r.location.y + r.dimens.height}, location{r.location.x + r.dimens.width, r.location.y + r.dimens.height}}
 	right := line{location{r.location.x + r.dimens.width, r.location.y + r.dimens.height}, location{r.location.x + r.dimens.width, r.location.y}}
 	top := line{location{r.location.x + r.dimens.width, r.location.y}, location{r.location.x, r.location.y}}
-	r.shape = shape{left, bottom, right, top}
+	r.shape.lines = []line{left, bottom, right, top}
 }

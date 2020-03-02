@@ -8,7 +8,7 @@ import (
 
 func initEntities() {
 	accelplayer := acceleratingEnt{
-		playerent{
+		&playerent{
 			newRectangle(
 				location{1, 1},
 				dimens{20, 20},
@@ -29,17 +29,17 @@ func initEntities() {
 		0.4,
 	}
 
-	playerSlasher := slasher{&accelplayer.ent, false, false}
+	playerSlasher := slasher{accelplayer.ent, false, false}
 
-	playerMoveSystem.addBot(&accelplayer.ent)
-	renderingSystem.addShape(&accelplayer.ent.rectangle.shape)
-	renderingSystem.CenterOn = &accelplayer.ent.rectangle
+	playerMoveSystem.addBot(accelplayer.ent)
+	renderingSystem.addShape(accelplayer.ent.rectangle.shape)
+	renderingSystem.CenterOn = accelplayer.ent.rectangle
 	collideSystem.addEnt(&accelplayer)
 	slashSystem.slashers = append(slashSystem.slashers, &playerSlasher)
 
 	for i := 1; i < 50; i++ {
-		moveEnemy := acceleratingEnt{
-			playerent{
+		moveEnemy := &acceleratingEnt{
+			&playerent{
 				newRectangle(
 					location{
 						i * 30,
@@ -62,23 +62,24 @@ func initEntities() {
 			0.4,
 			0.4,
 		}
-		renderingSystem.addShape(&moveEnemy.ent.rectangle.shape)
-		collideSystem.addEnt(&moveEnemy)
-		botsMoveSystem.addBot(&moveEnemy.ent)
-		slashSystem.slashees = append(slashSystem.slashees, &moveEnemy.ent)
-
+		renderingSystem.addShape(moveEnemy.ent.rectangle.shape)
+		collideSystem.addEnt(moveEnemy)
+		botsMoveSystem.addBot(moveEnemy.ent)
+		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.ent)
 	}
 	mapBounds := newRectangle(
 		location{0, 0},
 		dimens{2000, 2000},
 	)
-	renderingSystem.addShape(&mapBounds.shape)
-	collideSystem.addSolid(&mapBounds.shape)
+	renderingSystem.addShape(mapBounds.shape)
+	collideSystem.addSolid(mapBounds.shape)
 
 	diagonalWall := shape{
-		line{
-			location{250, 310},
-			location{600, 655},
+		[]line{
+			line{
+				location{250, 310},
+				location{600, 655},
+			},
 		},
 	}
 	renderingSystem.addShape(&diagonalWall)
@@ -88,10 +89,10 @@ func initEntities() {
 		location{45, 400},
 		dimens{70, 20},
 	)
-	renderingSystem.addShape(&lilRoom.shape)
-	collideSystem.addSolid(&lilRoom.shape)
+	renderingSystem.addShape(lilRoom.shape)
+	collideSystem.addSolid(lilRoom.shape)
 
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	renderingSystem.addShape(&anotherRoom.shape)
-	collideSystem.addSolid(&anotherRoom.shape)
+	renderingSystem.addShape(anotherRoom.shape)
+	collideSystem.addSolid(anotherRoom.shape)
 }

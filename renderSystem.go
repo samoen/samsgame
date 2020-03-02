@@ -104,7 +104,7 @@ func (r renderSystem) work(s *ebiten.Image) {
 	}
 
 	for _, shape := range r.shapes {
-		for _, l := range *shape {
+		for _, l := range shape.lines {
 			samDrawLine(l)
 		}
 	}

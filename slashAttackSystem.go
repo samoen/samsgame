@@ -45,9 +45,9 @@ func (s *slashAttackSystem) work() {
 				if bot.animating {
 					slashLine := line{bot.ent.rectangle.location, location{bot.ent.rectangle.location.x + 30, bot.ent.rectangle.location.y + 30}}
 					for _, slashee := range s.slashees {
-						for _, slasheeLine := range slashee.rectangle.shape {
+						for _, slasheeLine := range slashee.rectangle.shape.lines {
 							if _, _, intersected := slashLine.intersects(slasheeLine); intersected {
-								renderingSystem.removeShape(&slashee.rectangle.shape)
+								renderingSystem.removeShape(slashee.rectangle.shape)
 							}
 						}
 					}
