@@ -2,10 +2,11 @@ package main
 
 import (
 	"time"
+
+	"github.com/hajimehoshi/ebiten"
 )
 
-var botsMoveSystem = newPlayerMovementSystem(500)
-var playerMoveSystem = newPlayerMovementSystem(50)
+var playerMoveSystem = newPlayerMovementSystem()
 
 type directions struct {
 	right, down, left, up bool
@@ -20,29 +21,33 @@ type playerent struct {
 	rectangle  *rectangle
 	moveSpeed  moveSpeed
 	directions directions
-	getNewDirs func() directions
 }
 
-type botMovementSystem struct {
+type playerMovementSystem struct {
 	events <-chan time.Time
 	bots   []*playerent
 }
 
-func newPlayerMovementSystem(tickSpeed int) botMovementSystem {
-	b := botMovementSystem{}
-	b.events = time.NewTicker(time.Duration(tickSpeed) * time.Millisecond).C
+func newPlayerMovementSystem() playerMovementSystem {
+	b := playerMovementSystem{}
+	b.events = time.NewTicker(time.Duration(50) * time.Millisecond).C
 	return b
 }
 
-func (b *botMovementSystem) addBot(m *playerent) {
+func (b *playerMovementSystem) addBot(m *playerent) {
 	b.bots = append(b.bots, m)
 }
 
-func (b *botMovementSystem) work() {
+func (b *playerMovementSystem) work() {
 	select {
 	case <-b.events:
 		for _, bot := range b.bots {
-			bot.directions = bot.getNewDirs()
+			bot.directions = directions{
+				ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
+				ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
+				ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
+				ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
+			}
 		}
 	default:
 	}

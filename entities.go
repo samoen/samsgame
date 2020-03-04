@@ -1,11 +1,5 @@
 package main
 
-import (
-	"math/rand"
-
-	"github.com/hajimehoshi/ebiten"
-)
-
 func initEntities() {
 	accelplayer := acceleratingEnt{
 		&playerent{
@@ -15,14 +9,6 @@ func initEntities() {
 			),
 			moveSpeed{6, 6},
 			directions{},
-			func() directions {
-				return directions{
-					ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
-					ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),
-					ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
-					ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
-				}
-			},
 		},
 		momentum{},
 		0.4,
@@ -57,14 +43,6 @@ func initEntities() {
 				),
 				moveSpeed{9, 9},
 				directions{},
-				func() directions {
-					return directions{
-						rand.Intn(2) == 0,
-						rand.Intn(2) == 0,
-						rand.Intn(2) == 0,
-						rand.Intn(2) == 0,
-					}
-				},
 			},
 			momentum{},
 			0.4,
@@ -72,7 +50,7 @@ func initEntities() {
 		}
 		renderingSystem.addShape(moveEnemy.ent.rectangle.shape)
 		collideSystem.addEnt(moveEnemy)
-		botsMoveSystem.addBot(moveEnemy.ent)
+		botsMoveSystem.addEnemy(moveEnemy.ent)
 		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.ent)
 	}
 	mapBounds := newRectangle(

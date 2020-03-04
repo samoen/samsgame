@@ -35,7 +35,7 @@ func (s *slashAttackSystem) removeSlashee(p *playerent) {
 			if i < len(s.slashees)-1 {
 				copy(s.slashees[i:], s.slashees[i+1:])
 			}
-			s.slashees[len(s.slashees)-1] = nil // or the zero value of T
+			s.slashees[len(s.slashees)-1] = nil
 			s.slashees = s.slashees[:len(s.slashees)-1]
 		}
 	}
