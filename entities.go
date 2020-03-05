@@ -22,12 +22,11 @@ func initEntities() {
 		&shape{
 			[]line{line{}},
 		},
-		directions{},
 		0,
 		0,
 	}
 
-	playerMoveSystem.addBot(accelplayer.ent)
+	playerMoveSystem.addPlayer(accelplayer.ent)
 	renderingSystem.addShape(accelplayer.ent.rectangle.shape)
 	renderingSystem.CenterOn = accelplayer.ent.rectangle
 	collideSystem.addEnt(&accelplayer)

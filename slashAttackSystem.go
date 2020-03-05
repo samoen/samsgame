@@ -12,7 +12,6 @@ type slasher struct {
 	slashPressed   bool
 	animating      bool
 	slashLine      *shape
-	lastActiveDir  directions
 	startangle     float64
 	animationCount float64
 }
@@ -21,14 +20,12 @@ var slashSystem = newSlashAttackSystem()
 
 type slashAttackSystem struct {
 	slashAnimationTimer <-chan time.Time
-	events              <-chan time.Time
 	slashers            []*slasher
 	slashees            []*playerent
 }
 
 func newSlashAttackSystem() slashAttackSystem {
 	s := slashAttackSystem{}
-	// s.events = time.NewTicker(20 * time.Millisecond).C
 	return s
 }
 
@@ -66,65 +63,58 @@ func (s *slashAttackSystem) work() {
 			bot.animating = false
 			renderingSystem.removeShape(bot.slashLine)
 		default:
-			if !bot.animating {
-				if bot.ent.directions.down ||
-					bot.ent.directions.up ||
-					bot.ent.directions.right ||
-					bot.ent.directions.left {
-					hitRange := 1
-					moveTipX := 0
-					if bot.ent.directions.right {
-						moveTipX = hitRange
-					} else if bot.ent.directions.left {
-						moveTipX = -hitRange
-					}
-					moveTipY := 0
-					if bot.ent.directions.up {
-						moveTipY = -hitRange
-					} else if bot.ent.directions.down {
-						moveTipY = hitRange
-					}
-					bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
-					bot.startangle += 1.6
-				}
+		}
+		keepOnPlayer := func() {
+			midPlayer := bot.ent.rectangle.location
+			midPlayer.x += bot.ent.rectangle.dimens.width / 2
+			midPlayer.y += bot.ent.rectangle.dimens.height / 2
+			bot.animationCount -= 0.16
+			for i := 0; i < len(bot.slashLine.lines); i++ {
+				rotLine := newLinePolar(midPlayer, 30, bot.animationCount+bot.startangle) // -(math.Pi/2)
+				bot.slashLine.lines[i] = rotLine
 			}
+		}
 
-			keepOnPlayer := func() {
-				midPlayer := bot.ent.rectangle.location
-				midPlayer.x += bot.ent.rectangle.dimens.width / 2
-				midPlayer.y += bot.ent.rectangle.dimens.height / 2
-				bot.animationCount -= 0.16
-				for i := 0; i < len(bot.slashLine.lines); i++ {
-					rotLine := newLinePolar(midPlayer, 30, bot.animationCount+bot.startangle) // -(math.Pi/2)
-					bot.slashLine.lines[i] = rotLine
-				}
-			}
-
-			if bot.animating {
-				keepOnPlayer()
-			found:
-				for _, slashee := range s.slashees {
-					for _, slasheeLine := range slashee.rectangle.shape.lines {
-						for _, bladeLine := range bot.slashLine.lines {
-							if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-								renderingSystem.removeShape(slashee.rectangle.shape)
-								collideSystem.removeMover(slashee)
-								s.removeSlashee(slashee)
-								break found
-							}
+		if bot.animating {
+			keepOnPlayer()
+		found:
+			for _, slashee := range s.slashees {
+				for _, slasheeLine := range slashee.rectangle.shape.lines {
+					for _, bladeLine := range bot.slashLine.lines {
+						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+							renderingSystem.removeShape(slashee.rectangle.shape)
+							collideSystem.removeMover(slashee)
+							s.removeSlashee(slashee)
+							break found
 						}
 					}
 				}
-			} else {
-				if bot.slashPressed {
-					s.slashAnimationTimer = time.NewTicker(310 * time.Millisecond).C
-					bot.animating = true
-					keepOnPlayer()
-					renderingSystem.addShape(bot.slashLine)
-				}
 			}
+		} else {
+			if bot.slashPressed {
+				hitRange := 1
+				moveTipX := 0
+				if bot.ent.directions.right {
+					moveTipX = hitRange
+				} else if bot.ent.directions.left {
+					moveTipX = -hitRange
+				}
+				moveTipY := 0
+				if bot.ent.directions.up {
+					moveTipY = -hitRange
+				} else if bot.ent.directions.down {
+					moveTipY = hitRange
+				}
+				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
+				bot.startangle += 1.6
 
+				s.slashAnimationTimer = time.NewTicker(310 * time.Millisecond).C
+				bot.animating = true
+				keepOnPlayer()
+				renderingSystem.addShape(bot.slashLine)
+			}
 		}
+
 	}
 	// default:
 	// }
