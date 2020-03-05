@@ -18,7 +18,6 @@ func initEntities() {
 	playerSlasher := slasher{
 		accelplayer.ent,
 		false,
-		false,
 		&shape{
 			[]line{line{}},
 		},
@@ -60,6 +59,7 @@ func initEntities() {
 	)
 	renderingSystem.addShape(mapBounds.shape)
 	collideSystem.addSolid(mapBounds.shape)
+	slashSystem.addBlocker(mapBounds.shape)
 
 	diagonalWall := shape{
 		[]line{

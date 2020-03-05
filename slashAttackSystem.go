@@ -9,7 +9,6 @@ import (
 
 type slasher struct {
 	ent            *playerent
-	slashPressed   bool
 	animating      bool
 	slashLine      *shape
 	startangle     float64
@@ -22,6 +21,11 @@ type slashAttackSystem struct {
 	slashAnimationTimer <-chan time.Time
 	slashers            []*slasher
 	slashees            []*playerent
+	blockers            []*shape
+}
+
+func (s *slashAttackSystem) addBlocker(b *shape) {
+	s.blockers = append(s.blockers, b)
 }
 
 func newSlashAttackSystem() slashAttackSystem {
@@ -51,17 +55,16 @@ func (s *slashAttackSystem) work() {
 	// select {
 	// case <-s.events:
 	for _, bot := range s.slashers {
-		if ebiten.IsKeyPressed(ebiten.KeyX) {
-			bot.slashPressed = true
-		} else {
-			bot.slashPressed = false
-		}
-		select {
-		case <-s.slashAnimationTimer:
+		stopslash := func() {
 			s.slashAnimationTimer = nil
 			bot.animationCount = 0
 			bot.animating = false
 			renderingSystem.removeShape(bot.slashLine)
+		}
+		select {
+		case <-s.slashAnimationTimer:
+			stopslash()
+			return
 		default:
 		}
 		keepOnPlayer := func() {
@@ -70,14 +73,11 @@ func (s *slashAttackSystem) work() {
 			midPlayer.y += bot.ent.rectangle.dimens.height / 2
 			bot.animationCount -= 0.16
 			for i := 0; i < len(bot.slashLine.lines); i++ {
-				rotLine := newLinePolar(midPlayer, 30, bot.animationCount+bot.startangle) // -(math.Pi/2)
+				rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
 				bot.slashLine.lines[i] = rotLine
 			}
-		}
 
-		if bot.animating {
-			keepOnPlayer()
-		found:
+		foundSlashee:
 			for _, slashee := range s.slashees {
 				for _, slasheeLine := range slashee.rectangle.shape.lines {
 					for _, bladeLine := range bot.slashLine.lines {
@@ -85,13 +85,33 @@ func (s *slashAttackSystem) work() {
 							renderingSystem.removeShape(slashee.rectangle.shape)
 							collideSystem.removeMover(slashee)
 							s.removeSlashee(slashee)
-							break found
+							break foundSlashee
 						}
 					}
 				}
 			}
-		} else {
-			if bot.slashPressed {
+		foundBlocker:
+			for _, slashee := range s.blockers {
+				for _, slasheeLine := range slashee.lines {
+					for _, bladeLine := range bot.slashLine.lines {
+						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+							stopslash()
+							break foundBlocker
+						}
+					}
+				}
+			}
+		}
+
+		if bot.animating {
+			keepOnPlayer()
+		}
+
+		if !bot.animating {
+			if bot.ent.directions.down ||
+				bot.ent.directions.up ||
+				bot.ent.directions.right ||
+				bot.ent.directions.left {
 				hitRange := 1
 				moveTipX := 0
 				if bot.ent.directions.right {
@@ -107,11 +127,12 @@ func (s *slashAttackSystem) work() {
 				}
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 				bot.startangle += 1.6
-
+			}
+			if ebiten.IsKeyPressed(ebiten.KeyX) {
 				s.slashAnimationTimer = time.NewTicker(310 * time.Millisecond).C
 				bot.animating = true
-				keepOnPlayer()
 				renderingSystem.addShape(bot.slashLine)
+				keepOnPlayer()
 			}
 		}
 
