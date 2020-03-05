@@ -1,17 +1,20 @@
 package main
 
 import (
+	"math"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
 )
 
 type slasher struct {
-	ent           *playerent
-	slashPressed  bool
-	animating     bool
-	slashLine     *shape
-	lastActiveDir directions
+	ent            *playerent
+	slashPressed   bool
+	animating      bool
+	slashLine      *shape
+	lastActiveDir  directions
+	startangle     float64
+	animationCount float64
 }
 
 var slashSystem = newSlashAttackSystem()
@@ -41,6 +44,12 @@ func (s *slashAttackSystem) removeSlashee(p *playerent) {
 	}
 }
 
+func newLinePolar(loc location, length int, angle float64) line {
+	xpos := int(float64(length)*math.Cos(angle)) + loc.x
+	ypos := int(float64(length)*math.Sin(angle)) + loc.y
+	return line{loc, location{xpos, ypos}}
+}
+
 func (s *slashAttackSystem) work() {
 	// select {
 	// case <-s.events:
@@ -52,52 +61,47 @@ func (s *slashAttackSystem) work() {
 		}
 		select {
 		case <-s.slashAnimationTimer:
+			s.slashAnimationTimer = nil
+			bot.animationCount = 0
 			bot.animating = false
 			renderingSystem.removeShape(bot.slashLine)
 		default:
-			keepOnPlayer := func() {
+			if !bot.animating {
+				if bot.ent.directions.down ||
+					bot.ent.directions.up ||
+					bot.ent.directions.right ||
+					bot.ent.directions.left {
+					hitRange := 1
+					moveTipX := 0
+					if bot.ent.directions.right {
+						moveTipX = hitRange
+					} else if bot.ent.directions.left {
+						moveTipX = -hitRange
+					}
+					moveTipY := 0
+					if bot.ent.directions.up {
+						moveTipY = -hitRange
+					} else if bot.ent.directions.down {
+						moveTipY = hitRange
+					}
+					bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
+					bot.startangle += 1.6
+				}
+			}
 
+			keepOnPlayer := func() {
 				midPlayer := bot.ent.rectangle.location
 				midPlayer.x += bot.ent.rectangle.dimens.width / 2
 				midPlayer.y += bot.ent.rectangle.dimens.height / 2
-				hitRange := 30
-				if (bot.lastActiveDir.left || bot.lastActiveDir.right) && (bot.lastActiveDir.down || bot.lastActiveDir.up) {
-					hitRange = int(float64(hitRange) * 0.707)
-				}
-
-				moveTipX := 0
-				if bot.lastActiveDir.right {
-					moveTipX = hitRange
-				} else if bot.lastActiveDir.left {
-					moveTipX = -hitRange
-				}
-				hitTipX := midPlayer.x + moveTipX
-
-				moveTipY := 0
-				if bot.lastActiveDir.up {
-					moveTipY = -hitRange
-				} else if bot.lastActiveDir.down {
-					moveTipY = hitRange
-				}
-				hitTipY := midPlayer.y + moveTipY
-
+				bot.animationCount -= 0.16
 				for i := 0; i < len(bot.slashLine.lines); i++ {
-					bot.slashLine.lines[i].p1 = midPlayer
-					bot.slashLine.lines[i].p2 = location{
-						hitTipX,
-						hitTipY,
-					}
+					rotLine := newLinePolar(midPlayer, 30, bot.animationCount+bot.startangle) // -(math.Pi/2)
+					bot.slashLine.lines[i] = rotLine
 				}
 			}
-			if bot.ent.directions.down ||
-				bot.ent.directions.up ||
-				bot.ent.directions.right ||
-				bot.ent.directions.left {
-				bot.lastActiveDir = bot.ent.directions
-			}
+
 			if bot.animating {
 				keepOnPlayer()
-
 			found:
 				for _, slashee := range s.slashees {
 					for _, slasheeLine := range slashee.rectangle.shape.lines {
@@ -113,7 +117,7 @@ func (s *slashAttackSystem) work() {
 				}
 			} else {
 				if bot.slashPressed {
-					s.slashAnimationTimer = time.NewTimer(300 * time.Millisecond).C
+					s.slashAnimationTimer = time.NewTicker(310 * time.Millisecond).C
 					bot.animating = true
 					keepOnPlayer()
 					renderingSystem.addShape(bot.slashLine)

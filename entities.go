@@ -23,6 +23,8 @@ func initEntities() {
 			[]line{line{}},
 		},
 		directions{},
+		0,
+		0,
 	}
 
 	playerMoveSystem.addBot(accelplayer.ent)
