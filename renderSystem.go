@@ -18,7 +18,7 @@ const (
 	xNum             = tilescreenWidth / tileSize
 )
 
-var renderingSystem = renderSystem{}
+var renderingSystem = newRenderSystem()
 var img, _, _ = image.Decode(bytes.NewReader(images.Tiles_png))
 var tilesImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
@@ -36,9 +36,17 @@ var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.Fi
 // pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
 // }
 
+func newRenderSystem() renderSystem {
+	r := renderSystem{}
+	// r.toRemove = make(chan *shape)
+	return r
+}
+
 type renderSystem struct {
 	shapes   []*shape
 	CenterOn *rectangle
+	// shapesToRemove []*shape
+	// toRemove chan *shape
 }
 
 func (r *renderSystem) removeShape(s *shape) {
@@ -47,7 +55,7 @@ func (r *renderSystem) removeShape(s *shape) {
 			if i < len(r.shapes)-1 {
 				copy(r.shapes[i:], r.shapes[i+1:])
 			}
-			r.shapes[len(r.shapes)-1] = nil // or the zero value of T
+			r.shapes[len(r.shapes)-1] = nil
 			r.shapes = r.shapes[:len(r.shapes)-1]
 		}
 	}
@@ -56,7 +64,12 @@ func (r *renderSystem) removeShape(s *shape) {
 func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
 }
-func (r renderSystem) work(s *ebiten.Image) {
+func (r *renderSystem) work(s *ebiten.Image) {
+	// select {
+	// case rem := <-r.toRemove:
+	// 	r.removeShape(rem)
+	// default:
+	// }
 	for _, l := range layers {
 		for i, t := range l {
 
