@@ -23,6 +23,7 @@ func initEntities() {
 		},
 		0,
 		0,
+		false,
 	}
 
 	playerMoveSystem.addPlayer(accelplayer.ent)

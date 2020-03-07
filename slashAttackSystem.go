@@ -13,15 +13,15 @@ type slasher struct {
 	slashLine      *shape
 	startangle     float64
 	animationCount float64
+	onCooldown     bool
 }
 
 var slashSystem = newSlashAttackSystem()
 
 type slashAttackSystem struct {
-	slashAnimationTimer <-chan time.Time
-	slashers            []*slasher
-	slashees            []*playerent
-	blockers            []*shape
+	slashers []*slasher
+	slashees []*playerent
+	blockers []*shape
 }
 
 func (s *slashAttackSystem) addBlocker(b *shape) {
@@ -56,17 +56,11 @@ func (s *slashAttackSystem) work() {
 	// case <-s.events:
 	for _, bot := range s.slashers {
 		stopslash := func() {
-			s.slashAnimationTimer = nil
+			renderingSystem.removeShape(bot.slashLine)
 			bot.animationCount = 0
 			bot.animating = false
-			renderingSystem.removeShape(bot.slashLine)
 		}
-		select {
-		case <-s.slashAnimationTimer:
-			stopslash()
-			return
-		default:
-		}
+
 		keepOnPlayer := func() {
 			midPlayer := bot.ent.rectangle.location
 			midPlayer.x += bot.ent.rectangle.dimens.width / 2
@@ -75,6 +69,18 @@ func (s *slashAttackSystem) work() {
 			for i := 0; i < len(bot.slashLine.lines); i++ {
 				rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
 				bot.slashLine.lines[i] = rotLine
+			}
+			// foundBlocker:
+			for _, slashee := range s.blockers {
+				for _, slasheeLine := range slashee.lines {
+					for _, bladeLine := range bot.slashLine.lines {
+						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+							stopslash()
+							return
+							// break foundBlocker
+						}
+					}
+				}
 			}
 
 		foundSlashee:
@@ -86,17 +92,6 @@ func (s *slashAttackSystem) work() {
 							collideSystem.removeMover(slashee)
 							s.removeSlashee(slashee)
 							break foundSlashee
-						}
-					}
-				}
-			}
-		foundBlocker:
-			for _, slashee := range s.blockers {
-				for _, slasheeLine := range slashee.lines {
-					for _, bladeLine := range bot.slashLine.lines {
-						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-							stopslash()
-							break foundBlocker
 						}
 					}
 				}
@@ -128,11 +123,28 @@ func (s *slashAttackSystem) work() {
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 				bot.startangle += 1.6
 			}
-			if ebiten.IsKeyPressed(ebiten.KeyX) {
-				s.slashAnimationTimer = time.NewTicker(310 * time.Millisecond).C
+			if ebiten.IsKeyPressed(ebiten.KeyX) && !bot.onCooldown {
+				bot.onCooldown = true
 				bot.animating = true
-				renderingSystem.addShape(bot.slashLine)
 				keepOnPlayer()
+				if bot.animating {
+					renderingSystem.addShape(bot.slashLine)
+					animationTimer := time.NewTimer(310 * time.Millisecond).C
+					go func() {
+						select {
+						case <-animationTimer:
+							stopslash()
+						}
+					}()
+				}
+
+				coolDownTimer := time.NewTimer(800 * time.Millisecond).C
+				go func() {
+					select {
+					case <-coolDownTimer:
+						bot.onCooldown = false
+					}
+				}()
 			}
 		}
 
