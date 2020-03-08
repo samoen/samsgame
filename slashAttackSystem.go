@@ -43,19 +43,10 @@ func newSlashAttackSystem() slashAttackSystem {
 	return s
 }
 
-func removeFromSlice(slice []*playerent, p *playerent) []*playerent {
-	// mslice := *slice
-	for i, renderable := range slice {
-		if p == renderable {
-			if i < len(slice)-1 {
-				copy(slice[i:], slice[i+1:])
-			}
-			slice[len(slice)-1] = nil
-			return slice[:len(slice)-1]
-
-		}
-	}
-	return slice
+func (s *slashAttackSystem) purge(p *playerent) {
+	slashSystem.slashees = removeFromSlice(slashSystem.slashees, p)
+	// s.removeSlashee(p)
+	s.removeSlasher(p)
 }
 
 func (s *slashAttackSystem) removeSlasher(p *playerent) {
@@ -214,13 +205,28 @@ func (s *slashAttackSystem) work() {
 	}
 
 	for _, removeMe := range toRemove {
-		renderingSystem.removeShape(removeMe.rectangle.shape)
-		collideSystem.removeMover(removeMe)
-		s.slashees = removeFromSlice(s.slashees, removeMe)
-		botsMoveSystem.bots = removeFromSlice(botsMoveSystem.bots, removeMe)
-		// s.removeSlashee(removeMe)
-		s.removeSlasher(removeMe)
+		removeFromAllSystems(removeMe)
 	}
 	// default:
 	// }
+}
+
+func removeFromAllSystems(removeMe *playerent) {
+	renderingSystem.removeShape(removeMe.rectangle.shape)
+	collideSystem.removeMover(removeMe)
+	botsMoveSystem.bots = removeFromSlice(botsMoveSystem.bots, removeMe)
+	slashSystem.purge(removeMe)
+}
+
+func removeFromSlice(slice []*playerent, p *playerent) []*playerent {
+	for i, renderable := range slice {
+		if p == renderable {
+			if i < len(slice)-1 {
+				copy(slice[i:], slice[i+1:])
+			}
+			slice[len(slice)-1] = nil
+			return slice[:len(slice)-1]
+		}
+	}
+	return slice
 }

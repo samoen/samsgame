@@ -25,27 +25,27 @@ func (c *collisionSystem) addEnt(p *acceleratingEnt) {
 	c.movers = append(c.movers, p)
 }
 
-func (r *collisionSystem) removeMover(s *playerent) {
-	for i, renderable := range r.movers {
+func (c *collisionSystem) removeMover(s *playerent) {
+	for i, renderable := range c.movers {
 		if s == renderable.ent {
-			if i < len(r.movers)-1 {
-				copy(r.movers[i:], r.movers[i+1:])
+			if i < len(c.movers)-1 {
+				copy(c.movers[i:], c.movers[i+1:])
 			}
-			r.movers[len(r.movers)-1] = nil
-			r.movers = r.movers[:len(r.movers)-1]
+			c.movers[len(c.movers)-1] = nil
+			c.movers = c.movers[:len(c.movers)-1]
 			break
 		}
 	}
 }
 
-func (r *collisionSystem) removeSolid(s *shape) {
-	for i, renderable := range r.solids {
+func (c *collisionSystem) removeSolid(s *shape) {
+	for i, renderable := range c.solids {
 		if s == renderable {
-			if i < len(r.solids)-1 {
-				copy(r.solids[i:], r.solids[i+1:])
+			if i < len(c.solids)-1 {
+				copy(c.solids[i:], c.solids[i+1:])
 			}
-			r.solids[len(r.solids)-1] = nil // or the zero value of T
-			r.solids = r.solids[:len(r.solids)-1]
+			c.solids[len(c.solids)-1] = nil
+			c.solids = c.solids[:len(c.solids)-1]
 		}
 	}
 }
@@ -72,7 +72,6 @@ func (c *collisionSystem) work() {
 
 		if p.ent.directions.left {
 			movedx = true
-			// diagCorrected:=p.agility
 			desired := p.moment.xaxis - correctedAgilityX
 			if desired > -speedLimitx {
 				p.moment.xaxis = desired
