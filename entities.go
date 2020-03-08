@@ -42,7 +42,7 @@ func initEntities() {
 		}
 		enemySlasher := newSlasher(moveEnemy.ent)
 		slashSystem.slashers = append(slashSystem.slashers, enemySlasher)
-		slashSystem.slashees = append(slashSystem.slashees, enemySlasher.ent)
+		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.ent)
 		renderingSystem.addShape(moveEnemy.ent.rectangle.shape)
 		collideSystem.addEnt(&moveEnemy)
 		botsMoveSystem.addEnemy(moveEnemy.ent)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -14,12 +15,14 @@ type slasher struct {
 	animationCount float64
 	onCooldown     bool
 	cooldownCount  int
+	animChan       <-chan time.Time
 }
 
 func newSlasher(p *playerent) *slasher {
 	s := &slasher{}
 	s.ent = p
 	s.slashLine = &shape{[]line{line{}}}
+	s.cooldownCount = 100
 	return s
 }
 
@@ -39,19 +42,28 @@ func newSlashAttackSystem() slashAttackSystem {
 	s := slashAttackSystem{}
 	return s
 }
+
+func removeFromSlice(slice []*playerent, p *playerent) []*playerent {
+	// mslice := *slice
+	for i, renderable := range slice {
+		if p == renderable {
+			if i < len(slice)-1 {
+				copy(slice[i:], slice[i+1:])
+			}
+			slice[len(slice)-1] = nil
+			return slice[:len(slice)-1]
+
+		}
+	}
+	return slice
+}
+
 func (s *slashAttackSystem) removeSlasher(p *playerent) {
-	for i, subslasher := range s.slashers {
-		if p == subslasher.ent {
-			if i < len(s.slashers)-1 {
-				copy(s.slashers[i:], s.slashers[i+1:])
-			}
-			s.slashers[len(s.slashers)-1] = nil
-			s.slashers = s.slashers[:len(s.slashers)-1]
-
-			break
+	for _, slshr := range s.slashers {
+		if p == slshr.ent {
+			renderingSystem.removeShape(slshr.slashLine)
 		}
 	}
-
 	for i, subslasher := range s.slashers {
 		if p == subslasher.ent {
 			if i < len(s.slashers)-1 {
@@ -62,7 +74,6 @@ func (s *slashAttackSystem) removeSlasher(p *playerent) {
 			break
 		}
 	}
-
 }
 func (s *slashAttackSystem) removeSlashee(p *playerent) {
 	for i, renderable := range s.slashees {
@@ -75,16 +86,6 @@ func (s *slashAttackSystem) removeSlashee(p *playerent) {
 			break
 		}
 	}
-	// for i, subslasher := range s.slashers {
-	// 	if p == subslasher.ent {
-	// 		if i < len(s.slashers)-1 {
-	// 			copy(s.slashers[i:], s.slashers[i+1:])
-	// 		}
-	// 		s.slashers[len(s.slashers)-1] = nil
-	// 		s.slashers = s.slashers[:len(s.slashers)-1]
-	// 		break
-	// 	}
-	// }
 }
 
 func newLinePolar(loc location, length int, angle float64) line {
@@ -123,16 +124,27 @@ func (s *slashAttackSystem) work() {
 		}
 		stopSlashing := func() {
 			renderingSystem.removeShape(bot.slashLine)
-			// renderingSystem.toRemove <- bot.slashLine
 			bot.animationCount = 0
 			bot.animating = false
-			bot.onCooldown = false
 		}
 
-		if bot.animating && bot.animationCount < -3 {
-			stopSlashing()
-			continue
+		// if bot.animating && bot.animationCount < -3 {
+		// 	stopSlashing()
+		// 	continue
+		// }
+
+		select {
+		case <-bot.animChan:
+			if bot.animating {
+				stopSlashing()
+				continue
+			}
+		default:
 		}
+
+		// if bot.cooldownCount < 100 {
+		// 	bot.cooldownCount++
+		// }
 		if !bot.animating {
 			if bot.ent.directions.down ||
 				bot.ent.directions.up ||
@@ -160,36 +172,25 @@ func (s *slashAttackSystem) work() {
 				if notBlocked {
 					renderingSystem.addShape(bot.slashLine)
 					bot.animating = true
-					bot.onCooldown = true
-					// animationTimer := time.NewTimer(310 * time.Millisecond).C
-					// go func() {
-					// 	select {
-					// 	case <-animationTimer:
-					// 		if bot.animating {
-					// 			stopSlashing()
-					// 		}
-					// 	}
-					// }()
+					bot.animChan = time.NewTimer(310 * time.Millisecond).C
 				}
-				// else {
-				// 	bot.onCooldown = false
-				// }
 
-				// bot.onCooldown = true
-				// coolDownTimer := time.NewTimer(800 * time.Millisecond).C
-				// go func() {
-				// 	select {
-				// 	case <-coolDownTimer:
-				// 		bot.onCooldown = false
-				// 	}
-				// }()
+				bot.onCooldown = true
+				bot.cooldownCount = 0
+				coolDownTimer := time.NewTimer(800 * time.Millisecond).C
+				bot := bot
+				go func() {
+					select {
+					case <-coolDownTimer:
+						bot.onCooldown = false
+					}
+				}()
 			}
 		} else {
 			bot.animationCount -= 0.16
 			notBlocked := keepOnPlayer()
 			if !notBlocked {
 				stopSlashing()
-				// bot.onCooldown = false
 			}
 			if bot.animating {
 			foundSlashee:
@@ -200,10 +201,6 @@ func (s *slashAttackSystem) work() {
 					for _, slasheeLine := range slashee.rectangle.shape.lines {
 						for _, bladeLine := range bot.slashLine.lines {
 							if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-								renderingSystem.removeShape(slashee.rectangle.shape)
-								// renderingSystem.toRemove <- slashee.rectangle.shape
-								collideSystem.removeMover(slashee)
-								s.removeSlashee(slashee)
 								toRemove = append(toRemove, slashee)
 								break foundSlashee
 							}
@@ -217,11 +214,11 @@ func (s *slashAttackSystem) work() {
 	}
 
 	for _, removeMe := range toRemove {
-		for _, slshr := range s.slashers {
-			if removeMe == slshr.ent {
-				renderingSystem.removeShape(slshr.slashLine)
-			}
-		}
+		renderingSystem.removeShape(removeMe.rectangle.shape)
+		collideSystem.removeMover(removeMe)
+		s.slashees = removeFromSlice(s.slashees, removeMe)
+		botsMoveSystem.bots = removeFromSlice(botsMoveSystem.bots, removeMe)
+		// s.removeSlashee(removeMe)
 		s.removeSlasher(removeMe)
 	}
 	// default:
