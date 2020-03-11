@@ -15,7 +15,7 @@ type slasher struct {
 	animationCount float64
 	onCooldown     bool
 	cooldownCount  int
-	animChan       <-chan time.Time
+	doneAnimating  bool
 }
 
 func newSlasher(p *playerent) *slasher {
@@ -90,6 +90,7 @@ func (s *slashAttackSystem) work() {
 	// case <-s.events:
 	toRemove := []*playerent{}
 	for _, bot := range s.slashers {
+		bot := bot
 
 		keepOnPlayer := func() bool {
 			midPlayer := bot.ent.rectangle.location
@@ -113,29 +114,19 @@ func (s *slashAttackSystem) work() {
 
 			return true
 		}
+
 		stopSlashing := func() {
 			renderingSystem.removeShape(bot.slashLine)
 			bot.animationCount = 0
 			bot.animating = false
 		}
 
-		// if bot.animating && bot.animationCount < -3 {
-		// 	stopSlashing()
-		// 	continue
-		// }
-
-		select {
-		case <-bot.animChan:
-			if bot.animating {
-				stopSlashing()
-				continue
-			}
-		default:
+		if bot.doneAnimating {
+			bot.doneAnimating = false
+			stopSlashing()
+			continue
 		}
 
-		// if bot.cooldownCount < 100 {
-		// 	bot.cooldownCount++
-		// }
 		if !bot.animating {
 			if bot.ent.directions.down ||
 				bot.ent.directions.up ||
@@ -158,18 +149,22 @@ func (s *slashAttackSystem) work() {
 				bot.startangle += 1.6
 			}
 			if ebiten.IsKeyPressed(ebiten.KeyX) && !bot.onCooldown {
-
 				notBlocked := keepOnPlayer()
 				if notBlocked {
 					renderingSystem.addShape(bot.slashLine)
 					bot.animating = true
-					bot.animChan = time.NewTimer(310 * time.Millisecond).C
+					animChan := time.NewTimer(310 * time.Millisecond).C
+					go func() {
+						select {
+						case <-animChan:
+							bot.doneAnimating = true
+						}
+					}()
 				}
 
 				bot.onCooldown = true
 				bot.cooldownCount = 0
 				coolDownTimer := time.NewTimer(800 * time.Millisecond).C
-				bot := bot
 				go func() {
 					select {
 					case <-coolDownTimer:
