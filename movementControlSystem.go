@@ -12,7 +12,6 @@ type directions struct {
 
 type moveSpeed struct {
 	currentSpeed int
-	maxSpeed     int
 }
 
 // type rectangle struct {

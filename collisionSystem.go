@@ -28,7 +28,7 @@ func newControlledEntity() *acceleratingEnt {
 		momentum{},
 		0.4,
 		0.4,
-		moveSpeed{6, 6},
+		moveSpeed{10},
 		directions{},
 		false,
 	}
@@ -72,23 +72,21 @@ func (c *collisionSystem) removeSolid(s *shape) {
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
 }
+
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
 		correctedAgilityX := p.agility
 		speedLimitx := float64(p.moveSpeed.currentSpeed)
 		if p.directions.down || p.directions.up {
-			speedLimitx = speedLimitx * 0.707
 			correctedAgilityX = p.agility * 0.707
 		}
 		correctedAgilityY := p.agility
 		speedLimity := float64(p.moveSpeed.currentSpeed)
 		if p.directions.right || p.directions.left {
-			speedLimity = speedLimity * 0.707
 			correctedAgilityY = p.agility * 0.707
 		}
 
 		movedx := false
-
 		if p.directions.left {
 			movedx = true
 			desired := p.moment.xaxis - correctedAgilityX
@@ -126,10 +124,7 @@ func (c *collisionSystem) work() {
 				p.moment.yaxis = -speedLimity
 			}
 		}
-		if movedx && movedy {
 
-		}
-		// traction := float64(p.ent.moveSpeed.currentSpeed) / 50
 		if !movedx {
 			if p.moment.xaxis > 0 {
 				p.moment.xaxis -= p.tracktion
@@ -145,6 +140,11 @@ func (c *collisionSystem) work() {
 			if p.moment.yaxis < 0 {
 				p.moment.yaxis += p.tracktion
 			}
+		}
+
+		if math.Sqrt(math.Pow(p.moment.xaxis, 2)+math.Pow(p.moment.yaxis, 2)) > speedLimitx {
+			p.moment.xaxis = p.moment.xaxis * 0.707
+			p.moment.yaxis = p.moment.yaxis * 0.707
 		}
 
 		unitmovex := 1

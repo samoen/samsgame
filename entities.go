@@ -1,11 +1,10 @@
 package main
 
 func initEntities() {
-	accelplayer := newControlledEntity()
 
+	accelplayer := newControlledEntity()
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.slashers = append(slashSystem.slashers, playerSlasher)
-
 	playerMoveSystem.addPlayer(accelplayer)
 	renderingSystem.addShape(accelplayer.rect.shape)
 	renderingSystem.CenterOn = accelplayer.rect
@@ -21,6 +20,7 @@ func initEntities() {
 		collideSystem.addEnt(moveEnemy)
 		botsMoveSystem.addEnemy(moveEnemy)
 	}
+
 	mapBounds := newRectangle(
 		location{0, 0},
 		dimens{2000, 2000},
@@ -29,7 +29,7 @@ func initEntities() {
 	collideSystem.addSolid(mapBounds.shape)
 	slashSystem.addBlocker(mapBounds.shape)
 
-	diagonalWall := shape{
+	diagonalWall := &shape{
 		[]line{
 			line{
 				location{250, 310},
@@ -37,8 +37,9 @@ func initEntities() {
 			},
 		},
 	}
-	renderingSystem.addShape(&diagonalWall)
-	collideSystem.addSolid(&diagonalWall)
+	renderingSystem.addShape(diagonalWall)
+	collideSystem.addSolid(diagonalWall)
+	slashSystem.addBlocker(diagonalWall)
 
 	lilRoom := newRectangle(
 		location{45, 400},
