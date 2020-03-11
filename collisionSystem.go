@@ -16,6 +16,23 @@ type acceleratingEnt struct {
 	agility    float64
 	moveSpeed  moveSpeed
 	directions directions
+	atkButton  bool
+}
+
+func newControlledEntity() *acceleratingEnt {
+	c := &acceleratingEnt{
+		newRectangle(
+			location{1, 1},
+			dimens{20, 20},
+		),
+		momentum{},
+		0.4,
+		0.4,
+		moveSpeed{6, 6},
+		directions{},
+		false,
+	}
+	return c
 }
 
 type collisionSystem struct {

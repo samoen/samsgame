@@ -44,6 +44,7 @@ func (b *playerMovementSystem) work() {
 			ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft),
 			ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp),
 		}
+		bot.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 	}
 	// default:
 	// }

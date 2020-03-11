@@ -1,47 +1,25 @@
 package main
 
 func initEntities() {
-	accelplayer := acceleratingEnt{
-		newRectangle(
-			location{1, 1},
-			dimens{20, 20},
-		),
-		momentum{},
-		0.4,
-		0.4,
-		moveSpeed{6, 6},
-		directions{},
-	}
+	accelplayer := newControlledEntity()
 
-	playerSlasher := newSlasher(&accelplayer)
+	playerSlasher := newSlasher(accelplayer)
 	slashSystem.slashers = append(slashSystem.slashers, playerSlasher)
 
-	playerMoveSystem.addPlayer(&accelplayer)
+	playerMoveSystem.addPlayer(accelplayer)
 	renderingSystem.addShape(accelplayer.rect.shape)
 	renderingSystem.CenterOn = accelplayer.rect
-	collideSystem.addEnt(&accelplayer)
+	collideSystem.addEnt(accelplayer)
 
 	for i := 1; i < 50; i++ {
-		moveEnemy := acceleratingEnt{
-			newRectangle(
-				location{
-					i * 30,
-					1,
-				},
-				dimens{20, 20},
-			),
-			momentum{},
-			0.4,
-			0.4,
-			moveSpeed{9, 9},
-			directions{},
-		}
-		enemySlasher := newSlasher(&moveEnemy)
+		moveEnemy := newControlledEntity()
+		moveEnemy.rect.refreshShape(location{i * 30, 1})
+		enemySlasher := newSlasher(moveEnemy)
 		slashSystem.slashers = append(slashSystem.slashers, enemySlasher)
 		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.rect)
 		renderingSystem.addShape(moveEnemy.rect.shape)
-		collideSystem.addEnt(&moveEnemy)
-		botsMoveSystem.addEnemy(&moveEnemy)
+		collideSystem.addEnt(moveEnemy)
+		botsMoveSystem.addEnemy(moveEnemy)
 	}
 	mapBounds := newRectangle(
 		location{0, 0},

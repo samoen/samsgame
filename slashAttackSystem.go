@@ -3,8 +3,6 @@ package main
 import (
 	"math"
 	"time"
-
-	"github.com/hajimehoshi/ebiten"
 )
 
 type slasher struct {
@@ -149,7 +147,7 @@ func (s *slashAttackSystem) work() {
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 				bot.startangle += 1.6
 			}
-			if ebiten.IsKeyPressed(ebiten.KeyX) && !bot.onCooldown {
+			if bot.ent.atkButton && !bot.onCooldown {
 				notBlocked := keepOnPlayer()
 				if notBlocked {
 					renderingSystem.addShape(bot.slashLine)

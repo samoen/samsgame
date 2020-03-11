@@ -18,32 +18,33 @@ func newEnemyMovementSystem() enemyMovementSystem {
 	return b
 }
 
-func (b *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
-	b.movers = append(b.movers, m)
+func (e *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
+	e.movers = append(e.movers, m)
 }
 
-func (b *enemyMovementSystem) work() {
+func (e *enemyMovementSystem) work() {
 	select {
-	case <-b.events:
-		for _, bot := range b.movers {
+	case <-e.events:
+		for _, bot := range e.movers {
 			bot.directions = directions{
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,
 			}
+			bot.atkButton = rand.Intn(2) == 0
 		}
 	default:
 	}
 }
-func (c *enemyMovementSystem) removeEnemyMover(s *rectangle) {
-	for i, renderable := range c.movers {
+func (e *enemyMovementSystem) removeEnemyMover(s *rectangle) {
+	for i, renderable := range e.movers {
 		if s == renderable.rect {
-			if i < len(c.movers)-1 {
-				copy(c.movers[i:], c.movers[i+1:])
+			if i < len(e.movers)-1 {
+				copy(e.movers[i:], e.movers[i+1:])
 			}
-			c.movers[len(c.movers)-1] = nil
-			c.movers = c.movers[:len(c.movers)-1]
+			e.movers[len(e.movers)-1] = nil
+			e.movers = e.movers[:len(e.movers)-1]
 			break
 		}
 	}
