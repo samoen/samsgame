@@ -2,50 +2,46 @@ package main
 
 func initEntities() {
 	accelplayer := acceleratingEnt{
-		&playerent{
-			newRectangle(
-				location{1, 1},
-				dimens{20, 20},
-			),
-			moveSpeed{6, 6},
-			directions{},
-		},
+		newRectangle(
+			location{1, 1},
+			dimens{20, 20},
+		),
 		momentum{},
 		0.4,
 		0.4,
+		moveSpeed{6, 6},
+		directions{},
 	}
 
-	playerSlasher := newSlasher(accelplayer.ent)
+	playerSlasher := newSlasher(&accelplayer)
 	slashSystem.slashers = append(slashSystem.slashers, playerSlasher)
 
-	playerMoveSystem.addPlayer(accelplayer.ent)
-	renderingSystem.addShape(accelplayer.ent.rectangle.shape)
-	renderingSystem.CenterOn = accelplayer.ent.rectangle
+	playerMoveSystem.addPlayer(&accelplayer)
+	renderingSystem.addShape(accelplayer.rect.shape)
+	renderingSystem.CenterOn = accelplayer.rect
 	collideSystem.addEnt(&accelplayer)
 
 	for i := 1; i < 50; i++ {
 		moveEnemy := acceleratingEnt{
-			&playerent{
-				newRectangle(
-					location{
-						i * 30,
-						1,
-					},
-					dimens{20, 20},
-				),
-				moveSpeed{9, 9},
-				directions{},
-			},
+			newRectangle(
+				location{
+					i * 30,
+					1,
+				},
+				dimens{20, 20},
+			),
 			momentum{},
 			0.4,
 			0.4,
+			moveSpeed{9, 9},
+			directions{},
 		}
-		enemySlasher := newSlasher(moveEnemy.ent)
+		enemySlasher := newSlasher(&moveEnemy)
 		slashSystem.slashers = append(slashSystem.slashers, enemySlasher)
-		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.ent)
-		renderingSystem.addShape(moveEnemy.ent.rectangle.shape)
+		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.rect)
+		renderingSystem.addShape(moveEnemy.rect.shape)
 		collideSystem.addEnt(&moveEnemy)
-		botsMoveSystem.addEnemy(moveEnemy.ent)
+		botsMoveSystem.addEnemy(&moveEnemy)
 	}
 	mapBounds := newRectangle(
 		location{0, 0},

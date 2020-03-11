@@ -15,15 +15,13 @@ type moveSpeed struct {
 	maxSpeed     int
 }
 
-type playerent struct {
-	rectangle  *rectangle
-	moveSpeed  moveSpeed
-	directions directions
-}
+// type rectangle struct {
+// 	rectangle *rectangle
+// }
 
 type playerMovementSystem struct {
 	// events <-chan time.Time
-	bots []*playerent
+	bots []*acceleratingEnt
 }
 
 func newPlayerMovementSystem() playerMovementSystem {
@@ -32,7 +30,7 @@ func newPlayerMovementSystem() playerMovementSystem {
 	return b
 }
 
-func (b *playerMovementSystem) addPlayer(m *playerent) {
+func (b *playerMovementSystem) addPlayer(m *acceleratingEnt) {
 	b.bots = append(b.bots, m)
 }
 

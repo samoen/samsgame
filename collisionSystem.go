@@ -10,10 +10,12 @@ type momentum struct {
 	xaxis, yaxis float64
 }
 type acceleratingEnt struct {
-	ent       *playerent
-	moment    momentum
-	tracktion float64
-	agility   float64
+	rect       *rectangle
+	moment     momentum
+	tracktion  float64
+	agility    float64
+	moveSpeed  moveSpeed
+	directions directions
 }
 
 type collisionSystem struct {
@@ -25,9 +27,9 @@ func (c *collisionSystem) addEnt(p *acceleratingEnt) {
 	c.movers = append(c.movers, p)
 }
 
-func (c *collisionSystem) removeMover(s *playerent) {
+func (c *collisionSystem) removeMover(s *rectangle) {
 	for i, renderable := range c.movers {
-		if s == renderable.ent {
+		if s == renderable.rect {
 			if i < len(c.movers)-1 {
 				copy(c.movers[i:], c.movers[i+1:])
 			}
@@ -56,21 +58,21 @@ func (c *collisionSystem) addSolid(s *shape) {
 func (c *collisionSystem) work() {
 	for i, p := range c.movers {
 		correctedAgilityX := p.agility
-		speedLimitx := float64(p.ent.moveSpeed.currentSpeed)
-		if p.ent.directions.down || p.ent.directions.up {
+		speedLimitx := float64(p.moveSpeed.currentSpeed)
+		if p.directions.down || p.directions.up {
 			speedLimitx = speedLimitx * 0.707
 			correctedAgilityX = p.agility * 0.707
 		}
 		correctedAgilityY := p.agility
-		speedLimity := float64(p.ent.moveSpeed.currentSpeed)
-		if p.ent.directions.right || p.ent.directions.left {
+		speedLimity := float64(p.moveSpeed.currentSpeed)
+		if p.directions.right || p.directions.left {
 			speedLimity = speedLimity * 0.707
 			correctedAgilityY = p.agility * 0.707
 		}
 
 		movedx := false
 
-		if p.ent.directions.left {
+		if p.directions.left {
 			movedx = true
 			desired := p.moment.xaxis - correctedAgilityX
 			if desired > -speedLimitx {
@@ -79,7 +81,7 @@ func (c *collisionSystem) work() {
 				p.moment.xaxis = -speedLimitx
 			}
 		}
-		if p.ent.directions.right {
+		if p.directions.right {
 			movedx = true
 			desired := p.moment.xaxis + correctedAgilityX
 			if desired < speedLimitx {
@@ -89,7 +91,7 @@ func (c *collisionSystem) work() {
 			}
 		}
 		movedy := false
-		if p.ent.directions.down {
+		if p.directions.down {
 			movedy = true
 			desired := p.moment.yaxis + correctedAgilityY
 			if desired < speedLimity {
@@ -98,7 +100,7 @@ func (c *collisionSystem) work() {
 				p.moment.yaxis = speedLimity
 			}
 		}
-		if p.ent.directions.up {
+		if p.directions.up {
 			movedy = true
 			desired := p.moment.yaxis - correctedAgilityY
 			if desired > -speedLimity {
@@ -150,7 +152,7 @@ func (c *collisionSystem) work() {
 			if i == j {
 				continue
 			}
-			totalSolids = append(totalSolids, movingSolid.ent.rectangle.shape)
+			totalSolids = append(totalSolids, movingSolid.rect.shape)
 		}
 
 		for i := 1; i < int(maxSpd+1); i++ {
@@ -158,11 +160,11 @@ func (c *collisionSystem) work() {
 			ycollided := false
 			if int(absSpdx) > 0 {
 				absSpdx--
-				checklocx := p.ent.rectangle.location
+				checklocx := p.rect.location
 				checklocx.x += unitmovex
-				checkRect := newRectangle(checklocx, p.ent.rectangle.dimens)
+				checkRect := newRectangle(checklocx, p.rect.dimens)
 				if !checkRect.shape.normalcollides(totalSolids) {
-					p.ent.rectangle.refreshShape(checklocx)
+					p.rect.refreshShape(checklocx)
 				} else {
 					p.moment.xaxis = 0
 					xcollided = true
@@ -171,13 +173,13 @@ func (c *collisionSystem) work() {
 
 			if int(absSpdy) > 0 {
 				absSpdy--
-				checkrecty := *p.ent.rectangle
+				checkrecty := *p.rect
 				checkrecty.shape = &shape{}
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)
 				if !checkrecty.shape.normalcollides(totalSolids) {
-					p.ent.rectangle.refreshShape(checklocy)
+					p.rect.refreshShape(checklocy)
 				} else {
 					p.moment.yaxis = 0
 					ycollided = true

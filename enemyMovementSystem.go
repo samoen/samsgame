@@ -7,7 +7,7 @@ import (
 
 type enemyMovementSystem struct {
 	events <-chan time.Time
-	bots   []*playerent
+	movers []*acceleratingEnt
 }
 
 var botsMoveSystem = newEnemyMovementSystem()
@@ -18,14 +18,14 @@ func newEnemyMovementSystem() enemyMovementSystem {
 	return b
 }
 
-func (b *enemyMovementSystem) addEnemy(m *playerent) {
-	b.bots = append(b.bots, m)
+func (b *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
+	b.movers = append(b.movers, m)
 }
 
 func (b *enemyMovementSystem) work() {
 	select {
 	case <-b.events:
-		for _, bot := range b.bots {
+		for _, bot := range b.movers {
 			bot.directions = directions{
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,
@@ -34,5 +34,17 @@ func (b *enemyMovementSystem) work() {
 			}
 		}
 	default:
+	}
+}
+func (c *enemyMovementSystem) removeEnemyMover(s *rectangle) {
+	for i, renderable := range c.movers {
+		if s == renderable.rect {
+			if i < len(c.movers)-1 {
+				copy(c.movers[i:], c.movers[i+1:])
+			}
+			c.movers[len(c.movers)-1] = nil
+			c.movers = c.movers[:len(c.movers)-1]
+			break
+		}
 	}
 }

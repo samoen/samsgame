@@ -8,7 +8,7 @@ import (
 )
 
 type slasher struct {
-	ent            *playerent
+	ent            *acceleratingEnt
 	animating      bool
 	slashLine      *shape
 	startangle     float64
@@ -18,7 +18,7 @@ type slasher struct {
 	doneAnimating  bool
 }
 
-func newSlasher(p *playerent) *slasher {
+func newSlasher(p *acceleratingEnt) *slasher {
 	s := &slasher{}
 	s.ent = p
 	s.slashLine = &shape{[]line{line{}}}
@@ -30,7 +30,7 @@ var slashSystem = newSlashAttackSystem()
 
 type slashAttackSystem struct {
 	slashers []*slasher
-	slashees []*playerent
+	slashees []*rectangle
 	blockers []*shape
 }
 
@@ -43,20 +43,21 @@ func newSlashAttackSystem() slashAttackSystem {
 	return s
 }
 
-func (s *slashAttackSystem) purge(p *playerent) {
-	slashSystem.slashees = removeFromSlice(slashSystem.slashees, p)
-	// s.removeSlashee(p)
-	s.removeSlasher(p)
-}
+// func (s *slashAttackSystem) purge(p *rectangle) {
+// 	s.removeSlashee(p.ent)
+// 	// slashSystem.slashees = removeFromSlice(slashSystem.slashees, p.ent)
+// 	// s.removeSlashee(p)
+// 	s.removeSlasher(p)
+// }
 
-func (s *slashAttackSystem) removeSlasher(p *playerent) {
+func (s *slashAttackSystem) removeSlasher(p *rectangle) {
 	for _, slshr := range s.slashers {
-		if p == slshr.ent {
+		if p == slshr.ent.rect {
 			renderingSystem.removeShape(slshr.slashLine)
 		}
 	}
 	for i, subslasher := range s.slashers {
-		if p == subslasher.ent {
+		if p == subslasher.ent.rect {
 			if i < len(s.slashers)-1 {
 				copy(s.slashers[i:], s.slashers[i+1:])
 			}
@@ -66,7 +67,7 @@ func (s *slashAttackSystem) removeSlasher(p *playerent) {
 		}
 	}
 }
-func (s *slashAttackSystem) removeSlashee(p *playerent) {
+func (s *slashAttackSystem) removeSlashee(p *rectangle) {
 	for i, renderable := range s.slashees {
 		if p == renderable {
 			if i < len(s.slashees)-1 {
@@ -88,14 +89,14 @@ func newLinePolar(loc location, length int, angle float64) line {
 func (s *slashAttackSystem) work() {
 	// select {
 	// case <-s.events:
-	toRemove := []*playerent{}
+	toRemove := []*rectangle{}
 	for _, bot := range s.slashers {
 		bot := bot
 
 		keepOnPlayer := func() bool {
-			midPlayer := bot.ent.rectangle.location
-			midPlayer.x += bot.ent.rectangle.dimens.width / 2
-			midPlayer.y += bot.ent.rectangle.dimens.height / 2
+			midPlayer := bot.ent.rect.location
+			midPlayer.x += bot.ent.rect.dimens.width / 2
+			midPlayer.y += bot.ent.rect.dimens.height / 2
 
 			for i := 0; i < len(bot.slashLine.lines); i++ {
 				rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
@@ -181,10 +182,10 @@ func (s *slashAttackSystem) work() {
 			if bot.animating {
 			foundSlashee:
 				for _, slashee := range s.slashees {
-					if slashee == bot.ent {
+					if slashee == bot.ent.rect {
 						continue foundSlashee
 					}
-					for _, slasheeLine := range slashee.rectangle.shape.lines {
+					for _, slasheeLine := range slashee.shape.lines {
 						for _, bladeLine := range bot.slashLine.lines {
 							if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 								toRemove = append(toRemove, slashee)
@@ -206,14 +207,17 @@ func (s *slashAttackSystem) work() {
 	// }
 }
 
-func removeFromAllSystems(removeMe *playerent) {
-	renderingSystem.removeShape(removeMe.rectangle.shape)
+func removeFromAllSystems(removeMe *rectangle) {
+	renderingSystem.removeShape(removeMe.shape)
 	collideSystem.removeMover(removeMe)
-	botsMoveSystem.bots = removeFromSlice(botsMoveSystem.bots, removeMe)
-	slashSystem.purge(removeMe)
+	botsMoveSystem.removeEnemyMover(removeMe)
+	// botsMoveSystem.movers = removeFromSlice(botsMoveSystem.movers, removeMe)
+	// slashSystem.purge(removeMe)
+	slashSystem.removeSlasher(removeMe)
+	slashSystem.removeSlashee(removeMe)
 }
 
-func removeFromSlice(slice []*playerent, p *playerent) []*playerent {
+func removeFromSlice(slice []*acceleratingEnt, p *acceleratingEnt) []*acceleratingEnt {
 	for i, renderable := range slice {
 		if p == renderable {
 			if i < len(slice)-1 {
