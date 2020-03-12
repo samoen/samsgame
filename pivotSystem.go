@@ -6,17 +6,20 @@ import (
 
 type pivotingShape struct {
 	pivoterShape   *shape
-	pivotPoint     *acceleratingEnt
+	pivotPoint     *rectangle
 	startangle     float64
 	animationCount float64
 	animating      bool
 	doneAnimating  bool
 }
 
-func newPivotingShape(s *shape, r *acceleratingEnt) *pivotingShape {
+func newPivotingShape(r *rectangle, heading float64) *pivotingShape {
+	slashLine := newShape()
+	slashLine.lines = []line{line{}}
 	p := &pivotingShape{}
-	p.pivoterShape = s
+	p.pivoterShape = slashLine
 	p.pivotPoint = r
+	p.animationCount = heading + 1.6
 	return p
 }
 
@@ -84,9 +87,9 @@ func (p *pivotSystem) work() {
 		bot := bot
 
 		keepOnPlayer := func() bool {
-			midPlayer := bot.pivotPoint.rect.location
-			midPlayer.x += bot.pivotPoint.rect.dimens.width / 2
-			midPlayer.y += bot.pivotPoint.rect.dimens.height / 2
+			midPlayer := bot.pivotPoint.location
+			midPlayer.x += bot.pivotPoint.dimens.width / 2
+			midPlayer.y += bot.pivotPoint.dimens.height / 2
 
 			for i := 0; i < len(bot.pivoterShape.lines); i++ {
 				rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
@@ -119,7 +122,7 @@ func (p *pivotSystem) work() {
 		} else {
 		foundSlashee:
 			for _, slashee := range p.slashees {
-				if slashee == bot.pivotPoint.rect.shape {
+				if slashee == bot.pivotPoint.shape {
 					continue foundSlashee
 				}
 				for _, slasheeLine := range slashee.lines {
@@ -127,7 +130,7 @@ func (p *pivotSystem) work() {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 							toRemove = append(toRemove, slashee)
 							for _, ps := range p.pivoters {
-								if ps.pivotPoint.rect.shape == slashee {
+								if ps.pivotPoint.shape == slashee {
 									toRemove = append(toRemove, ps.pivoterShape)
 									break
 								}

@@ -6,21 +6,16 @@ import (
 )
 
 type slasher struct {
-	ent       *acceleratingEnt
-	animating bool
-	// slashLine *shape
-	startangle float64
-	// animationCount float64
+	ent           *acceleratingEnt
+	animating     bool
+	startangle    float64
 	onCooldown    bool
 	cooldownCount int
-	// doneAnimating  bool
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
 	s := &slasher{}
 	s.ent = p
-	// s.slashLine = newShape()
-	// s.slashLine.lines = []line{line{}}
 	s.cooldownCount = 100
 	return s
 }
@@ -29,31 +24,14 @@ var slashSystem = newSlashAttackSystem()
 
 type slashAttackSystem struct {
 	slashers []*slasher
-	// slashees []*rectangle
-	// blockers []*shape
 }
 
 func (s *slashAttackSystem) addSlasher(b *slasher) {
 	s.slashers = append(s.slashers, b)
 	b.ent.rect.shape.removals = append(b.ent.rect.shape.removals, func() {
 		s.removeSlasher(b.ent.rect.shape)
-		// s.removeSlashee(b.ent.rect.shape)
-		// b.slashLine.sysPurge()
 	})
 }
-
-// func (s *slashAttackSystem) addSlashee(b *rectangle) {
-// 	// s.slashees = append(s.slashees, b)
-// 	// b.shape.removals = append(b.shape.removals, func() {
-// 	// 	// s.removeSlasher(b.ent.rect.shape)
-// 	// 	s.removeSlashee(b.shape)
-
-// 	// })
-// }
-
-// func (s *slashAttackSystem) addBlocker(b *shape) {
-// 	// s.blockers = append(s.blockers, b)
-// }
 
 func newSlashAttackSystem() slashAttackSystem {
 	s := slashAttackSystem{}
@@ -71,19 +49,6 @@ func (s *slashAttackSystem) removeSlasher(p *shape) {
 			break
 		}
 	}
-}
-
-func (s *slashAttackSystem) removeSlashee(p *shape) {
-	// for i, renderable := range s.slashees {
-	// 	if p == renderable.shape {
-	// 		if i < len(s.slashees)-1 {
-	// 			copy(s.slashees[i:], s.slashees[i+1:])
-	// 		}
-	// 		s.slashees[len(s.slashees)-1] = nil
-	// 		s.slashees = s.slashees[:len(s.slashees)-1]
-	// 		break
-	// 	}
-	// }
 }
 
 func newLinePolar(loc location, length int, angle float64) line {
@@ -123,20 +88,12 @@ func (s *slashAttackSystem) work() {
 				moveTipY = hitRange
 			}
 			bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
-			bot.startangle += 1.6
 		}
-		if bot.ent.atkButton && !bot.onCooldown {
-			// notBlocked := keepOnPlayer()
-			// if notBlocked {
-			slashLine := newShape()
-			slashLine.lines = []line{line{}}
-			renderingSystem.addShape(slashLine)
-			ps := newPivotingShape(slashLine, bot.ent)
-			// ps.startangle = bot.startangle
-			ps.animationCount = bot.startangle
-			pivotingSystem.addPivoter(ps)
 
-			// }
+		if bot.ent.atkButton && !bot.onCooldown {
+			ps := newPivotingShape(bot.ent.rect, bot.startangle)
+			renderingSystem.addShape(ps.pivoterShape)
+			pivotingSystem.addPivoter(ps)
 
 			bot.onCooldown = true
 			bot.cooldownCount = 0
@@ -148,13 +105,7 @@ func (s *slashAttackSystem) work() {
 				}
 			}()
 		}
-
 	}
-
-	// for _, removeMe := range toRemove {
-	// 	removeMe.shape.sysPurge()
-	// }
-
 	// default:
 	// }
 }
