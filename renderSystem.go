@@ -36,6 +36,10 @@ var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.Fi
 // pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
 // }
 
+// type deleter struct{
+// 	shapeToDelete *shape
+// }
+
 func newRenderSystem() renderSystem {
 	r := renderSystem{}
 	// r.toRemove = make(chan *shape)
@@ -63,6 +67,9 @@ func (r *renderSystem) removeShape(s *shape) {
 
 func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
+	s.removals = append(s.removals, func() {
+		r.removeShape(s)
+	})
 }
 func (r *renderSystem) work(s *ebiten.Image) {
 	// select {

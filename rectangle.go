@@ -32,7 +32,13 @@ func (l line) intersects(l2 line) (int, int, bool) {
 }
 
 type shape struct {
-	lines []line
+	lines    []line
+	removals []func()
+}
+
+func newShape() *shape {
+	s := &shape{}
+	return s
 }
 
 func (s shape) normalcollides(entities []*shape) bool {
@@ -61,7 +67,7 @@ type rectangle struct {
 func newRectangle(loc location, dims dimens) *rectangle {
 	r := rectangle{}
 	r.dimens = dims
-	r.shape = &shape{}
+	r.shape = newShape()
 	r.refreshShape(loc)
 	return &r
 }

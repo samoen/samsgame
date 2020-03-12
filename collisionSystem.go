@@ -42,11 +42,14 @@ type collisionSystem struct {
 
 func (c *collisionSystem) addEnt(p *acceleratingEnt) {
 	c.movers = append(c.movers, p)
+	p.rect.shape.removals = append(p.rect.shape.removals, func() {
+		c.removeMover(p.rect.shape)
+	})
 }
 
-func (c *collisionSystem) removeMover(s *rectangle) {
+func (c *collisionSystem) removeMover(s *shape) {
 	for i, renderable := range c.movers {
-		if s == renderable.rect {
+		if s == renderable.rect.shape {
 			if i < len(c.movers)-1 {
 				copy(c.movers[i:], c.movers[i+1:])
 			}
@@ -191,7 +194,7 @@ func (c *collisionSystem) work() {
 			if int(absSpdy) > 0 {
 				absSpdy--
 				checkrecty := *p.rect
-				checkrecty.shape = &shape{}
+				checkrecty.shape = newShape()
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)

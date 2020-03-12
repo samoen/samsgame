@@ -14,8 +14,8 @@ func initEntities() {
 		moveEnemy := newControlledEntity()
 		moveEnemy.rect.refreshShape(location{i * 30, 1})
 		enemySlasher := newSlasher(moveEnemy)
-		slashSystem.slashers = append(slashSystem.slashers, enemySlasher)
-		slashSystem.slashees = append(slashSystem.slashees, moveEnemy.rect)
+		slashSystem.addSlasher(enemySlasher)
+		slashSystem.addSlashee(moveEnemy.rect)
 		renderingSystem.addShape(moveEnemy.rect.shape)
 		collideSystem.addEnt(moveEnemy)
 		botsMoveSystem.addEnemy(moveEnemy)
@@ -29,14 +29,14 @@ func initEntities() {
 	collideSystem.addSolid(mapBounds.shape)
 	slashSystem.addBlocker(mapBounds.shape)
 
-	diagonalWall := &shape{
-		[]line{
-			line{
-				location{250, 310},
-				location{600, 655},
-			},
+	diagonalWall := newShape()
+	diagonalWall.lines = []line{
+		line{
+			location{250, 310},
+			location{600, 655},
 		},
 	}
+
 	renderingSystem.addShape(diagonalWall)
 	collideSystem.addSolid(diagonalWall)
 	slashSystem.addBlocker(diagonalWall)

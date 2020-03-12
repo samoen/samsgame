@@ -20,6 +20,9 @@ func newEnemyMovementSystem() enemyMovementSystem {
 
 func (e *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
 	e.movers = append(e.movers, m)
+	m.rect.shape.removals = append(m.rect.shape.removals, func() {
+		e.removeEnemyMover(m.rect.shape)
+	})
 }
 
 func (e *enemyMovementSystem) work() {
@@ -37,9 +40,9 @@ func (e *enemyMovementSystem) work() {
 	default:
 	}
 }
-func (e *enemyMovementSystem) removeEnemyMover(s *rectangle) {
+func (e *enemyMovementSystem) removeEnemyMover(s *shape) {
 	for i, renderable := range e.movers {
-		if s == renderable.rect {
+		if s == renderable.rect.shape {
 			if i < len(e.movers)-1 {
 				copy(e.movers[i:], e.movers[i+1:])
 			}

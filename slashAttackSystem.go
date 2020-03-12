@@ -19,7 +19,8 @@ type slasher struct {
 func newSlasher(p *acceleratingEnt) *slasher {
 	s := &slasher{}
 	s.ent = p
-	s.slashLine = &shape{[]line{line{}}}
+	s.slashLine = newShape()
+	s.slashLine.lines = []line{line{}}
 	s.cooldownCount = 100
 	return s
 }
@@ -30,6 +31,24 @@ type slashAttackSystem struct {
 	slashers []*slasher
 	slashees []*rectangle
 	blockers []*shape
+}
+
+func (s *slashAttackSystem) addSlasher(b *slasher) {
+	s.slashers = append(s.slashers, b)
+	b.ent.rect.shape.removals = append(b.ent.rect.shape.removals, func() {
+		s.removeSlasher(b.ent.rect.shape)
+		// s.removeSlashee(b.ent.rect.shape)
+		b.slashLine.sysPurge()
+	})
+}
+
+func (s *slashAttackSystem) addSlashee(b *rectangle) {
+	s.slashees = append(s.slashees, b)
+	b.shape.removals = append(b.shape.removals, func() {
+		// s.removeSlasher(b.ent.rect.shape)
+		s.removeSlashee(b.shape)
+
+	})
 }
 
 func (s *slashAttackSystem) addBlocker(b *shape) {
@@ -48,14 +67,14 @@ func newSlashAttackSystem() slashAttackSystem {
 // 	s.removeSlasher(p)
 // }
 
-func (s *slashAttackSystem) removeSlasher(p *rectangle) {
-	for _, slshr := range s.slashers {
-		if p == slshr.ent.rect {
-			renderingSystem.removeShape(slshr.slashLine)
-		}
-	}
+func (s *slashAttackSystem) removeSlasher(p *shape) {
+	// for _, slshr := range s.slashers {
+	// 	if p == slshr.ent.rect.shape {
+	// 		renderingSystem.removeShape(slshr.slashLine)
+	// 	}
+	// }
 	for i, subslasher := range s.slashers {
-		if p == subslasher.ent.rect {
+		if p == subslasher.ent.rect.shape {
 			if i < len(s.slashers)-1 {
 				copy(s.slashers[i:], s.slashers[i+1:])
 			}
@@ -65,9 +84,9 @@ func (s *slashAttackSystem) removeSlasher(p *rectangle) {
 		}
 	}
 }
-func (s *slashAttackSystem) removeSlashee(p *rectangle) {
+func (s *slashAttackSystem) removeSlashee(p *shape) {
 	for i, renderable := range s.slashees {
-		if p == renderable {
+		if p == renderable.shape {
 			if i < len(s.slashees)-1 {
 				copy(s.slashees[i:], s.slashees[i+1:])
 			}
@@ -82,6 +101,12 @@ func newLinePolar(loc location, length int, angle float64) line {
 	xpos := int(float64(length)*math.Cos(angle)) + loc.x
 	ypos := int(float64(length)*math.Sin(angle)) + loc.y
 	return line{loc, location{xpos, ypos}}
+}
+
+func (s *shape) sysPurge() {
+	for _, rem := range s.removals {
+		rem()
+	}
 }
 
 func (s *slashAttackSystem) work() {
@@ -115,7 +140,8 @@ func (s *slashAttackSystem) work() {
 		}
 
 		stopSlashing := func() {
-			renderingSystem.removeShape(bot.slashLine)
+			bot.slashLine.sysPurge()
+			// renderingSystem.removeShape(bot.slashLine)
 			bot.animationCount = 0
 			bot.animating = false
 		}
@@ -206,13 +232,14 @@ func (s *slashAttackSystem) work() {
 }
 
 func removeFromAllSystems(removeMe *rectangle) {
-	renderingSystem.removeShape(removeMe.shape)
-	collideSystem.removeMover(removeMe)
-	botsMoveSystem.removeEnemyMover(removeMe)
+	// renderingSystem.removeShape(removeMe.shape)
+	removeMe.shape.sysPurge()
+	// collideSystem.removeMover(removeMe)
+	// botsMoveSystem.removeEnemyMover(removeMe)
 	// botsMoveSystem.movers = removeFromSlice(botsMoveSystem.movers, removeMe)
 	// slashSystem.purge(removeMe)
-	slashSystem.removeSlasher(removeMe)
-	slashSystem.removeSlashee(removeMe)
+	// slashSystem.removeSlasher(removeMe)
+	// slashSystem.removeSlashee(removeMe)
 }
 
 func removeFromSlice(slice []*acceleratingEnt, p *acceleratingEnt) []*acceleratingEnt {
