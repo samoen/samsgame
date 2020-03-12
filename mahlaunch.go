@@ -31,6 +31,7 @@ func main() {
 		botsMoveSystem.work()
 		collideSystem.work()
 		slashSystem.work()
+		pivotingSystem.work()
 
 		if ebiten.IsDrawingSkipped() {
 			return nil
