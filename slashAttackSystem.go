@@ -7,7 +7,6 @@ import (
 
 type slasher struct {
 	ent           *acceleratingEnt
-	animating     bool
 	startangle    float64
 	onCooldown    bool
 	cooldownCount int

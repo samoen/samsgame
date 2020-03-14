@@ -1,27 +1,31 @@
 package main
 
 import (
-	"bytes"
-	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/examples/resources/images"
 )
 
-const (
-	tilescreenWidth  = 240
-	tilescreenHeight = 240
-	tileSize         = 16
-	tileXNum         = 25
-	xNum             = tilescreenWidth / tileSize
-)
+// const (
+// 	tilescreenWidth = 256
+// 	tileSize = 16
+// 	tileXNum = 25
+// 	xNum     = tilescreenWidth / tileSize
+// )
+// var tilesImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+// var img, _, _ = image.Decode(bytes.NewReader(images.Tiles_png))
 
 var renderingSystem = newRenderSystem()
-var img, _, _ = image.Decode(bytes.NewReader(images.Tiles_png))
-var tilesImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
+var bgOps = &ebiten.DrawImageOptions{}
+
+func init() {
+	// bgOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(bgSizex), float64(mapBounds.dimens.height)/float64(sgsizey))
+	// bgOps.GeoM.Scale(5, 5)
+	bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+}
 
 // func initRenderSystem() {
 // bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
@@ -42,15 +46,12 @@ var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.Fi
 
 func newRenderSystem() renderSystem {
 	r := renderSystem{}
-	// r.toRemove = make(chan *shape)
 	return r
 }
 
 type renderSystem struct {
 	shapes   []*shape
 	CenterOn *rectangle
-	// shapesToRemove []*shape
-	// toRemove chan *shape
 }
 
 func (r *renderSystem) removeShape(s *shape) {
@@ -72,29 +73,32 @@ func (r *renderSystem) addShape(s *shape) {
 	})
 }
 func (r *renderSystem) work(s *ebiten.Image) {
-	// select {
-	// case rem := <-r.toRemove:
-	// 	r.removeShape(rem)
-	// default:
+	// myBgOps := ebiten.DrawImageOptions{}
+	myBgOps := *bgOps
+
+	// myBgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+	myBgOps.GeoM.Translate(float64(-r.CenterOn.location.x), float64(-r.CenterOn.location.y))
+	myBgOps.GeoM.Translate(float64(-r.CenterOn.dimens.width/2), float64(-r.CenterOn.dimens.height/2))
+	s.DrawImage(bgImage, &myBgOps)
+
+	// tileOps := &ebiten.DrawImageOptions{}
+	// tileOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+	// tileOps.GeoM.Translate(float64(-r.CenterOn.location.x), float64(-r.CenterOn.location.y))
+	// tileOps.GeoM.Translate(float64(-r.CenterOn.dimens.width/2), float64(-r.CenterOn.dimens.height/2))
+	// for _, l := range layers {
+	// 	for i, t := range l {
+	// 		inTOps := *tileOps
+	// 		inTOps.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
+
+	// 		// tileOps.GeoM.Scale(2, 2)
+	// 		// tileOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(tileImSizex), float64(mapBounds.dimens.height)/float64(tileImSizey))
+
+	// 		sx := (t % tileXNum) * tileSize
+	// 		sy := (t / tileXNum) * tileSize
+	// 		subImage := tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
+	// 		s.DrawImage(subImage, &inTOps)
+	// 	}
 	// }
-	for _, l := range layers {
-		for i, t := range l {
-
-			tileOps := &ebiten.DrawImageOptions{}
-			tileOps.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
-
-			tileOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
-			tileOps.GeoM.Translate(float64(-r.CenterOn.location.x), float64(-r.CenterOn.location.y))
-			tileOps.GeoM.Translate(float64(-r.CenterOn.dimens.width/2), float64(-r.CenterOn.dimens.height/2))
-			// tileOps.GeoM.Scale(2, 2)
-			// tileOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(tileImSizex), float64(mapBounds.dimens.height)/float64(tileImSizey))
-
-			sx := (t % tileXNum) * tileSize
-			sy := (t / tileXNum) * tileSize
-			subImage := tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-			s.DrawImage(subImage, tileOps)
-		}
-	}
 
 	center := location{(screenWidth / 2) - r.CenterOn.location.x - (r.CenterOn.dimens.width / 2), (screenHeight / 2) - r.CenterOn.location.y - (r.CenterOn.dimens.height / 2)}
 	samDrawLine := func(l line) {

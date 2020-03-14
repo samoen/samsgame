@@ -86,37 +86,36 @@ func (p *pivotSystem) work() {
 	for _, bot := range p.pivoters {
 		bot := bot
 
-		keepOnPlayer := func() bool {
-			midPlayer := bot.pivotPoint.location
-			midPlayer.x += bot.pivotPoint.dimens.width / 2
-			midPlayer.y += bot.pivotPoint.dimens.height / 2
-
-			for i := 0; i < len(bot.pivoterShape.lines); i++ {
-				rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
-				bot.pivoterShape.lines[i] = rotLine
-			}
-
-			for _, blocker := range p.blockers {
-				for _, blockerLine := range blocker.lines {
-					for _, bladeLine := range bot.pivoterShape.lines {
-						if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
-							return false
-						}
-					}
-				}
-			}
-
-			return true
-		}
-
 		if bot.doneAnimating {
 			toRemove = append(toRemove, bot.pivoterShape)
 			continue
 		}
 
 		bot.animationCount -= 0.16
-		notBlocked := keepOnPlayer()
-		if !notBlocked {
+
+		midPlayer := bot.pivotPoint.location
+		midPlayer.x += bot.pivotPoint.dimens.width / 2
+		midPlayer.y += bot.pivotPoint.dimens.height / 2
+
+		for i := 0; i < len(bot.pivoterShape.lines); i++ {
+			rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
+			bot.pivoterShape.lines[i] = rotLine
+		}
+
+		blocked := false
+	foundblocker:
+		for _, blocker := range p.blockers {
+			for _, blockerLine := range blocker.lines {
+				for _, bladeLine := range bot.pivoterShape.lines {
+					if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
+						blocked = true
+						break foundblocker
+					}
+				}
+			}
+		}
+
+		if blocked {
 			toRemove = append(toRemove, bot.pivoterShape)
 			continue
 		} else {
