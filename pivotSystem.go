@@ -19,10 +19,21 @@ func newPivotingShape(r *rectangle, heading float64) *pivotingShape {
 	p.pivoterShape = slashLine
 	p.pivotPoint = r
 	p.animationCount = heading + 1.6
+
+	for i := 1; i < 7; i++ {
+		p.nextLine()
+		if !pivotingSystem.checkBlocker(p.pivoterShape) {
+			break
+		} else {
+			p.animationCount -= 0.5
+		}
+	}
+
 	return p
 }
 
 var pivotingSystem = pivotSystem{}
+var swordLength = 60
 
 type pivotSystem struct {
 	pivoters []*pivotingShape
@@ -80,6 +91,31 @@ func (p *pivotSystem) removePivoter(sh *shape) {
 	}
 }
 
+func (p *pivotSystem) checkBlocker(sh *shape) bool {
+	for _, blocker := range p.blockers {
+		for _, blockerLine := range blocker.lines {
+			for _, bladeLine := range sh.lines {
+				if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (bot *pivotingShape) nextLine() {
+
+	midPlayer := bot.pivotPoint.location
+	midPlayer.x += bot.pivotPoint.dimens.width / 2
+	midPlayer.y += bot.pivotPoint.dimens.height / 2
+
+	for i := 0; i < len(bot.pivoterShape.lines); i++ {
+		rotLine := newLinePolar(midPlayer, swordLength, bot.animationCount)
+		bot.pivoterShape.lines[i] = rotLine
+	}
+}
+
 func (p *pivotSystem) work() {
 	toRemove := []*shape{}
 	for _, bot := range p.pivoters {
@@ -91,29 +127,8 @@ func (p *pivotSystem) work() {
 		}
 
 		bot.animationCount -= 0.16
-
-		midPlayer := bot.pivotPoint.location
-		midPlayer.x += bot.pivotPoint.dimens.width / 2
-		midPlayer.y += bot.pivotPoint.dimens.height / 2
-
-		for i := 0; i < len(bot.pivoterShape.lines); i++ {
-			rotLine := newLinePolar(midPlayer, 50, bot.animationCount)
-			bot.pivoterShape.lines[i] = rotLine
-		}
-
-		blocked := false
-	foundblocker:
-		for _, blocker := range p.blockers {
-			for _, blockerLine := range blocker.lines {
-				for _, bladeLine := range bot.pivoterShape.lines {
-					if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
-						blocked = true
-						break foundblocker
-					}
-				}
-			}
-		}
-
+		bot.nextLine()
+		blocked := p.checkBlocker(bot.pivoterShape)
 		if blocked {
 			toRemove = append(toRemove, bot.pivoterShape)
 			continue

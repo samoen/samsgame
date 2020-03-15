@@ -36,9 +36,15 @@ func main() {
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
+		// myBgOps := ebiten.DrawImageOptions{}
+		myBgOps := *bgOps
 
-		renderingSystem.work(screen)
+		// myBgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
+		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.location.x), float64(-renderingSystem.CenterOn.location.y))
+		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.dimens.width/2), float64(-renderingSystem.CenterOn.dimens.height/2))
+		screen.DrawImage(bgImage, &myBgOps)
 		weaponRenderingSystem.work(screen)
+		renderingSystem.work(screen)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 

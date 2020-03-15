@@ -91,6 +91,7 @@ func (s *slashAttackSystem) work() {
 
 		if bot.ent.atkButton && !bot.onCooldown {
 			ps := newPivotingShape(bot.ent.rect, bot.startangle)
+
 			renderingSystem.addShape(ps.pivoterShape)
 			pivotingSystem.addPivoter(ps)
 

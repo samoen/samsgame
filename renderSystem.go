@@ -73,13 +73,6 @@ func (r *renderSystem) addShape(s *shape) {
 	})
 }
 func (r *renderSystem) work(s *ebiten.Image) {
-	// myBgOps := ebiten.DrawImageOptions{}
-	myBgOps := *bgOps
-
-	// myBgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
-	myBgOps.GeoM.Translate(float64(-r.CenterOn.location.x), float64(-r.CenterOn.location.y))
-	myBgOps.GeoM.Translate(float64(-r.CenterOn.dimens.width/2), float64(-r.CenterOn.dimens.height/2))
-	s.DrawImage(bgImage, &myBgOps)
 
 	// tileOps := &ebiten.DrawImageOptions{}
 	// tileOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
