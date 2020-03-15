@@ -38,6 +38,7 @@ func main() {
 		}
 
 		renderingSystem.work(screen)
+		weaponRenderingSystem.work(screen)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 

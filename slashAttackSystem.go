@@ -94,6 +94,9 @@ func (s *slashAttackSystem) work() {
 			renderingSystem.addShape(ps.pivoterShape)
 			pivotingSystem.addPivoter(ps)
 
+			ws := weaponSprite{ps.pivoterShape, &ps.animationCount}
+			weaponRenderingSystem.addWeaponSprite(&ws)
+
 			bot.onCooldown = true
 			bot.cooldownCount = 0
 			coolDownTimer := time.NewTimer(800 * time.Millisecond).C

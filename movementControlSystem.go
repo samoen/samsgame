@@ -14,10 +14,6 @@ type moveSpeed struct {
 	currentSpeed int
 }
 
-// type rectangle struct {
-// 	rectangle *rectangle
-// }
-
 type playerMovementSystem struct {
 	// events <-chan time.Time
 	bots []*acceleratingEnt

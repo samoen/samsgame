@@ -7,6 +7,7 @@ func initEntities() {
 	collideSystem.addEnt(accelplayer)
 	renderingSystem.addShape(accelplayer.rect.shape)
 	renderingSystem.CenterOn = accelplayer.rect
+	weaponRenderingSystem.CenterOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.addSlasher(playerSlasher)
 	// pivotingSystem.addSlashee(accelplayer.rect.shape)

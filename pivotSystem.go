@@ -7,7 +7,6 @@ import (
 type pivotingShape struct {
 	pivoterShape   *shape
 	pivotPoint     *rectangle
-	startangle     float64
 	animationCount float64
 	animating      bool
 	doneAnimating  bool
@@ -98,7 +97,7 @@ func (p *pivotSystem) work() {
 		midPlayer.y += bot.pivotPoint.dimens.height / 2
 
 		for i := 0; i < len(bot.pivoterShape.lines); i++ {
-			rotLine := newLinePolar(midPlayer, 50, bot.animationCount+bot.startangle)
+			rotLine := newLinePolar(midPlayer, 50, bot.animationCount)
 			bot.pivoterShape.lines[i] = rotLine
 		}
 
