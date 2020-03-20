@@ -46,7 +46,9 @@ func (w *weaponRenderSystem) work(s *ebiten.Image) {
 		point := wep.weaponShape.lines[0]
 		point.p1.x += center.x
 		point.p1.y += center.y
-		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2) + 0.2)
+		ew, _ := swordImage.Size()
+		wepOps.GeoM.Translate(-float64(ew)/2, 0)
+		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
 		wepOps.GeoM.Translate(float64(point.p1.x), float64(point.p1.y))
 		s.DrawImage(swordImage, wepOps)
 	}
