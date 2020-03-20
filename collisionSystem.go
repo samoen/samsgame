@@ -23,7 +23,7 @@ func newControlledEntity() *acceleratingEnt {
 	c := &acceleratingEnt{
 		newRectangle(
 			location{1, 1},
-			dimens{20, 20},
+			dimens{20, 40},
 		),
 		momentum{},
 		0.4,

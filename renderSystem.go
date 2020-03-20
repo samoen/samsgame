@@ -7,42 +7,14 @@ import (
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
-// const (
-// 	tilescreenWidth = 256
-// 	tileSize = 16
-// 	tileXNum = 25
-// 	xNum     = tilescreenWidth / tileSize
-// )
-// var tilesImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
-// var img, _, _ = image.Decode(bytes.NewReader(images.Tiles_png))
-
 var renderingSystem = newRenderSystem()
 var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
 var bgOps = &ebiten.DrawImageOptions{}
 
 func init() {
-	// bgOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(bgSizex), float64(mapBounds.dimens.height)/float64(sgsizey))
-	// bgOps.GeoM.Scale(5, 5)
 	bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
 }
-
-// func initRenderSystem() {
-// bgImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-// bgSizex, sgsizey := bgImage.Size()
-// bgOps := &ebiten.DrawImageOptions{}
-// bgOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(bgSizex), float64(mapBounds.dimens.height)/float64(sgsizey))
-// bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
-
-// pImage, _, _ := ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-// pSizex, pSizey := pImage.Size()
-// pOps := &ebiten.DrawImageOptions{}
-// pOps.GeoM.Scale(float64(player.width)/float64(pSizex), float64(player.height)/float64(pSizey))
-// }
-
-// type deleter struct{
-// 	shapeToDelete *shape
-// }
 
 func newRenderSystem() renderSystem {
 	r := renderSystem{}
@@ -72,26 +44,6 @@ func (r *renderSystem) addShape(s *shape) {
 	})
 }
 func (r *renderSystem) work(s *ebiten.Image) {
-
-	// tileOps := &ebiten.DrawImageOptions{}
-	// tileOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
-	// tileOps.GeoM.Translate(float64(-r.CenterOn.location.x), float64(-r.CenterOn.location.y))
-	// tileOps.GeoM.Translate(float64(-r.CenterOn.dimens.width/2), float64(-r.CenterOn.dimens.height/2))
-	// for _, l := range layers {
-	// 	for i, t := range l {
-	// 		inTOps := *tileOps
-	// 		inTOps.GeoM.Translate(float64((i%xNum)*tileSize), float64((i/xNum)*tileSize))
-
-	// 		// tileOps.GeoM.Scale(2, 2)
-	// 		// tileOps.GeoM.Scale(float64(mapBounds.dimens.width)/float64(tileImSizex), float64(mapBounds.dimens.height)/float64(tileImSizey))
-
-	// 		sx := (t % tileXNum) * tileSize
-	// 		sy := (t / tileXNum) * tileSize
-	// 		subImage := tilesImage.SubImage(image.Rect(sx, sy, sx+tileSize, sy+tileSize)).(*ebiten.Image)
-	// 		s.DrawImage(subImage, &inTOps)
-	// 	}
-	// }
-
 	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
@@ -124,14 +76,4 @@ func (r *renderSystem) work(s *ebiten.Image) {
 			samDrawLine(l)
 		}
 	}
-
-	// newops := *bgOps
-	// newops.GeoM.Translate(float64(-player.rectangle.location.x), float64(-player.rectangle.location.y))
-	// newops.GeoM.Translate(float64(-player.rectangle.dimens.width/2), float64(-player.rectangle.dimens.height/2))
-	// screen.DrawImage(bgImage, &newops)
-
-	// newPOps := *pOps
-	// newPOps.GeoM.Translate(float64((screenWidth/2)-(player.w/2)), float64((screenHeight/2)-(player.h/2)))
-	// screen.DrawImage(pImage, &newPOps)
-
 }

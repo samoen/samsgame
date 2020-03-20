@@ -88,8 +88,8 @@ func (s *slashAttackSystem) work() {
 
 			renderingSystem.addShape(ps.pivoterShape)
 			pivotingSystem.addPivoter(ps)
-
-			ws := weaponSprite{ps.pivoterShape, &ps.animationCount, bot.ent.rect, swordImage}
+			bs := playerSprite{bot.ent.rect, swordImage}
+			ws := weaponSprite{ps.pivoterShape, &ps.animationCount, bs}
 			weaponRenderingSystem.addWeaponSprite(&ws)
 
 			bot.onCooldown = true
