@@ -10,15 +10,41 @@ import (
 type weaponSprite struct {
 	weaponShape *shape
 	angle       *float64
+	drawPoint   *rectangle
+	sprite      *ebiten.Image
+}
+
+type playerSprite struct {
+	playerRect *rectangle
+	sprite     *ebiten.Image
+}
+
+var playerSprites []*playerSprite
+
+func addPlayerSprite(ws *playerSprite) {
+	playerSprites = append(playerSprites, ws)
+	ws.playerRect.shape.removals = append(ws.playerRect.shape.removals, func() {
+		for i, renderable := range playerSprites {
+			if ws.playerRect.shape == renderable.playerRect.shape {
+				if i < len(playerSprites)-1 {
+					copy(playerSprites[i:], playerSprites[i+1:])
+				}
+				playerSprites[len(playerSprites)-1] = nil
+				playerSprites = playerSprites[:len(playerSprites)-1]
+				break
+			}
+		}
+	})
 }
 
 type weaponRenderSystem struct {
-	weapons  []*weaponSprite
-	CenterOn *rectangle
+	weapons []*weaponSprite
 }
 
 var weaponRenderingSystem = weaponRenderSystem{}
 var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/sword.png", ebiten.FilterDefault)
+var playerStandImage, _, _ = ebitenutil.NewImageFromFile("assets/playerstand.png", ebiten.FilterDefault)
+var playerSpriteHitboxExceed = 10
 
 func (w *weaponRenderSystem) addWeaponSprite(s *weaponSprite) {
 	w.weapons = append(w.weapons, s)
@@ -26,6 +52,7 @@ func (w *weaponRenderSystem) addWeaponSprite(s *weaponSprite) {
 		w.removeWeaponSprite(s.weaponShape)
 	})
 }
+
 func (w *weaponRenderSystem) removeWeaponSprite(s *shape) {
 	for i, renderable := range w.weapons {
 		if s == renderable.weaponShape {
@@ -39,17 +66,27 @@ func (w *weaponRenderSystem) removeWeaponSprite(s *shape) {
 	}
 }
 
+var centerOn *rectangle
+
 func (w *weaponRenderSystem) work(s *ebiten.Image) {
-	center := location{(screenWidth / 2) - w.CenterOn.location.x - (w.CenterOn.dimens.width / 2), (screenHeight / 2) - w.CenterOn.location.y - (w.CenterOn.dimens.height / 2)}
+	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
+	for _, ps := range playerSprites {
+		pOps := &ebiten.DrawImageOptions{}
+
+		pOps.GeoM.Translate(float64(ps.playerRect.location.x+center.x-playerSpriteHitboxExceed), float64(ps.playerRect.location.y+center.y-(2*playerSpriteHitboxExceed)))
+		s.DrawImage(ps.sprite, pOps)
+	}
 	for _, wep := range w.weapons {
+		midPlayer := wep.drawPoint.location
+		midPlayer.x += wep.drawPoint.dimens.width / 2
+		midPlayer.y += wep.drawPoint.dimens.height / 2
+		midPlayer.x += center.x
+		midPlayer.y += center.y
+		ew, _ := wep.sprite.Size()
 		wepOps := &ebiten.DrawImageOptions{}
-		point := wep.weaponShape.lines[0]
-		point.p1.x += center.x
-		point.p1.y += center.y
-		ew, _ := swordImage.Size()
 		wepOps.GeoM.Translate(-float64(ew)/2, 0)
 		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
-		wepOps.GeoM.Translate(float64(point.p1.x), float64(point.p1.y))
-		s.DrawImage(swordImage, wepOps)
+		wepOps.GeoM.Translate(float64(midPlayer.x), float64(midPlayer.y))
+		s.DrawImage(wep.sprite, wepOps)
 	}
 }

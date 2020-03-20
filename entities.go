@@ -3,16 +3,19 @@ package main
 const mapBoundWidth = 5000
 
 func initEntities() {
-
 	accelplayer := newControlledEntity()
 	playerMoveSystem.addPlayer(accelplayer)
 	collideSystem.addEnt(accelplayer)
 	renderingSystem.addShape(accelplayer.rect.shape)
-	renderingSystem.CenterOn = accelplayer.rect
-	weaponRenderingSystem.CenterOn = accelplayer.rect
+	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.addSlasher(playerSlasher)
 	// pivotingSystem.addSlashee(accelplayer.rect.shape)
+
+	ps := &playerSprite{accelplayer.rect, playerStandImage}
+	addPlayerSprite(ps)
+
+	// weaponRenderingSystem.addWeaponSprite(&ws)
 
 	for i := 1; i < 20; i++ {
 		moveEnemy := newControlledEntity()
@@ -23,6 +26,8 @@ func initEntities() {
 		renderingSystem.addShape(moveEnemy.rect.shape)
 		collideSystem.addEnt(moveEnemy)
 		botsMoveSystem.addEnemy(moveEnemy)
+		es := &playerSprite{moveEnemy.rect, playerStandImage}
+		addPlayerSprite(es)
 	}
 
 	mapBounds := newRectangle(

@@ -50,8 +50,7 @@ func newRenderSystem() renderSystem {
 }
 
 type renderSystem struct {
-	shapes   []*shape
-	CenterOn *rectangle
+	shapes []*shape
 }
 
 func (r *renderSystem) removeShape(s *shape) {
@@ -93,7 +92,7 @@ func (r *renderSystem) work(s *ebiten.Image) {
 	// 	}
 	// }
 
-	center := location{(screenWidth / 2) - r.CenterOn.location.x - (r.CenterOn.dimens.width / 2), (screenHeight / 2) - r.CenterOn.location.y - (r.CenterOn.dimens.height / 2)}
+	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
 		op.ColorM.Scale(0, 230, 64, 1)

@@ -39,9 +39,8 @@ func main() {
 		}
 
 		myBgOps := *bgOps
-
-		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.location.x), float64(-renderingSystem.CenterOn.location.y))
-		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.dimens.width/2), float64(-renderingSystem.CenterOn.dimens.height/2))
+		myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
+		myBgOps.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
 
 		tilesAcross := mapBoundWidth / bgTileWidth
 
@@ -54,6 +53,7 @@ func main() {
 		}
 
 		weaponRenderingSystem.work(screen)
+
 		renderingSystem.work(screen)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
