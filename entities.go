@@ -6,6 +6,7 @@ func initEntities() {
 	accelplayer := newControlledEntity()
 	playerMoveSystem.addPlayer(accelplayer)
 	collideSystem.addEnt(accelplayer)
+	collideSystem.addSolid(accelplayer.rect.shape)
 	renderingSystem.addShape(accelplayer.rect.shape)
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
@@ -17,7 +18,7 @@ func initEntities() {
 
 	// weaponRenderingSystem.addWeaponSprite(&ws)
 
-	for i := 1; i < 20; i++ {
+	for i := 1; i < 30; i++ {
 		moveEnemy := newControlledEntity()
 		moveEnemy.rect.refreshShape(location{i * 50, i * 30})
 		enemySlasher := newSlasher(moveEnemy)
@@ -25,6 +26,7 @@ func initEntities() {
 		pivotingSystem.addSlashee(moveEnemy.rect.shape)
 		renderingSystem.addShape(moveEnemy.rect.shape)
 		collideSystem.addEnt(moveEnemy)
+		collideSystem.addSolid(moveEnemy.rect.shape)
 		botsMoveSystem.addEnemy(moveEnemy)
 		es := &playerSprite{moveEnemy.rect, playerStandImage}
 		addPlayerSprite(es)

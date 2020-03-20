@@ -11,8 +11,6 @@ type weaponSprite struct {
 	weaponShape *shape
 	angle       *float64
 	basicSprite playerSprite
-	// drawPoint   *rectangle
-	// sprite      *ebiten.Image
 }
 
 type playerSprite struct {

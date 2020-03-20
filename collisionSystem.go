@@ -68,88 +68,95 @@ func (c *collisionSystem) removeSolid(s *shape) {
 			}
 			c.solids[len(c.solids)-1] = nil
 			c.solids = c.solids[:len(c.solids)-1]
+			break
 		}
 	}
 }
 
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
+	s.removals = append(s.removals, func() {
+		c.removeSolid(s)
+	})
+}
+
+func (p *acceleratingEnt) drive() {
+	correctedAgilityX := p.agility
+	speedLimitx := float64(p.moveSpeed.currentSpeed)
+	if p.directions.down || p.directions.up {
+		correctedAgilityX = p.agility * 0.707
+	}
+	correctedAgilityY := p.agility
+	speedLimity := float64(p.moveSpeed.currentSpeed)
+	if p.directions.right || p.directions.left {
+		correctedAgilityY = p.agility * 0.707
+	}
+
+	movedx := false
+	if p.directions.left {
+		movedx = true
+		desired := p.moment.xaxis - correctedAgilityX
+		if desired > -speedLimitx {
+			p.moment.xaxis = desired
+		} else {
+			p.moment.xaxis = -speedLimitx
+		}
+	}
+	if p.directions.right {
+		movedx = true
+		desired := p.moment.xaxis + correctedAgilityX
+		if desired < speedLimitx {
+			p.moment.xaxis = desired
+		} else {
+			p.moment.xaxis = speedLimitx
+		}
+	}
+	movedy := false
+	if p.directions.down {
+		movedy = true
+		desired := p.moment.yaxis + correctedAgilityY
+		if desired < speedLimity {
+			p.moment.yaxis = desired
+		} else {
+			p.moment.yaxis = speedLimity
+		}
+	}
+	if p.directions.up {
+		movedy = true
+		desired := p.moment.yaxis - correctedAgilityY
+		if desired > -speedLimity {
+			p.moment.yaxis = desired
+		} else {
+			p.moment.yaxis = -speedLimity
+		}
+	}
+
+	if !movedx {
+		if p.moment.xaxis > 0 {
+			p.moment.xaxis -= p.tracktion
+		}
+		if p.moment.xaxis < 0 {
+			p.moment.xaxis += p.tracktion
+		}
+	}
+	if !movedy {
+		if p.moment.yaxis > 0 {
+			p.moment.yaxis -= p.tracktion
+		}
+		if p.moment.yaxis < 0 {
+			p.moment.yaxis += p.tracktion
+		}
+	}
+
+	if math.Sqrt(math.Pow(p.moment.xaxis, 2)+math.Pow(p.moment.yaxis, 2)) > speedLimitx {
+		p.moment.xaxis = p.moment.xaxis * 0.707
+		p.moment.yaxis = p.moment.yaxis * 0.707
+	}
 }
 
 func (c *collisionSystem) work() {
-	for i, p := range c.movers {
-		correctedAgilityX := p.agility
-		speedLimitx := float64(p.moveSpeed.currentSpeed)
-		if p.directions.down || p.directions.up {
-			correctedAgilityX = p.agility * 0.707
-		}
-		correctedAgilityY := p.agility
-		speedLimity := float64(p.moveSpeed.currentSpeed)
-		if p.directions.right || p.directions.left {
-			correctedAgilityY = p.agility * 0.707
-		}
-
-		movedx := false
-		if p.directions.left {
-			movedx = true
-			desired := p.moment.xaxis - correctedAgilityX
-			if desired > -speedLimitx {
-				p.moment.xaxis = desired
-			} else {
-				p.moment.xaxis = -speedLimitx
-			}
-		}
-		if p.directions.right {
-			movedx = true
-			desired := p.moment.xaxis + correctedAgilityX
-			if desired < speedLimitx {
-				p.moment.xaxis = desired
-			} else {
-				p.moment.xaxis = speedLimitx
-			}
-		}
-		movedy := false
-		if p.directions.down {
-			movedy = true
-			desired := p.moment.yaxis + correctedAgilityY
-			if desired < speedLimity {
-				p.moment.yaxis = desired
-			} else {
-				p.moment.yaxis = speedLimity
-			}
-		}
-		if p.directions.up {
-			movedy = true
-			desired := p.moment.yaxis - correctedAgilityY
-			if desired > -speedLimity {
-				p.moment.yaxis = desired
-			} else {
-				p.moment.yaxis = -speedLimity
-			}
-		}
-
-		if !movedx {
-			if p.moment.xaxis > 0 {
-				p.moment.xaxis -= p.tracktion
-			}
-			if p.moment.xaxis < 0 {
-				p.moment.xaxis += p.tracktion
-			}
-		}
-		if !movedy {
-			if p.moment.yaxis > 0 {
-				p.moment.yaxis -= p.tracktion
-			}
-			if p.moment.yaxis < 0 {
-				p.moment.yaxis += p.tracktion
-			}
-		}
-
-		if math.Sqrt(math.Pow(p.moment.xaxis, 2)+math.Pow(p.moment.yaxis, 2)) > speedLimitx {
-			p.moment.xaxis = p.moment.xaxis * 0.707
-			p.moment.yaxis = p.moment.yaxis * 0.707
-		}
-
+	for _, p := range c.movers {
+		p.drive()
 		unitmovex := 1
 		if p.moment.xaxis < 0 {
 			unitmovex = -1
@@ -163,18 +170,6 @@ func (c *collisionSystem) work() {
 		absSpdy := math.Abs(p.moment.yaxis)
 		maxSpd := math.Max(absSpdx, absSpdy)
 
-		var totalSolids []*shape
-		for _, sol := range c.solids {
-			totalSolids = append(totalSolids, sol)
-		}
-		for j, movingSolid := range c.movers {
-
-			if i == j {
-				continue
-			}
-			totalSolids = append(totalSolids, movingSolid.rect.shape)
-		}
-
 		for i := 1; i < int(maxSpd+1); i++ {
 			xcollided := false
 			ycollided := false
@@ -183,7 +178,7 @@ func (c *collisionSystem) work() {
 				checklocx := p.rect.location
 				checklocx.x += unitmovex
 				checkRect := newRectangle(checklocx, p.rect.dimens)
-				if !checkRect.shape.normalcollides(totalSolids) {
+				if !normalcollides(*checkRect.shape, c.solids, p.rect.shape) {
 					p.rect.refreshShape(checklocx)
 				} else {
 					p.moment.xaxis = 0
@@ -198,7 +193,7 @@ func (c *collisionSystem) work() {
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)
-				if !checkrecty.shape.normalcollides(totalSolids) {
+				if !normalcollides(*checkrecty.shape, c.solids, p.rect.shape) {
 					p.rect.refreshShape(checklocy)
 				} else {
 					p.moment.yaxis = 0
