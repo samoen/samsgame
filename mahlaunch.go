@@ -16,6 +16,7 @@ import (
 
 const screenWidth = 1400
 const screenHeight = 1000
+const bgTileWidth = 2500
 
 func main() {
 
@@ -36,13 +37,22 @@ func main() {
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
-		// myBgOps := ebiten.DrawImageOptions{}
+
 		myBgOps := *bgOps
 
-		// myBgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
 		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.location.x), float64(-renderingSystem.CenterOn.location.y))
 		myBgOps.GeoM.Translate(float64(-renderingSystem.CenterOn.dimens.width/2), float64(-renderingSystem.CenterOn.dimens.height/2))
-		screen.DrawImage(bgImage, &myBgOps)
+
+		tilesAcross := mapBoundWidth / bgTileWidth
+
+		for i := 0; i < tilesAcross; i++ {
+			for j := 0; j < tilesAcross; j++ {
+				tileOps := myBgOps
+				tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+				screen.DrawImage(bgImage, &tileOps)
+			}
+		}
+
 		weaponRenderingSystem.work(screen)
 		renderingSystem.work(screen)
 

@@ -1,5 +1,7 @@
 package main
 
+const mapBoundWidth = 5000
+
 func initEntities() {
 
 	accelplayer := newControlledEntity()
@@ -25,7 +27,7 @@ func initEntities() {
 
 	mapBounds := newRectangle(
 		location{0, 0},
-		dimens{5000, 5000},
+		dimens{mapBoundWidth, mapBoundWidth},
 	)
 	renderingSystem.addShape(mapBounds.shape)
 	collideSystem.addSolid(mapBounds.shape)
