@@ -50,12 +50,6 @@ func (s *slashAttackSystem) removeSlasher(p *shape) {
 	}
 }
 
-func newLinePolar(loc location, length int, angle float64) line {
-	xpos := int(float64(length)*math.Cos(angle)) + loc.x
-	ypos := int(float64(length)*math.Sin(angle)) + loc.y
-	return line{loc, location{xpos, ypos}}
-}
-
 func (s *shape) sysPurge() {
 	for _, rem := range s.removals {
 		rem()

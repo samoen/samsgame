@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"time"
 )
 
@@ -12,20 +13,29 @@ type pivotingShape struct {
 	doneAnimating  bool
 }
 
+func (p *pivotingShape) makeAxe(heading float64) {
+	p.animationCount -= heading
+	midPlayer := p.pivotPoint.location
+	midPlayer.x += p.pivotPoint.dimens.width / 2
+	midPlayer.y += p.pivotPoint.dimens.height / 2
+	rotLine := newLinePolar(midPlayer, swordLength, p.animationCount)
+	crossLine := newLinePolar(rotLine.p2, swordLength/3, p.animationCount+math.Pi/2)
+	frontCrossLine := newLinePolar(rotLine.p2, swordLength/3, p.animationCount-math.Pi/2)
+	p.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
+}
+
 func newPivotingShape(r *rectangle, heading float64) *pivotingShape {
-	slashLine := newShape()
-	slashLine.lines = []line{line{}}
 	p := &pivotingShape{}
-	p.pivoterShape = slashLine
 	p.pivotPoint = r
 	p.animationCount = heading + 1.6
+	p.pivoterShape = newShape()
+	p.makeAxe(0)
 
 	for i := 1; i < 7; i++ {
-		p.nextLine()
 		if !pivotingSystem.checkBlocker(p.pivoterShape) {
 			break
 		} else {
-			p.animationCount -= 0.5
+			p.makeAxe(0.5)
 		}
 	}
 
@@ -33,7 +43,7 @@ func newPivotingShape(r *rectangle, heading float64) *pivotingShape {
 }
 
 var pivotingSystem = pivotSystem{}
-var swordLength = 60
+var swordLength = 45
 
 type pivotSystem struct {
 	pivoters []*pivotingShape
@@ -103,17 +113,25 @@ func (p *pivotSystem) checkBlocker(sh *shape) bool {
 	}
 	return false
 }
+func newLinePolar(loc location, length int, angle float64) line {
+	xpos := int(float64(length)*math.Cos(angle)) + loc.x
+	ypos := int(float64(length)*math.Sin(angle)) + loc.y
+	return line{loc, location{xpos, ypos}}
+}
 
-func (bot *pivotingShape) nextLine() {
+func rotateAround(center location, point location, angle float64) location {
+	result := location{}
 
-	midPlayer := bot.pivotPoint.location
-	midPlayer.x += bot.pivotPoint.dimens.width / 2
-	midPlayer.y += bot.pivotPoint.dimens.height / 2
+	rotatedX := math.Cos(angle)*float64(point.x-center.x) - math.Sin(angle)*float64(point.y-center.y) + float64(center.x)
+	rotatedY := math.Sin(angle)*float64(point.x-center.x) + math.Cos(angle)*float64(point.y-center.y) + float64(center.y)
+	result.x = int(rotatedX)
+	result.y = int(rotatedY)
 
-	for i := 0; i < len(bot.pivoterShape.lines); i++ {
-		rotLine := newLinePolar(midPlayer, swordLength, bot.animationCount)
-		bot.pivoterShape.lines[i] = rotLine
-	}
+	// var rotat  Math.sin(angle) * (point.x - center.x) + Math.cos(angle) * (point.y - center.y) + center.y;
+	// result.x = int(float64(around.x) + ((math.Cos(angle) - math.Sin(angle)) * float64(target.x-around.x)))
+	// result.y = int(float64(around.y) + ((math.Cos(angle) + math.Sin(angle)) * float64(target.y-around.y)))
+
+	return result
 }
 
 func (p *pivotSystem) work() {
@@ -126,8 +144,7 @@ func (p *pivotSystem) work() {
 			continue
 		}
 
-		bot.animationCount -= 0.16
-		bot.nextLine()
+		bot.makeAxe(0.16)
 		blocked := p.checkBlocker(bot.pivoterShape)
 		if blocked {
 			toRemove = append(toRemove, bot.pivoterShape)
@@ -154,7 +171,6 @@ func (p *pivotSystem) work() {
 				}
 			}
 		}
-
 	}
 	for _, removeMe := range toRemove {
 		removeMe.sysPurge()
