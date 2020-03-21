@@ -31,8 +31,10 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
+type sysIndex int
+
 const (
-	hitBoxRenderable int = iota
+	hitBoxRenderable sysIndex = iota
 	spriteRenderable
 	moveCollider
 	solidCollider
@@ -103,9 +105,8 @@ func eliminate(s *shape) {
 }
 
 type shape struct {
-	lines []line
-	// removals []func()
-	systems []int
+	lines   []line
+	systems []sysIndex
 }
 
 func newShape() *shape {

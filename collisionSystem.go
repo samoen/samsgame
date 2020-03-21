@@ -73,9 +73,6 @@ func (c *collisionSystem) removeSolid(s *shape) {
 
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
-	// s.removals = append(s.removals, func() {
-	// 	c.removeSolid(s)
-	// })
 	s.systems = append(s.systems, solidCollider)
 }
 

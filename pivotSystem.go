@@ -30,15 +30,6 @@ func newPivotingShape(r *rectangle, heading float64) *pivotingShape {
 	p.animationCount = heading + 1.6
 	p.pivoterShape = newShape()
 	p.makeAxe(0)
-
-	for i := 1; i < 7; i++ {
-		if !pivotingSystem.checkBlocker(p.pivoterShape) {
-			break
-		} else {
-			p.makeAxe(0.5)
-		}
-	}
-
 	return p
 }
 
@@ -68,9 +59,18 @@ func (p *pivotSystem) removeSlashee(sh *shape) {
 		}
 	}
 }
+
 func (p *pivotSystem) addPivoter(s *pivotingShape) {
 	p.pivoters = append(p.pivoters, s)
 	s.pivoterShape.systems = append(s.pivoterShape.systems, pivotingHitbox)
+
+	for i := 1; i < 7; i++ {
+		if !pivotingSystem.checkBlocker(s.pivoterShape) {
+			break
+		} else {
+			s.makeAxe(0.5)
+		}
+	}
 
 	s.animating = true
 	animChan := time.NewTimer(310 * time.Millisecond).C
@@ -81,10 +81,12 @@ func (p *pivotSystem) addPivoter(s *pivotingShape) {
 		}
 	}()
 }
+
 func (p *pivotSystem) addBlocker(b *shape) {
 	p.blockers = append(p.blockers, b)
 	b.systems = append(b.systems, weaponBlocker)
 }
+
 func (p *pivotSystem) removePivoter(sh *shape) {
 	for i, subslasher := range p.pivoters {
 		if sh == subslasher.pivoterShape {
