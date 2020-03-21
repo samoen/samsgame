@@ -28,7 +28,7 @@ func main() {
 			return errors.New("game ended by player")
 		}
 
-		playerMoveSystem.work()
+		updatePlayerControl()
 		botsMoveSystem.work()
 		collideSystem.work()
 		slashSystem.work()

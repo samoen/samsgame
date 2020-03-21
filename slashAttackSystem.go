@@ -27,9 +27,7 @@ type slashAttackSystem struct {
 
 func (s *slashAttackSystem) addSlasher(b *slasher) {
 	s.slashers = append(s.slashers, b)
-	b.ent.rect.shape.removals = append(b.ent.rect.shape.removals, func() {
-		s.removeSlasher(b.ent.rect.shape)
-	})
+	b.ent.rect.shape.systems = append(b.ent.rect.shape.systems, abilityActivator)
 }
 
 func newSlashAttackSystem() slashAttackSystem {
@@ -50,19 +48,9 @@ func (s *slashAttackSystem) removeSlasher(p *shape) {
 	}
 }
 
-func (s *shape) sysPurge() {
-	for _, rem := range s.removals {
-		rem()
-	}
-}
-
 func (s *slashAttackSystem) work() {
-	// select {
-	// case <-s.events:
-	// toRemove := []*rectangle{}
 	for _, bot := range s.slashers {
 		bot := bot
-
 		if bot.ent.directions.down ||
 			bot.ent.directions.up ||
 			bot.ent.directions.right ||
@@ -103,19 +91,4 @@ func (s *slashAttackSystem) work() {
 			}()
 		}
 	}
-	// default:
-	// }
 }
-
-// func removeFromSlice(slice []*interface{}, p *interface{}) []*interface{} {
-// 	for i, renderable := range slice {
-// 		if p == renderable {
-// 			if i < len(slice)-1 {
-// 				copy(slice[i:], slice[i+1:])
-// 			}
-// 			slice[len(slice)-1] = nil
-// 			return slice[:len(slice)-1]
-// 		}
-// 	}
-// 	return slice
-// }

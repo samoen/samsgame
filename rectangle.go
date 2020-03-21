@@ -31,9 +31,81 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
+const (
+	hitBoxRenderable int = iota
+	spriteRenderable
+	moveCollider
+	solidCollider
+	enemyControlled
+	playerControlled
+	abilityActivator
+	hurtable
+	rotatingSprite
+	weaponBlocker
+	pivotingHitbox
+)
+
+func eliminate(s *shape) {
+	for _, sys := range s.systems {
+		switch sys {
+		case spriteRenderable:
+			for i, renderable := range playerSprites {
+				if s == renderable.playerRect.shape {
+					if i < len(playerSprites)-1 {
+						copy(playerSprites[i:], playerSprites[i+1:])
+					}
+					playerSprites[len(playerSprites)-1] = nil
+					playerSprites = playerSprites[:len(playerSprites)-1]
+					break
+				}
+			}
+		case hitBoxRenderable:
+			renderingSystem.removeShape(s)
+		case moveCollider:
+			collideSystem.removeMover(s)
+		case solidCollider:
+			collideSystem.removeSolid(s)
+		case enemyControlled:
+			botsMoveSystem.removeEnemyMover(s)
+		case abilityActivator:
+			slashSystem.removeSlasher(s)
+		case hurtable:
+			pivotingSystem.removeSlashee(s)
+		case pivotingHitbox:
+			pivotingSystem.removePivoter(s)
+		case rotatingSprite:
+			weaponRenderingSystem.removeWeaponSprite(s)
+		case playerControlled:
+			for i, renderable := range playerControllables {
+				if s == renderable.rect.shape {
+					if i < len(playerControllables)-1 {
+						copy(playerControllables[i:], playerControllables[i+1:])
+					}
+					playerControllables[len(playerControllables)-1] = nil
+					playerControllables = playerControllables[:len(playerControllables)-1]
+					break
+				}
+			}
+		case weaponBlocker:
+			for i, renderable := range pivotingSystem.blockers {
+				if s == renderable {
+					if i < len(pivotingSystem.blockers)-1 {
+						copy(pivotingSystem.blockers[i:], pivotingSystem.blockers[i+1:])
+					}
+					pivotingSystem.blockers[len(pivotingSystem.blockers)-1] = nil
+					pivotingSystem.blockers = pivotingSystem.blockers[:len(pivotingSystem.blockers)-1]
+					break
+				}
+			}
+		}
+
+	}
+}
+
 type shape struct {
-	lines    []line
-	removals []func()
+	lines []line
+	// removals []func()
+	systems []int
 }
 
 func newShape() *shape {

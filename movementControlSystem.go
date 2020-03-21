@@ -4,8 +4,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-var playerMoveSystem = newPlayerMovementSystem()
-
 type directions struct {
 	right, down, left, up bool
 }
@@ -14,25 +12,17 @@ type moveSpeed struct {
 	currentSpeed int
 }
 
-type playerMovementSystem struct {
-	// events <-chan time.Time
-	bots []*acceleratingEnt
+var playerControllables []*acceleratingEnt
+
+func addPlayerControlled(m *acceleratingEnt) {
+	playerControllables = append(playerControllables, m)
+	m.rect.shape.systems = append(m.rect.shape.systems, playerControlled)
 }
 
-func newPlayerMovementSystem() playerMovementSystem {
-	b := playerMovementSystem{}
-	// b.events = time.NewTicker(time.Duration(50) * time.Millisecond).C
-	return b
-}
-
-func (b *playerMovementSystem) addPlayer(m *acceleratingEnt) {
-	b.bots = append(b.bots, m)
-}
-
-func (b *playerMovementSystem) work() {
+func updatePlayerControl() {
 	// select {
 	// case <-b.events:
-	for _, bot := range b.bots {
+	for _, bot := range playerControllables {
 		bot.directions = directions{
 			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
 			ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown),

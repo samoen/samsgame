@@ -22,18 +22,7 @@ var playerSprites []*playerSprite
 
 func addPlayerSprite(ws *playerSprite) {
 	playerSprites = append(playerSprites, ws)
-	ws.playerRect.shape.removals = append(ws.playerRect.shape.removals, func() {
-		for i, renderable := range playerSprites {
-			if ws.playerRect.shape == renderable.playerRect.shape {
-				if i < len(playerSprites)-1 {
-					copy(playerSprites[i:], playerSprites[i+1:])
-				}
-				playerSprites[len(playerSprites)-1] = nil
-				playerSprites = playerSprites[:len(playerSprites)-1]
-				break
-			}
-		}
-	})
+	ws.playerRect.shape.systems = append(ws.playerRect.shape.systems, spriteRenderable)
 }
 
 type weaponRenderSystem struct {
@@ -47,9 +36,7 @@ var playerSpriteHitboxExceed = 10
 
 func (w *weaponRenderSystem) addWeaponSprite(s *weaponSprite) {
 	w.weapons = append(w.weapons, s)
-	s.weaponShape.removals = append(s.weaponShape.removals, func() {
-		w.removeWeaponSprite(s.weaponShape)
-	})
+	s.weaponShape.systems = append(s.weaponShape.systems, rotatingSprite)
 }
 
 func (w *weaponRenderSystem) removeWeaponSprite(s *shape) {

@@ -20,9 +20,7 @@ func newEnemyMovementSystem() enemyMovementSystem {
 
 func (e *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
 	e.movers = append(e.movers, m)
-	m.rect.shape.removals = append(m.rect.shape.removals, func() {
-		e.removeEnemyMover(m.rect.shape)
-	})
+	m.rect.shape.systems = append(m.rect.shape.systems, enemyControlled)
 }
 
 func (e *enemyMovementSystem) work() {

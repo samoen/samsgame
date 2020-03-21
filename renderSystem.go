@@ -39,10 +39,9 @@ func (r *renderSystem) removeShape(s *shape) {
 
 func (r *renderSystem) addShape(s *shape) {
 	r.shapes = append(r.shapes, s)
-	s.removals = append(s.removals, func() {
-		r.removeShape(s)
-	})
+	s.systems = append(s.systems, hitBoxRenderable)
 }
+
 func (r *renderSystem) work(s *ebiten.Image) {
 	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
 	samDrawLine := func(l line) {

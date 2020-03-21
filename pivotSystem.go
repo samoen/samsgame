@@ -53,10 +53,7 @@ type pivotSystem struct {
 
 func (p *pivotSystem) addSlashee(s *shape) {
 	p.slashees = append(p.slashees, s)
-	s.removals = append(s.removals, func() {
-		// s.removeSlasher(b.ent.rect.shape)
-		p.removeSlashee(s)
-	})
+	s.systems = append(s.systems, hurtable)
 }
 
 func (p *pivotSystem) removeSlashee(sh *shape) {
@@ -73,9 +70,8 @@ func (p *pivotSystem) removeSlashee(sh *shape) {
 }
 func (p *pivotSystem) addPivoter(s *pivotingShape) {
 	p.pivoters = append(p.pivoters, s)
-	s.pivoterShape.removals = append(s.pivoterShape.removals, func() {
-		p.removePivoter(s.pivoterShape)
-	})
+	s.pivoterShape.systems = append(s.pivoterShape.systems, pivotingHitbox)
+
 	s.animating = true
 	animChan := time.NewTimer(310 * time.Millisecond).C
 	go func() {
@@ -87,6 +83,7 @@ func (p *pivotSystem) addPivoter(s *pivotingShape) {
 }
 func (p *pivotSystem) addBlocker(b *shape) {
 	p.blockers = append(p.blockers, b)
+	b.systems = append(b.systems, weaponBlocker)
 }
 func (p *pivotSystem) removePivoter(sh *shape) {
 	for i, subslasher := range p.pivoters {
@@ -119,25 +116,18 @@ func newLinePolar(loc location, length int, angle float64) line {
 	return line{loc, location{xpos, ypos}}
 }
 
-func rotateAround(center location, point location, angle float64) location {
-	result := location{}
-
-	rotatedX := math.Cos(angle)*float64(point.x-center.x) - math.Sin(angle)*float64(point.y-center.y) + float64(center.x)
-	rotatedY := math.Sin(angle)*float64(point.x-center.x) + math.Cos(angle)*float64(point.y-center.y) + float64(center.y)
-	result.x = int(rotatedX)
-	result.y = int(rotatedY)
-
-	// var rotat  Math.sin(angle) * (point.x - center.x) + Math.cos(angle) * (point.y - center.y) + center.y;
-	// result.x = int(float64(around.x) + ((math.Cos(angle) - math.Sin(angle)) * float64(target.x-around.x)))
-	// result.y = int(float64(around.y) + ((math.Cos(angle) + math.Sin(angle)) * float64(target.y-around.y)))
-
-	return result
-}
+// func rotateAround(center location, point location, angle float64) location {
+// 	result := location{}
+// 	rotatedX := math.Cos(angle)*float64(point.x-center.x) - math.Sin(angle)*float64(point.y-center.y) + float64(center.x)
+// 	rotatedY := math.Sin(angle)*float64(point.x-center.x) + math.Cos(angle)*float64(point.y-center.y) + float64(center.y)
+// 	result.x = int(rotatedX)
+// 	result.y = int(rotatedY)
+// 	return result
+// }
 
 func (p *pivotSystem) work() {
 	toRemove := []*shape{}
 	for _, bot := range p.pivoters {
-		bot := bot
 
 		if bot.doneAnimating {
 			toRemove = append(toRemove, bot.pivoterShape)
@@ -173,6 +163,6 @@ func (p *pivotSystem) work() {
 		}
 	}
 	for _, removeMe := range toRemove {
-		removeMe.sysPurge()
+		eliminate(removeMe)
 	}
 }

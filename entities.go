@@ -4,7 +4,7 @@ const mapBoundWidth = 5000
 
 func initEntities() {
 	accelplayer := newControlledEntity()
-	playerMoveSystem.addPlayer(accelplayer)
+	addPlayerControlled(accelplayer)
 	collideSystem.addEnt(accelplayer)
 	collideSystem.addSolid(accelplayer.rect.shape)
 	renderingSystem.addShape(accelplayer.rect.shape)
@@ -16,11 +16,9 @@ func initEntities() {
 	ps := &playerSprite{accelplayer.rect, playerStandImage}
 	addPlayerSprite(ps)
 
-	// weaponRenderingSystem.addWeaponSprite(&ws)
-
 	for i := 1; i < 30; i++ {
 		moveEnemy := newControlledEntity()
-		moveEnemy.rect.refreshShape(location{i * 50, i * 30})
+		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
 		enemySlasher := newSlasher(moveEnemy)
 		slashSystem.addSlasher(enemySlasher)
 		pivotingSystem.addSlashee(moveEnemy.rect.shape)

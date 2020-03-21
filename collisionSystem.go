@@ -42,9 +42,7 @@ type collisionSystem struct {
 
 func (c *collisionSystem) addEnt(p *acceleratingEnt) {
 	c.movers = append(c.movers, p)
-	p.rect.shape.removals = append(p.rect.shape.removals, func() {
-		c.removeMover(p.rect.shape)
-	})
+	p.rect.shape.systems = append(p.rect.shape.systems, moveCollider)
 }
 
 func (c *collisionSystem) removeMover(s *shape) {
@@ -75,9 +73,10 @@ func (c *collisionSystem) removeSolid(s *shape) {
 
 func (c *collisionSystem) addSolid(s *shape) {
 	c.solids = append(c.solids, s)
-	s.removals = append(s.removals, func() {
-		c.removeSolid(s)
-	})
+	// s.removals = append(s.removals, func() {
+	// 	c.removeSolid(s)
+	// })
+	s.systems = append(s.systems, solidCollider)
 }
 
 func (p *acceleratingEnt) drive() {
