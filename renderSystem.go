@@ -24,26 +24,13 @@ type renderSystem struct {
 	shapes map[*entityid]*shape
 }
 
-// func (r *renderSystem) removeShape(s *shape) {
-// 	for i, renderable := range r.shapes {
-// 		if s == renderable {
-// 			if i < len(r.shapes)-1 {
-// 				copy(r.shapes[i:], r.shapes[i+1:])
-// 			}
-// 			r.shapes[len(r.shapes)-1] = nil
-// 			r.shapes = r.shapes[:len(r.shapes)-1]
-// 		}
-// 	}
-// }
-
 func (r *renderSystem) addShape(s *shape, id *entityid) {
-	// r.shapes = append(r.shapes, s)
 	r.shapes[id] = s
 	id.systems = append(id.systems, hitBoxRenderable)
 }
 
 func (r *renderSystem) work(s *ebiten.Image) {
-	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
+	center := renderOffset()
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
 		op.ColorM.Scale(0, 230, 64, 1)

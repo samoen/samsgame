@@ -73,7 +73,7 @@ func main() {
 		myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
 		myBgOps.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
 
-		tilesAcross := mapBoundWidth / bgTileWidth
+		tilesAcross := worldWidth / bgTileWidth
 
 		for i := 0; i < tilesAcross; i++ {
 			for j := 0; j < tilesAcross; j++ {

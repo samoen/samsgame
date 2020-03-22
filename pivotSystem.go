@@ -133,7 +133,7 @@ func (p *pivotSystem) work() {
 		} else {
 		foundSlashee:
 			for slasheeid, slashee := range p.slashees {
-				if slashee == bot.pivotPoint.shape {
+				if slasheeid == bot.ownerid {
 					continue foundSlashee
 				}
 				for _, slasheeLine := range slashee.lines {

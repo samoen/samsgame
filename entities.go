@@ -1,6 +1,6 @@
 package main
 
-const mapBoundWidth = 5000
+const worldWidth = 5000
 
 func initEntities() {
 	playerid := &entityid{}
@@ -12,7 +12,7 @@ func initEntities() {
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.addSlasher(playerid, playerSlasher)
-	// pivotingSystem.addSlashee(accelplayer.rect.shape)
+	// pivotingSystem.addSlashee(accelplayer.rect.shape, playerid)
 
 	ps := &playerSprite{accelplayer.rect, playerStandImage}
 	addPlayerSprite(ps, playerid)
@@ -32,14 +32,14 @@ func initEntities() {
 		addPlayerSprite(es, enemyid)
 	}
 
-	mapBoundsID := &entityid{}
-	mapBounds := newRectangle(
+	worldBoundaryID := &entityid{}
+	worldBoundRect := newRectangle(
 		location{0, 0},
-		dimens{mapBoundWidth, mapBoundWidth},
+		dimens{worldWidth, worldWidth},
 	)
-	renderingSystem.addShape(mapBounds.shape, mapBoundsID)
-	collideSystem.addSolid(mapBounds.shape, mapBoundsID)
-	pivotingSystem.addBlocker(mapBounds.shape, mapBoundsID)
+	renderingSystem.addShape(worldBoundRect.shape, worldBoundaryID)
+	collideSystem.addSolid(worldBoundRect.shape, worldBoundaryID)
+	pivotingSystem.addBlocker(worldBoundRect.shape, worldBoundaryID)
 
 	diagonalWallID := &entityid{}
 	diagonalWall := newShape()

@@ -39,16 +39,3 @@ func (e *enemyMovementSystem) work() {
 	default:
 	}
 }
-
-// func (e *enemyMovementSystem) removeEnemyMover(s *shape) {
-// 	for i, renderable := range e.movers {
-// 		if s == renderable.rect.shape {
-// 			if i < len(e.movers)-1 {
-// 				copy(e.movers[i:], e.movers[i+1:])
-// 			}
-// 			e.movers[len(e.movers)-1] = nil
-// 			e.movers = e.movers[:len(e.movers)-1]
-// 			break
-// 		}
-// 	}
-// }

@@ -52,32 +52,6 @@ func (c *collisionSystem) addEnt(p *acceleratingEnt, id *entityid) {
 	id.systems = append(id.systems, moveCollider)
 }
 
-// func (c *collisionSystem) removeMover(s *shape) {
-// 	for i, renderable := range c.movers {
-// 		if s == renderable.rect.shape {
-// 			if i < len(c.movers)-1 {
-// 				copy(c.movers[i:], c.movers[i+1:])
-// 			}
-// 			c.movers[len(c.movers)-1] = nil
-// 			c.movers = c.movers[:len(c.movers)-1]
-// 			break
-// 		}
-// 	}
-// }
-
-// func (c *collisionSystem) removeSolid(s *shape) {
-// 	for i, renderable := range c.solids {
-// 		if s == renderable {
-// 			if i < len(c.solids)-1 {
-// 				copy(c.solids[i:], c.solids[i+1:])
-// 			}
-// 			c.solids[len(c.solids)-1] = nil
-// 			c.solids = c.solids[:len(c.solids)-1]
-// 			break
-// 		}
-// 	}
-// }
-
 func (c *collisionSystem) addSolid(s *shape, id *entityid) {
 	c.solids[id] = s
 	id.systems = append(id.systems, solidCollider)

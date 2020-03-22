@@ -35,26 +35,49 @@ func addWeaponSprite(s *weaponSprite, id *entityid) {
 
 var centerOn *rectangle
 
+func renderingCenter() location {
+	l := rectCenterPoint(*centerOn)
+	l.x *= -1
+	l.y *= -1
+	return l
+}
+
+func renderOffset() location {
+	center := renderingCenter()
+	center.x += screenWidth / 2
+	center.y += screenHeight / 2
+	return center
+}
+
+func rectCenterPoint(r rectangle) location {
+	x := r.location.x + (r.dimens.width / 2)
+	y := r.location.y + (r.dimens.height / 2)
+	return location{x, y}
+}
+
 func renderWeaponSprites(s *ebiten.Image) {
-	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
+	center := renderOffset()
 	for _, ps := range playerSprites {
 		pOps := &ebiten.DrawImageOptions{}
 		// offsetx := -playerSpriteHitboxExceed
 		// offsety :=-(2*playerSpriteHitboxExceed)
-		pOps.GeoM.Translate(float64(ps.playerRect.location.x+center.x), float64(ps.playerRect.location.y+center.y))
+		pSpriteOffset := center
+		pSpriteOffset.x += ps.playerRect.location.x
+		pSpriteOffset.y += ps.playerRect.location.y
+		pOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 		s.DrawImage(ps.sprite, pOps)
 	}
 	for _, wep := range weapons {
-		midPlayer := wep.basicSprite.playerRect.location
-		midPlayer.x += wep.basicSprite.playerRect.dimens.width / 2
-		midPlayer.y += wep.basicSprite.playerRect.dimens.height / 2
-		midPlayer.x += center.x
-		midPlayer.y += center.y
+		wepOffset := center
+		ownerCenter := rectCenterPoint(*wep.basicSprite.playerRect)
+		wepOffset.x += ownerCenter.x
+		wepOffset.y += ownerCenter.y
+
 		ew, _ := wep.basicSprite.sprite.Size()
 		wepOps := &ebiten.DrawImageOptions{}
 		wepOps.GeoM.Translate(-float64(ew)/2, 0)
 		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
-		wepOps.GeoM.Translate(float64(midPlayer.x), float64(midPlayer.y))
+		wepOps.GeoM.Translate(float64(wepOffset.x), float64(wepOffset.y))
 		s.DrawImage(wep.basicSprite.sprite, wepOps)
 	}
 }
