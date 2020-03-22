@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 type weaponSprite struct {
@@ -30,8 +29,7 @@ type weaponRenderSystem struct {
 }
 
 var weaponRenderingSystem = weaponRenderSystem{}
-var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/sword.png", ebiten.FilterDefault)
-var playerStandImage, _, _ = ebitenutil.NewImageFromFile("assets/playerstand.png", ebiten.FilterDefault)
+
 var playerSpriteHitboxExceed = 10
 
 func (w *weaponRenderSystem) addWeaponSprite(s *weaponSprite) {

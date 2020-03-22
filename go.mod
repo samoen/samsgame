@@ -1,6 +1,6 @@
 module mahgame
 
-go 1.13
+go 1.141
 
 require (
 	github.com/hajimehoshi/ebiten v1.10.5

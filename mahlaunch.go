@@ -18,7 +18,38 @@ const screenWidth = 1400
 const screenHeight = 1000
 const bgTileWidth = 2500
 
+var playerStandImage, _, _ = ebitenutil.NewImageFromFile("assets/playerstand.png", ebiten.FilterDefault)
+
+// var playerStandImage *ebiten.Image
+
+var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+
+var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/sword.png", ebiten.FilterDefault)
+
+// var swordImage *ebiten.Image
+
+var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
+
+// var bgImage *ebiten.Image
+
 func main() {
+	// img, _, err := image.Decode(bytes.NewReader(playerStandPng))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// playerStandImage, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+
+	// sword, _, err := image.Decode(bytes.NewReader(swordPng))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// swordImage, _ = ebiten.NewImageFromImage(sword, ebiten.FilterDefault)
+
+	// bgIm, _, err := image.Decode(bytes.NewReader(backgroundPng))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// bgImage, _ = ebiten.NewImageFromImage(bgIm, ebiten.FilterDefault)
 
 	initEntities()
 

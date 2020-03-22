@@ -4,12 +4,10 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 var renderingSystem = newRenderSystem()
-var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
-var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
+
 var bgOps = &ebiten.DrawImageOptions{}
 
 func init() {
