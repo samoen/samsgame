@@ -7,7 +7,7 @@ import (
 
 type enemyMovementSystem struct {
 	events <-chan time.Time
-	movers []*acceleratingEnt
+	movers map[*entityid]*acceleratingEnt
 }
 
 var botsMoveSystem = newEnemyMovementSystem()
@@ -15,12 +15,13 @@ var botsMoveSystem = newEnemyMovementSystem()
 func newEnemyMovementSystem() enemyMovementSystem {
 	b := enemyMovementSystem{}
 	b.events = time.NewTicker(time.Duration(500) * time.Millisecond).C
+	b.movers = make(map[*entityid]*acceleratingEnt)
 	return b
 }
 
-func (e *enemyMovementSystem) addEnemy(m *acceleratingEnt) {
-	e.movers = append(e.movers, m)
-	m.rect.shape.systems = append(m.rect.shape.systems, enemyControlled)
+func (e *enemyMovementSystem) addEnemy(m *acceleratingEnt, id *entityid) {
+	e.movers[id] = m
+	id.systems = append(id.systems, enemyControlled)
 }
 
 func (e *enemyMovementSystem) work() {
@@ -38,15 +39,16 @@ func (e *enemyMovementSystem) work() {
 	default:
 	}
 }
-func (e *enemyMovementSystem) removeEnemyMover(s *shape) {
-	for i, renderable := range e.movers {
-		if s == renderable.rect.shape {
-			if i < len(e.movers)-1 {
-				copy(e.movers[i:], e.movers[i+1:])
-			}
-			e.movers[len(e.movers)-1] = nil
-			e.movers = e.movers[:len(e.movers)-1]
-			break
-		}
-	}
-}
+
+// func (e *enemyMovementSystem) removeEnemyMover(s *shape) {
+// 	for i, renderable := range e.movers {
+// 		if s == renderable.rect.shape {
+// 			if i < len(e.movers)-1 {
+// 				copy(e.movers[i:], e.movers[i+1:])
+// 			}
+// 			e.movers[len(e.movers)-1] = nil
+// 			e.movers = e.movers[:len(e.movers)-1]
+// 			break
+// 		}
+// 	}
+// }

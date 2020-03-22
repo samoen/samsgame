@@ -47,66 +47,37 @@ const (
 	pivotingHitbox
 )
 
-func eliminate(s *shape) {
-	for _, sys := range s.systems {
+func eliminate(id *entityid) {
+	for _, sys := range id.systems {
 		switch sys {
 		case spriteRenderable:
-			for i, renderable := range playerSprites {
-				if s == renderable.playerRect.shape {
-					if i < len(playerSprites)-1 {
-						copy(playerSprites[i:], playerSprites[i+1:])
-					}
-					playerSprites[len(playerSprites)-1] = nil
-					playerSprites = playerSprites[:len(playerSprites)-1]
-					break
-				}
-			}
+			delete(playerSprites, id)
 		case hitBoxRenderable:
-			renderingSystem.removeShape(s)
+			delete(renderingSystem.shapes, id)
 		case moveCollider:
-			collideSystem.removeMover(s)
+			delete(collideSystem.movers, id)
 		case solidCollider:
-			collideSystem.removeSolid(s)
+			delete(collideSystem.solids, id)
 		case enemyControlled:
-			botsMoveSystem.removeEnemyMover(s)
+			delete(botsMoveSystem.movers, id)
 		case abilityActivator:
-			slashSystem.removeSlasher(s)
+			delete(slashSystem.slashers, id)
 		case hurtable:
-			pivotingSystem.removeSlashee(s)
+			delete(pivotingSystem.slashees, id)
 		case pivotingHitbox:
-			pivotingSystem.removePivoter(s)
+			delete(pivotingSystem.pivoters, id)
 		case rotatingSprite:
-			weaponRenderingSystem.removeWeaponSprite(s)
+			delete(weapons, id)
 		case playerControlled:
-			for i, renderable := range playerControllables {
-				if s == renderable.rect.shape {
-					if i < len(playerControllables)-1 {
-						copy(playerControllables[i:], playerControllables[i+1:])
-					}
-					playerControllables[len(playerControllables)-1] = nil
-					playerControllables = playerControllables[:len(playerControllables)-1]
-					break
-				}
-			}
+			delete(playerControllables, id)
 		case weaponBlocker:
-			for i, renderable := range pivotingSystem.blockers {
-				if s == renderable {
-					if i < len(pivotingSystem.blockers)-1 {
-						copy(pivotingSystem.blockers[i:], pivotingSystem.blockers[i+1:])
-					}
-					pivotingSystem.blockers[len(pivotingSystem.blockers)-1] = nil
-					pivotingSystem.blockers = pivotingSystem.blockers[:len(pivotingSystem.blockers)-1]
-					break
-				}
-			}
+			delete(pivotingSystem.blockers, id)
 		}
-
 	}
 }
 
 type shape struct {
-	lines   []line
-	systems []sysIndex
+	lines []line
 }
 
 func newShape() *shape {
@@ -114,10 +85,10 @@ func newShape() *shape {
 	return s
 }
 
-func normalcollides(checkcopy shape, entities []*shape, exclude *shape) bool {
+func normalcollides(checkcopy shape, entities map[*entityid]*shape, exclude *entityid) bool {
 	for _, li := range checkcopy.lines {
-		for _, obj := range entities {
-			if obj == exclude {
+		for solidID, obj := range entities {
+			if solidID == exclude {
 				continue
 			}
 			for _, subline := range obj.lines {

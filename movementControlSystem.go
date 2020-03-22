@@ -12,11 +12,11 @@ type moveSpeed struct {
 	currentSpeed int
 }
 
-var playerControllables []*acceleratingEnt
+var playerControllables = make(map[*entityid]*acceleratingEnt)
 
-func addPlayerControlled(m *acceleratingEnt) {
-	playerControllables = append(playerControllables, m)
-	m.rect.shape.systems = append(m.rect.shape.systems, playerControlled)
+func addPlayerControlled(m *acceleratingEnt, id *entityid) {
+	playerControllables[id] = m
+	id.systems = append(id.systems, playerControlled)
 }
 
 func updatePlayerControl() {

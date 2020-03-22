@@ -17,42 +17,25 @@ type playerSprite struct {
 	sprite     *ebiten.Image
 }
 
-var playerSprites []*playerSprite
+var playerSprites = make(map[*entityid]*playerSprite)
 
-func addPlayerSprite(ws *playerSprite) {
-	playerSprites = append(playerSprites, ws)
-	ws.playerRect.shape.systems = append(ws.playerRect.shape.systems, spriteRenderable)
+func addPlayerSprite(ws *playerSprite, id *entityid) {
+	playerSprites[id] = ws
+	id.systems = append(id.systems, spriteRenderable)
 }
 
-type weaponRenderSystem struct {
-	weapons []*weaponSprite
-}
+var weapons = make(map[*entityid]*weaponSprite)
 
-var weaponRenderingSystem = weaponRenderSystem{}
+// var playerSpriteHitboxExceed = 10
 
-var playerSpriteHitboxExceed = 10
-
-func (w *weaponRenderSystem) addWeaponSprite(s *weaponSprite) {
-	w.weapons = append(w.weapons, s)
-	s.weaponShape.systems = append(s.weaponShape.systems, rotatingSprite)
-}
-
-func (w *weaponRenderSystem) removeWeaponSprite(s *shape) {
-	for i, renderable := range w.weapons {
-		if s == renderable.weaponShape {
-			if i < len(w.weapons)-1 {
-				copy(w.weapons[i:], w.weapons[i+1:])
-			}
-			w.weapons[len(w.weapons)-1] = nil
-			w.weapons = w.weapons[:len(w.weapons)-1]
-			break
-		}
-	}
+func addWeaponSprite(s *weaponSprite, id *entityid) {
+	weapons[id] = s
+	id.systems = append(id.systems, rotatingSprite)
 }
 
 var centerOn *rectangle
 
-func (w *weaponRenderSystem) work(s *ebiten.Image) {
+func renderWeaponSprites(s *ebiten.Image) {
 	center := location{(screenWidth / 2) - centerOn.location.x - (centerOn.dimens.width / 2), (screenHeight / 2) - centerOn.location.y - (centerOn.dimens.height / 2)}
 	for _, ps := range playerSprites {
 		pOps := &ebiten.DrawImageOptions{}
@@ -61,7 +44,7 @@ func (w *weaponRenderSystem) work(s *ebiten.Image) {
 		pOps.GeoM.Translate(float64(ps.playerRect.location.x+center.x), float64(ps.playerRect.location.y+center.y))
 		s.DrawImage(ps.sprite, pOps)
 	}
-	for _, wep := range w.weapons {
+	for _, wep := range weapons {
 		midPlayer := wep.basicSprite.playerRect.location
 		midPlayer.x += wep.basicSprite.playerRect.dimens.width / 2
 		midPlayer.y += wep.basicSprite.playerRect.dimens.height / 2

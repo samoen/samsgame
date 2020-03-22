@@ -22,34 +22,22 @@ func newSlasher(p *acceleratingEnt) *slasher {
 var slashSystem = newSlashAttackSystem()
 
 type slashAttackSystem struct {
-	slashers []*slasher
+	slashers map[*entityid]*slasher
 }
 
-func (s *slashAttackSystem) addSlasher(b *slasher) {
-	s.slashers = append(s.slashers, b)
-	b.ent.rect.shape.systems = append(b.ent.rect.shape.systems, abilityActivator)
+func (s *slashAttackSystem) addSlasher(id *entityid, b *slasher) {
+	s.slashers[id] = b
+	id.systems = append(id.systems, abilityActivator)
 }
 
 func newSlashAttackSystem() slashAttackSystem {
 	s := slashAttackSystem{}
+	s.slashers = make(map[*entityid]*slasher)
 	return s
 }
 
-func (s *slashAttackSystem) removeSlasher(p *shape) {
-	for i, subslasher := range s.slashers {
-		if p == subslasher.ent.rect.shape {
-			if i < len(s.slashers)-1 {
-				copy(s.slashers[i:], s.slashers[i+1:])
-			}
-			s.slashers[len(s.slashers)-1] = nil
-			s.slashers = s.slashers[:len(s.slashers)-1]
-			break
-		}
-	}
-}
-
 func (s *slashAttackSystem) work() {
-	for _, bot := range s.slashers {
+	for slasherid, bot := range s.slashers {
 		bot := bot
 		if bot.ent.directions.down ||
 			bot.ent.directions.up ||
@@ -72,13 +60,13 @@ func (s *slashAttackSystem) work() {
 		}
 
 		if bot.ent.atkButton && !bot.onCooldown {
-			ps := newPivotingShape(bot.ent.rect, bot.startangle)
-
-			renderingSystem.addShape(ps.pivoterShape)
-			pivotingSystem.addPivoter(ps)
+			wepid := &entityid{}
+			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
+			renderingSystem.addShape(ps.pivoterShape, wepid)
+			pivotingSystem.addPivoter(wepid, ps)
 			bs := playerSprite{bot.ent.rect, swordImage}
 			ws := weaponSprite{ps.pivoterShape, &ps.animationCount, bs}
-			weaponRenderingSystem.addWeaponSprite(&ws)
+			addWeaponSprite(&ws, wepid)
 
 			bot.onCooldown = true
 			bot.cooldownCount = 0

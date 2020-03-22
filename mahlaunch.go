@@ -83,7 +83,7 @@ func main() {
 			}
 		}
 
-		weaponRenderingSystem.work(screen)
+		renderWeaponSprites(screen)
 
 		renderingSystem.work(screen)
 

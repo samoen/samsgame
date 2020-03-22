@@ -16,28 +16,30 @@ func init() {
 
 func newRenderSystem() renderSystem {
 	r := renderSystem{}
+	r.shapes = make(map[*entityid]*shape)
 	return r
 }
 
 type renderSystem struct {
-	shapes []*shape
+	shapes map[*entityid]*shape
 }
 
-func (r *renderSystem) removeShape(s *shape) {
-	for i, renderable := range r.shapes {
-		if s == renderable {
-			if i < len(r.shapes)-1 {
-				copy(r.shapes[i:], r.shapes[i+1:])
-			}
-			r.shapes[len(r.shapes)-1] = nil
-			r.shapes = r.shapes[:len(r.shapes)-1]
-		}
-	}
-}
+// func (r *renderSystem) removeShape(s *shape) {
+// 	for i, renderable := range r.shapes {
+// 		if s == renderable {
+// 			if i < len(r.shapes)-1 {
+// 				copy(r.shapes[i:], r.shapes[i+1:])
+// 			}
+// 			r.shapes[len(r.shapes)-1] = nil
+// 			r.shapes = r.shapes[:len(r.shapes)-1]
+// 		}
+// 	}
+// }
 
-func (r *renderSystem) addShape(s *shape) {
-	r.shapes = append(r.shapes, s)
-	s.systems = append(s.systems, hitBoxRenderable)
+func (r *renderSystem) addShape(s *shape, id *entityid) {
+	// r.shapes = append(r.shapes, s)
+	r.shapes[id] = s
+	id.systems = append(id.systems, hitBoxRenderable)
 }
 
 func (r *renderSystem) work(s *ebiten.Image) {

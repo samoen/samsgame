@@ -4,7 +4,14 @@ import (
 	"math"
 )
 
-var collideSystem = collisionSystem{}
+var collideSystem = newCollideSystem()
+
+func newCollideSystem() collisionSystem {
+	c := collisionSystem{}
+	c.movers = make(map[*entityid]*acceleratingEnt)
+	c.solids = make(map[*entityid]*shape)
+	return c
+}
 
 type momentum struct {
 	xaxis, yaxis float64
@@ -36,44 +43,44 @@ func newControlledEntity() *acceleratingEnt {
 }
 
 type collisionSystem struct {
-	movers []*acceleratingEnt
-	solids []*shape
+	movers map[*entityid]*acceleratingEnt
+	solids map[*entityid]*shape
 }
 
-func (c *collisionSystem) addEnt(p *acceleratingEnt) {
-	c.movers = append(c.movers, p)
-	p.rect.shape.systems = append(p.rect.shape.systems, moveCollider)
+func (c *collisionSystem) addEnt(p *acceleratingEnt, id *entityid) {
+	c.movers[id] = p
+	id.systems = append(id.systems, moveCollider)
 }
 
-func (c *collisionSystem) removeMover(s *shape) {
-	for i, renderable := range c.movers {
-		if s == renderable.rect.shape {
-			if i < len(c.movers)-1 {
-				copy(c.movers[i:], c.movers[i+1:])
-			}
-			c.movers[len(c.movers)-1] = nil
-			c.movers = c.movers[:len(c.movers)-1]
-			break
-		}
-	}
-}
+// func (c *collisionSystem) removeMover(s *shape) {
+// 	for i, renderable := range c.movers {
+// 		if s == renderable.rect.shape {
+// 			if i < len(c.movers)-1 {
+// 				copy(c.movers[i:], c.movers[i+1:])
+// 			}
+// 			c.movers[len(c.movers)-1] = nil
+// 			c.movers = c.movers[:len(c.movers)-1]
+// 			break
+// 		}
+// 	}
+// }
 
-func (c *collisionSystem) removeSolid(s *shape) {
-	for i, renderable := range c.solids {
-		if s == renderable {
-			if i < len(c.solids)-1 {
-				copy(c.solids[i:], c.solids[i+1:])
-			}
-			c.solids[len(c.solids)-1] = nil
-			c.solids = c.solids[:len(c.solids)-1]
-			break
-		}
-	}
-}
+// func (c *collisionSystem) removeSolid(s *shape) {
+// 	for i, renderable := range c.solids {
+// 		if s == renderable {
+// 			if i < len(c.solids)-1 {
+// 				copy(c.solids[i:], c.solids[i+1:])
+// 			}
+// 			c.solids[len(c.solids)-1] = nil
+// 			c.solids = c.solids[:len(c.solids)-1]
+// 			break
+// 		}
+// 	}
+// }
 
-func (c *collisionSystem) addSolid(s *shape) {
-	c.solids = append(c.solids, s)
-	s.systems = append(s.systems, solidCollider)
+func (c *collisionSystem) addSolid(s *shape, id *entityid) {
+	c.solids[id] = s
+	id.systems = append(id.systems, solidCollider)
 }
 
 func (p *acceleratingEnt) drive() {
@@ -151,7 +158,7 @@ func (p *acceleratingEnt) drive() {
 }
 
 func (c *collisionSystem) work() {
-	for _, p := range c.movers {
+	for moverid, p := range c.movers {
 		p.drive()
 		unitmovex := 1
 		if p.moment.xaxis < 0 {
@@ -174,7 +181,7 @@ func (c *collisionSystem) work() {
 				checklocx := p.rect.location
 				checklocx.x += unitmovex
 				checkRect := newRectangle(checklocx, p.rect.dimens)
-				if !normalcollides(*checkRect.shape, c.solids, p.rect.shape) {
+				if !normalcollides(*checkRect.shape, c.solids, moverid) {
 					p.rect.refreshShape(checklocx)
 				} else {
 					p.moment.xaxis = 0
@@ -189,7 +196,7 @@ func (c *collisionSystem) work() {
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)
-				if !normalcollides(*checkrecty.shape, c.solids, p.rect.shape) {
+				if !normalcollides(*checkrecty.shape, c.solids, moverid) {
 					p.rect.refreshShape(checklocy)
 				} else {
 					p.moment.yaxis = 0
