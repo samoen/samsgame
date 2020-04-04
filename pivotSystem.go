@@ -6,7 +6,8 @@ import (
 )
 
 type entityid struct {
-	systems []sysIndex
+	systems    []sysIndex
+	associates []*entityid
 }
 
 type pivotingShape struct {
@@ -120,7 +121,8 @@ func (p *pivotSystem) work() {
 	for id, bot := range p.pivoters {
 
 		if bot.doneAnimating {
-			eliminate(id)
+			deathables[id] = deathable{}
+			// eliminate(id)
 			continue
 		}
 
@@ -128,7 +130,8 @@ func (p *pivotSystem) work() {
 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
 		blocked := p.checkBlocker(*bot.pivoterShape)
 		if blocked {
-			eliminate(id)
+			// eliminate(id)
+			deathables[id] = deathable{}
 			continue
 		} else {
 		foundSlashee:
@@ -139,13 +142,16 @@ func (p *pivotSystem) work() {
 				for _, slasheeLine := range slashee.lines {
 					for _, bladeLine := range bot.pivoterShape.lines {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-							for pivID, ps := range p.pivoters {
-								if ps.ownerid == slasheeid {
-									eliminate(pivID)
-									break
-								}
-							}
-							eliminate(slasheeid)
+							// for pivID, ps := range p.pivoters {
+							// 	if ps.ownerid == slasheeid {
+							// 		deathables[pivID] = deathable{}
+							// 		// eliminate(pivID)
+							// 		break
+							// 	}
+							// }
+
+							deathables[slasheeid] = deathable{}
+							// eliminate(slasheeid)
 							break foundSlashee
 						}
 					}

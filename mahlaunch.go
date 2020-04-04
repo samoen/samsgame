@@ -60,11 +60,11 @@ func main() {
 		}
 
 		updatePlayerControl()
-		botsMoveSystem.work()
+		// botsMoveSystem.work()
 		collideSystem.work()
 		slashSystem.work()
 		pivotingSystem.work()
-
+		deathSystemwork()
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -94,5 +94,51 @@ func main() {
 
 	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "sam's cool game"); err != nil {
 		log.Fatal(err)
+	}
+}
+
+type deathable struct {
+	dead bool
+}
+
+var deathables = make(map[*entityid]deathable)
+
+func deathSystemwork() {
+	for dID := range deathables {
+		for _, associate := range dID.associates {
+			eliminate(associate)
+		}
+		eliminate(dID)
+		delete(deathables, dID)
+	}
+}
+
+func eliminate(id *entityid) {
+
+	for _, sys := range id.systems {
+		switch sys {
+		case spriteRenderable:
+			delete(playerSprites, id)
+		case hitBoxRenderable:
+			delete(renderingSystem.shapes, id)
+		case moveCollider:
+			delete(collideSystem.movers, id)
+		case solidCollider:
+			delete(collideSystem.solids, id)
+		case enemyControlled:
+			delete(botsMoveSystem.movers, id)
+		case abilityActivator:
+			delete(slashSystem.slashers, id)
+		case hurtable:
+			delete(pivotingSystem.slashees, id)
+		case pivotingHitbox:
+			delete(pivotingSystem.pivoters, id)
+		case rotatingSprite:
+			delete(weapons, id)
+		case playerControlled:
+			delete(playerControllables, id)
+		case weaponBlocker:
+			delete(pivotingSystem.blockers, id)
+		}
 	}
 }

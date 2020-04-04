@@ -47,35 +47,6 @@ const (
 	pivotingHitbox
 )
 
-func eliminate(id *entityid) {
-	for _, sys := range id.systems {
-		switch sys {
-		case spriteRenderable:
-			delete(playerSprites, id)
-		case hitBoxRenderable:
-			delete(renderingSystem.shapes, id)
-		case moveCollider:
-			delete(collideSystem.movers, id)
-		case solidCollider:
-			delete(collideSystem.solids, id)
-		case enemyControlled:
-			delete(botsMoveSystem.movers, id)
-		case abilityActivator:
-			delete(slashSystem.slashers, id)
-		case hurtable:
-			delete(pivotingSystem.slashees, id)
-		case pivotingHitbox:
-			delete(pivotingSystem.pivoters, id)
-		case rotatingSprite:
-			delete(weapons, id)
-		case playerControlled:
-			delete(playerControllables, id)
-		case weaponBlocker:
-			delete(pivotingSystem.blockers, id)
-		}
-	}
-}
-
 type shape struct {
 	lines []line
 }
