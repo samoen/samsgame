@@ -58,13 +58,32 @@ func main() {
 		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 			return errors.New("game ended by player")
 		}
-
+		// var wg sync.WaitGroup
+		// go func() {
+		// defer wg.Done()
+		// wg.Add(1)
 		updatePlayerControl()
-		// botsMoveSystem.work()
+		// }()
+		// go func() {
+		// defer wg.Done()
+		// wg.Add(1)
 		collideSystem.work()
-		slashSystem.work()
+		// }()
+		// go func() {
+		// 	defer wg.Done()
+		// 	wg.Add(1)
+		// 	}()
+		// go func() {
+		// defer wg.Done()
+		// wg.Add(1)
 		pivotingSystem.work()
+		// }()
+		// wg.Wait()
+		// botsMoveSystem.work()
+		slashSystem.work()
+
 		deathSystemwork()
+
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -98,18 +117,26 @@ func main() {
 }
 
 type deathable struct {
-	dead bool
+	gotHit         bool
+	deathableShape *shape
+	currentHP      int
 }
 
-var deathables = make(map[*entityid]deathable)
+var deathables = make(map[*entityid]*deathable)
 
 func deathSystemwork() {
-	for dID := range deathables {
-		for _, associate := range dID.associates {
-			eliminate(associate)
+	for dID, mDeathable := range deathables {
+		if mDeathable.gotHit {
+			mDeathable.gotHit = false
+			mDeathable.currentHP--
 		}
-		eliminate(dID)
-		delete(deathables, dID)
+		if mDeathable.currentHP < 1 {
+			for _, associate := range dID.associates {
+				eliminate(associate)
+			}
+			eliminate(dID)
+			// delete(deathables, dID)
+		}
 	}
 }
 
@@ -130,7 +157,8 @@ func eliminate(id *entityid) {
 		case abilityActivator:
 			delete(slashSystem.slashers, id)
 		case hurtable:
-			delete(pivotingSystem.slashees, id)
+			delete(deathables, id)
+
 		case pivotingHitbox:
 			delete(pivotingSystem.pivoters, id)
 		case rotatingSprite:

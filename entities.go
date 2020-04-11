@@ -17,20 +17,26 @@ func initEntities() {
 	ps := &playerSprite{accelplayer.rect, playerStandImage}
 	addPlayerSprite(ps, playerid)
 
-	for i := 1; i < 30; i++ {
-		enemyid := &entityid{}
-		moveEnemy := newControlledEntity()
-		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
-		enemySlasher := newSlasher(moveEnemy)
-		slashSystem.addSlasher(enemyid, enemySlasher)
-		pivotingSystem.addSlashee(moveEnemy.rect.shape, enemyid)
-		renderingSystem.addShape(moveEnemy.rect.shape, enemyid)
-		collideSystem.addEnt(moveEnemy, enemyid)
-		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
-		botsMoveSystem.addEnemy(moveEnemy, enemyid)
-		es := &playerSprite{moveEnemy.rect, playerStandImage}
-		addPlayerSprite(es, enemyid)
-	}
+	i := 1
+	// for i := 1; i < 30; i++ {
+	enemyid := &entityid{}
+	moveEnemy := newControlledEntity()
+	moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
+	enemySlasher := newSlasher(moveEnemy)
+	slashSystem.addSlasher(enemyid, enemySlasher)
+	botDeathable := deathable{}
+	botDeathable.currentHP = 3
+	botDeathable.deathableShape = moveEnemy.rect.shape
+	addDeathable(enemyid, &botDeathable)
+
+	renderingSystem.addShape(moveEnemy.rect.shape, enemyid)
+	collideSystem.addEnt(moveEnemy, enemyid)
+	collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
+	botsMoveSystem.addEnemy(moveEnemy, enemyid)
+
+	es := &playerSprite{moveEnemy.rect, playerStandImage}
+	addPlayerSprite(es, enemyid)
+	// }
 
 	worldBoundaryID := &entityid{}
 	worldBoundRect := newRectangle(
@@ -44,7 +50,7 @@ func initEntities() {
 	diagonalWallID := &entityid{}
 	diagonalWall := newShape()
 	diagonalWall.lines = []line{
-		line{
+		{
 			location{250, 310},
 			location{600, 655},
 		},

@@ -46,21 +46,21 @@ var swordLength = 45
 type pivotSystem struct {
 	pivoters map[*entityid]*pivotingShape
 	blockers map[*entityid]*shape
-	slashees map[*entityid]*shape
 }
 
+// var slashees = make(map[*entityid]*shape)
 func newPivotSystem() pivotSystem {
 	p := pivotSystem{}
 	p.pivoters = make(map[*entityid]*pivotingShape)
-	p.slashees = make(map[*entityid]*shape)
+	// p.slashees = make(map[*entityid]*shape)
 	p.blockers = make(map[*entityid]*shape)
 	return p
 }
 
-func (p *pivotSystem) addSlashee(s *shape, id *entityid) {
-	p.slashees[id] = s
-	id.systems = append(id.systems, hurtable)
-}
+// func (p *pivotSystem) addSlashee(s *shape, id *entityid) {
+// 	p.slashees[id] = s
+// 	id.systems = append(id.systems, hurtable)
+// }
 
 func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
 	p.pivoters[eid] = s
@@ -121,8 +121,8 @@ func (p *pivotSystem) work() {
 	for id, bot := range p.pivoters {
 
 		if bot.doneAnimating {
-			deathables[id] = deathable{}
-			// eliminate(id)
+			// deathables[id] = deathable{}
+			eliminate(id)
 			continue
 		}
 
@@ -130,16 +130,16 @@ func (p *pivotSystem) work() {
 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
 		blocked := p.checkBlocker(*bot.pivoterShape)
 		if blocked {
-			// eliminate(id)
-			deathables[id] = deathable{}
+			eliminate(id)
+			// deathables[id] = deathable{}
 			continue
 		} else {
 		foundSlashee:
-			for slasheeid, slashee := range p.slashees {
+			for slasheeid, slashee := range deathables {
 				if slasheeid == bot.ownerid {
 					continue foundSlashee
 				}
-				for _, slasheeLine := range slashee.lines {
+				for _, slasheeLine := range slashee.deathableShape.lines {
 					for _, bladeLine := range bot.pivoterShape.lines {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 							// for pivID, ps := range p.pivoters {
@@ -149,8 +149,8 @@ func (p *pivotSystem) work() {
 							// 		break
 							// 	}
 							// }
-
-							deathables[slasheeid] = deathable{}
+							slashee.gotHit = true
+							// deathables[slasheeid] = deathable{}
 							// eliminate(slasheeid)
 							break foundSlashee
 						}
@@ -159,4 +159,9 @@ func (p *pivotSystem) work() {
 			}
 		}
 	}
+}
+
+func addDeathable(id *entityid, d *deathable) {
+	id.systems = append(id.systems, hurtable)
+	deathables[id] = d
 }
