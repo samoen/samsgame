@@ -15,7 +15,7 @@ func initEntities() {
 	// pivotingSystem.addSlashee(accelplayer.rect.shape, playerid)
 
 	ps := &baseSprite{accelplayer.rect, playerStandImage}
-	addPlayerSprite(ps, playerid)
+	addBasicSprite(ps, playerid)
 
 	for i := 1; i < 30; i++ {
 		enemyid := &entityid{}
@@ -29,11 +29,12 @@ func initEntities() {
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
 		botsMoveSystem.addEnemy(moveEnemy, enemyid)
 		es := &baseSprite{moveEnemy.rect, playerStandImage}
-		addPlayerSprite(es, enemyid)
+		addBasicSprite(es, enemyid)
 
 		botDeathable := deathable{}
 		botDeathable.currentHP = 3
-		botDeathable.deathableShape = moveEnemy.rect.shape
+		botDeathable.maxHP = 3
+		botDeathable.deathableShape = moveEnemy.rect
 		addDeathable(enemyid, &botDeathable)
 	}
 

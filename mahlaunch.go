@@ -100,19 +100,33 @@ func main() {
 
 type deathable struct {
 	gotHit         bool
-	deathableShape *shape
+	deathableShape *rectangle
 	currentHP      int
+	maxHP          int
 	associates     []*entityid
+	healthbar      *rectangle
 }
 
 var deathables = make(map[*entityid]*deathable)
 
-// func drawHealthbars(screen *ebiten.Image){
+func addDeathable(id *entityid, d *deathable) {
+	id.systems = append(id.systems, hurtable)
+	deathables[id] = d
 
-// }
+	hBarEnt := &entityid{}
+	d.healthbar = newRectangle(d.deathableShape.location, dimens{d.deathableShape.dimens.width, 10})
+	sprite := &baseSprite{
+		d.healthbar,
+		emptyImage,
+	}
+	d.associates = append(d.associates, hBarEnt)
+	addBasicSprite(sprite, hBarEnt)
+}
 
 func deathSystemwork() {
 	for dID, mDeathable := range deathables {
+		mDeathable.healthbar.location = location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+		mDeathable.healthbar.dimens.width = mDeathable.currentHP * mDeathable.deathableShape.dimens.width / mDeathable.maxHP
 		if mDeathable.gotHit {
 			mDeathable.gotHit = false
 			mDeathable.currentHP--
@@ -131,7 +145,7 @@ func eliminate(id *entityid) {
 	for _, sys := range id.systems {
 		switch sys {
 		case spriteRenderable:
-			delete(playerSprites, id)
+			delete(basicSprites, id)
 		case hitBoxRenderable:
 			delete(renderingSystem.shapes, id)
 		case moveCollider:

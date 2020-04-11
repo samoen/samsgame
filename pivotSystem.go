@@ -138,7 +138,7 @@ func (p *pivotSystem) work() {
 				if _, ok := bot.alreadyHit[slasheeid]; ok {
 					continue foundSlashee
 				}
-				for _, slasheeLine := range slashee.deathableShape.lines {
+				for _, slasheeLine := range slashee.deathableShape.shape.lines {
 					for _, bladeLine := range bot.pivoterShape.lines {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 							// for pivID, ps := range p.pivoters {
@@ -159,12 +159,4 @@ func (p *pivotSystem) work() {
 			}
 		}
 	}
-}
-func addDeathable(id *entityid, d *deathable) {
-	id.systems = append(id.systems, hurtable)
-	deathables[id] = d
-
-	// healthbar := &entityid{}
-	// sprite := &weaponSprite{}
-	// addWeaponSprite()
 }

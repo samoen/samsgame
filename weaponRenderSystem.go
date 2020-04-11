@@ -17,10 +17,10 @@ type baseSprite struct {
 	sprite     *ebiten.Image
 }
 
-var playerSprites = make(map[*entityid]*baseSprite)
+var basicSprites = make(map[*entityid]*baseSprite)
 
-func addPlayerSprite(ws *baseSprite, id *entityid) {
-	playerSprites[id] = ws
+func addBasicSprite(ws *baseSprite, id *entityid) {
+	basicSprites[id] = ws
 	id.systems = append(id.systems, spriteRenderable)
 }
 
@@ -57,14 +57,22 @@ func rectCenterPoint(r rectangle) location {
 
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
-	for _, ps := range playerSprites {
+	for _, ps := range basicSprites {
 		pOps := &ebiten.DrawImageOptions{}
 		// offsetx := -playerSpriteHitboxExceed
 		// offsety :=-(2*playerSpriteHitboxExceed)
+
+		imW, imH := ps.sprite.Size()
+		wRatio := float64(ps.playerRect.dimens.width) / float64(imW)
+		hRatio := float64(ps.playerRect.dimens.height) / float64(imH)
+		// pOps.GeoM.Scale(float64(ps.playerRect.dimens.width), float64(ps.playerRect.dimens.height))
+		pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
+
 		pSpriteOffset := center
 		pSpriteOffset.x += ps.playerRect.location.x
 		pSpriteOffset.y += ps.playerRect.location.y
 		pOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
+
 		s.DrawImage(ps.sprite, pOps)
 	}
 	for _, wep := range weapons {
