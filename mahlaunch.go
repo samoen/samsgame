@@ -98,18 +98,26 @@ func main() {
 }
 
 type deathable struct {
-	dead bool
+	gotHit         bool
+	deathableShape *shape
+	currentHP      int
+	associates     []*entityid
 }
 
-var deathables = make(map[*entityid]deathable)
+var deathables = make(map[*entityid]*deathable)
 
 func deathSystemwork() {
-	for dID := range deathables {
-		for _, associate := range dID.associates {
-			eliminate(associate)
+	for dID, mDeathable := range deathables {
+		if mDeathable.gotHit {
+			mDeathable.gotHit = false
+			mDeathable.currentHP--
 		}
-		eliminate(dID)
-		delete(deathables, dID)
+		if mDeathable.currentHP < 1 {
+			for _, associate := range mDeathable.associates {
+				eliminate(associate)
+			}
+			eliminate(dID)
+		}
 	}
 }
 
@@ -130,7 +138,7 @@ func eliminate(id *entityid) {
 		case abilityActivator:
 			delete(slashSystem.slashers, id)
 		case hurtable:
-			delete(pivotingSystem.slashees, id)
+			delete(deathables, id)
 		case pivotingHitbox:
 			delete(pivotingSystem.pivoters, id)
 		case rotatingSprite:

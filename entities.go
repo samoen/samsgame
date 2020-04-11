@@ -23,13 +23,18 @@ func initEntities() {
 		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
 		enemySlasher := newSlasher(moveEnemy)
 		slashSystem.addSlasher(enemyid, enemySlasher)
-		pivotingSystem.addSlashee(moveEnemy.rect.shape, enemyid)
+		// pivotingSystem.addSlashee(moveEnemy.rect.shape, enemyid)
 		renderingSystem.addShape(moveEnemy.rect.shape, enemyid)
 		collideSystem.addEnt(moveEnemy, enemyid)
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
 		botsMoveSystem.addEnemy(moveEnemy, enemyid)
 		es := &playerSprite{moveEnemy.rect, playerStandImage}
 		addPlayerSprite(es, enemyid)
+
+		botDeathable := deathable{}
+		botDeathable.currentHP = 3
+		botDeathable.deathableShape = moveEnemy.rect.shape
+		addDeathable(enemyid, &botDeathable)
 	}
 
 	worldBoundaryID := &entityid{}
@@ -44,7 +49,7 @@ func initEntities() {
 	diagonalWallID := &entityid{}
 	diagonalWall := newShape()
 	diagonalWall.lines = []line{
-		line{
+		{
 			location{250, 310},
 			location{600, 655},
 		},

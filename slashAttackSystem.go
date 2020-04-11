@@ -67,7 +67,10 @@ func (s *slashAttackSystem) work() {
 			bs := playerSprite{bot.ent.rect, swordImage}
 			ws := weaponSprite{ps.pivoterShape, &ps.animationCount, bs}
 			addWeaponSprite(&ws, wepid)
-			slasherid.associates = append(slasherid.associates, wepid)
+
+			if d, ok := deathables[slasherid]; ok {
+				d.associates = append(d.associates, wepid)
+			}
 
 			bot.onCooldown = true
 			bot.cooldownCount = 0
