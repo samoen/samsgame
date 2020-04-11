@@ -2,12 +2,15 @@ package main
 
 import (
 	"math"
-	"time"
 )
 
 type entityid struct {
-	systems    []sysIndex
-	associates []*entityid
+	systems     []sysIndex
+	realSystems map[sysIndex]component
+}
+
+type component interface {
+	work(*entityid)
 }
 
 type pivotingShape struct {
@@ -17,6 +20,47 @@ type pivotingShape struct {
 	animationCount float64
 	animating      bool
 	doneAnimating  bool
+}
+
+func (bot *pivotingShape) work() {
+	if bot.doneAnimating {
+		// deathables[id] = deathable{}
+		// eliminate(id)
+		return
+	}
+
+	bot.animationCount -= 0.16
+	bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
+	blocked := checkBlocker(*bot.pivoterShape)
+	if blocked {
+		// eliminate(id)
+		// deathables[id] = deathable{}
+		return
+	} else {
+	foundSlashee:
+		for slasheeid, slashee := range deathables {
+			if slasheeid == bot.ownerid {
+				continue foundSlashee
+			}
+			for _, slasheeLine := range slashee.deathableShape.lines {
+				for _, bladeLine := range bot.pivoterShape.lines {
+					if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+						// for pivID, ps := range p.pivoters {
+						// 	if ps.ownerid == slasheeid {
+						// 		deathables[pivID] = deathable{}
+						// 		// eliminate(pivID)
+						// 		break
+						// 	}
+						// }
+						slashee.gotHit = true
+						// deathables[slasheeid] = deathable{}
+						// eliminate(slasheeid)
+						break foundSlashee
+					}
+				}
+			}
+		}
+	}
 }
 
 func makeAxe(heading float64, centerRect rectangle) []line {
@@ -39,59 +83,64 @@ func newPivotingShape(owner *entityid, r *rectangle, heading float64) *pivotingS
 	return p
 }
 
-var pivotingSystem = newPivotSystem()
+// var pivotingSystem = newPivotSystem()
 
 var swordLength = 45
 
-type pivotSystem struct {
-	pivoters map[*entityid]*pivotingShape
-	blockers map[*entityid]*shape
-}
+// type pivotSystem struct {
+// 	pivoters map[*entityid]*pivotingShape
+// 	blockers map[*entityid]*shape
+// }
+
+var pivoters = make(map[*entityid]*pivotingShape)
+
+// p.slashees = make(map[*entityid]*shape)
+var blockers = make(map[*entityid]*shape)
 
 // var slashees = make(map[*entityid]*shape)
-func newPivotSystem() pivotSystem {
-	p := pivotSystem{}
-	p.pivoters = make(map[*entityid]*pivotingShape)
-	// p.slashees = make(map[*entityid]*shape)
-	p.blockers = make(map[*entityid]*shape)
-	return p
-}
+// func newPivotSystem() pivotSystem {
+// 	p := pivotSystem{}
+// 	p.pivoters = make(map[*entityid]*pivotingShape)
+// 	// p.slashees = make(map[*entityid]*shape)
+// 	p.blockers = make(map[*entityid]*shape)
+// 	return p
+// }
 
 // func (p *pivotSystem) addSlashee(s *shape, id *entityid) {
 // 	p.slashees[id] = s
 // 	id.systems = append(id.systems, hurtable)
 // }
 
-func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
-	p.pivoters[eid] = s
-	eid.systems = append(eid.systems, pivotingHitbox)
+// func addPivoter(eid *entityid, s *pivotingShape) {
+// 	pivoters[eid] = s
+// 	eid.systems = append(eid.systems, pivotingHitbox)
 
-	for i := 1; i < 15; i++ {
-		if !pivotingSystem.checkBlocker(*s.pivoterShape) {
-			break
-		} else {
-			s.animationCount -= 0.4
-			s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
-		}
-	}
+// 	for i := 1; i < 15; i++ {
+// 		if !pivotingSystem.checkBlocker(*s.pivoterShape) {
+// 			break
+// 		} else {
+// 			s.animationCount -= 0.4
+// 			s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
+// 		}
+// 	}
 
-	s.animating = true
-	animChan := time.NewTimer(310 * time.Millisecond).C
-	go func() {
-		select {
-		case <-animChan:
-			s.doneAnimating = true
-		}
-	}()
-}
+// 	s.animating = true
+// 	animChan := time.NewTimer(310 * time.Millisecond).C
+// 	go func() {
+// 		select {
+// 		case <-animChan:
+// 			s.doneAnimating = true
+// 		}
+// 	}()
+// }
 
-func (p *pivotSystem) addBlocker(b *shape, id *entityid) {
-	p.blockers[id] = b
-	id.systems = append(id.systems, weaponBlocker)
-}
+// func (p *pivotSystem) addBlocker(b *shape, id *entityid) {
+// 	p.blockers[id] = b
+// 	id.systems = append(id.systems, weaponBlocker)
+// }
 
-func (p *pivotSystem) checkBlocker(sh shape) bool {
-	for _, blocker := range p.blockers {
+func checkBlocker(sh shape) bool {
+	for _, blocker := range blockers {
 		for _, blockerLine := range blocker.lines {
 			for _, bladeLine := range sh.lines {
 				if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
@@ -117,49 +166,49 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	return result
 // }
 
-func (p *pivotSystem) work() {
-	for id, bot := range p.pivoters {
+// func (p *pivotSystem) work() {
+// 	for id, bot := range p.pivoters {
 
-		if bot.doneAnimating {
-			// deathables[id] = deathable{}
-			eliminate(id)
-			continue
-		}
+// 		if bot.doneAnimating {
+// 			// deathables[id] = deathable{}
+// 			eliminate(id)
+// 			continue
+// 		}
 
-		bot.animationCount -= 0.16
-		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
-		blocked := p.checkBlocker(*bot.pivoterShape)
-		if blocked {
-			eliminate(id)
-			// deathables[id] = deathable{}
-			continue
-		} else {
-		foundSlashee:
-			for slasheeid, slashee := range deathables {
-				if slasheeid == bot.ownerid {
-					continue foundSlashee
-				}
-				for _, slasheeLine := range slashee.deathableShape.lines {
-					for _, bladeLine := range bot.pivoterShape.lines {
-						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-							// for pivID, ps := range p.pivoters {
-							// 	if ps.ownerid == slasheeid {
-							// 		deathables[pivID] = deathable{}
-							// 		// eliminate(pivID)
-							// 		break
-							// 	}
-							// }
-							slashee.gotHit = true
-							// deathables[slasheeid] = deathable{}
-							// eliminate(slasheeid)
-							break foundSlashee
-						}
-					}
-				}
-			}
-		}
-	}
-}
+// 		bot.animationCount -= 0.16
+// 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
+// 		blocked := p.checkBlocker(*bot.pivoterShape)
+// 		if blocked {
+// 			eliminate(id)
+// 			// deathables[id] = deathable{}
+// 			continue
+// 		} else {
+// 		foundSlashee:
+// 			for slasheeid, slashee := range deathables {
+// 				if slasheeid == bot.ownerid {
+// 					continue foundSlashee
+// 				}
+// 				for _, slasheeLine := range slashee.deathableShape.lines {
+// 					for _, bladeLine := range bot.pivoterShape.lines {
+// 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+// 							// for pivID, ps := range p.pivoters {
+// 							// 	if ps.ownerid == slasheeid {
+// 							// 		deathables[pivID] = deathable{}
+// 							// 		// eliminate(pivID)
+// 							// 		break
+// 							// 	}
+// 							// }
+// 							slashee.gotHit = true
+// 							// deathables[slasheeid] = deathable{}
+// 							// eliminate(slasheeid)
+// 							break foundSlashee
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 func addDeathable(id *entityid, d *deathable) {
 	id.systems = append(id.systems, hurtable)
