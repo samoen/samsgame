@@ -7,19 +7,19 @@ import (
 )
 
 type weaponSprite struct {
-	weaponShape *shape
+	// weaponShape *shape
 	angle       *float64
-	basicSprite playerSprite
+	basicSprite baseSprite
 }
 
-type playerSprite struct {
+type baseSprite struct {
 	playerRect *rectangle
 	sprite     *ebiten.Image
 }
 
-var playerSprites = make(map[*entityid]*playerSprite)
+var playerSprites = make(map[*entityid]*baseSprite)
 
-func addPlayerSprite(ws *playerSprite, id *entityid) {
+func addPlayerSprite(ws *baseSprite, id *entityid) {
 	playerSprites[id] = ws
 	id.systems = append(id.systems, spriteRenderable)
 }
@@ -55,7 +55,7 @@ func rectCenterPoint(r rectangle) location {
 	return location{x, y}
 }
 
-func renderWeaponSprites(s *ebiten.Image) {
+func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range playerSprites {
 		pOps := &ebiten.DrawImageOptions{}

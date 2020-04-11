@@ -65,6 +65,7 @@ func main() {
 		slashSystem.work()
 		pivotingSystem.work()
 		deathSystemwork()
+
 		if ebiten.IsDrawingSkipped() {
 			return nil
 		}
@@ -83,7 +84,7 @@ func main() {
 			}
 		}
 
-		renderWeaponSprites(screen)
+		renderEntSprites(screen)
 
 		renderingSystem.work(screen)
 
@@ -105,6 +106,10 @@ type deathable struct {
 }
 
 var deathables = make(map[*entityid]*deathable)
+
+// func drawHealthbars(screen *ebiten.Image){
+
+// }
 
 func deathSystemwork() {
 	for dID, mDeathable := range deathables {

@@ -14,7 +14,7 @@ func initEntities() {
 	slashSystem.addSlasher(playerid, playerSlasher)
 	// pivotingSystem.addSlashee(accelplayer.rect.shape, playerid)
 
-	ps := &playerSprite{accelplayer.rect, playerStandImage}
+	ps := &baseSprite{accelplayer.rect, playerStandImage}
 	addPlayerSprite(ps, playerid)
 
 	for i := 1; i < 30; i++ {
@@ -28,7 +28,7 @@ func initEntities() {
 		collideSystem.addEnt(moveEnemy, enemyid)
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
 		botsMoveSystem.addEnemy(moveEnemy, enemyid)
-		es := &playerSprite{moveEnemy.rect, playerStandImage}
+		es := &baseSprite{moveEnemy.rect, playerStandImage}
 		addPlayerSprite(es, enemyid)
 
 		botDeathable := deathable{}

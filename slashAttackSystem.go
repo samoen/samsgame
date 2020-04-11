@@ -64,8 +64,8 @@ func (s *slashAttackSystem) work() {
 			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
 			renderingSystem.addShape(ps.pivoterShape, wepid)
 			pivotingSystem.addPivoter(wepid, ps)
-			bs := playerSprite{bot.ent.rect, swordImage}
-			ws := weaponSprite{ps.pivoterShape, &ps.animationCount, bs}
+			bs := baseSprite{bot.ent.rect, swordImage}
+			ws := weaponSprite{&ps.animationCount, bs}
 			addWeaponSprite(&ws, wepid)
 
 			if d, ok := deathables[slasherid]; ok {

@@ -16,6 +16,7 @@ type pivotingShape struct {
 	animationCount float64
 	animating      bool
 	doneAnimating  bool
+	alreadyHit     map[*entityid]bool
 }
 
 func makeAxe(heading float64, centerRect rectangle) []line {
@@ -35,6 +36,7 @@ func newPivotingShape(owner *entityid, r *rectangle, heading float64) *pivotingS
 	p.animationCount = heading + 1.6
 	p.pivoterShape = newShape()
 	p.pivoterShape.lines = makeAxe(p.animationCount, *r)
+	p.alreadyHit = make(map[*entityid]bool)
 	return p
 }
 
@@ -133,6 +135,9 @@ func (p *pivotSystem) work() {
 				if slasheeid == bot.ownerid {
 					continue foundSlashee
 				}
+				if _, ok := bot.alreadyHit[slasheeid]; ok {
+					continue foundSlashee
+				}
 				for _, slasheeLine := range slashee.deathableShape.lines {
 					for _, bladeLine := range bot.pivoterShape.lines {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
@@ -144,7 +149,7 @@ func (p *pivotSystem) work() {
 							// 	}
 							// }
 							slashee.gotHit = true
-
+							bot.alreadyHit[slasheeid] = true
 							// deathables[slasheeid] = deathable{}
 							// eliminate(slasheeid)
 							break foundSlashee
@@ -158,4 +163,8 @@ func (p *pivotSystem) work() {
 func addDeathable(id *entityid, d *deathable) {
 	id.systems = append(id.systems, hurtable)
 	deathables[id] = d
+
+	// healthbar := &entityid{}
+	// sprite := &weaponSprite{}
+	// addWeaponSprite()
 }
