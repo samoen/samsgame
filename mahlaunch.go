@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"image/color"
 	_ "image/png"
 	"log"
 
@@ -33,6 +34,8 @@ var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.F
 // var bgImage *ebiten.Image
 
 func main() {
+
+	emptyImage.Fill(color.White)
 	// img, _, err := image.Decode(bytes.NewReader(playerStandPng))
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -60,7 +63,6 @@ func main() {
 		}
 
 		updatePlayerControl()
-		// botsMoveSystem.work()
 		collideSystem.work()
 		slashSystem.work()
 		pivotingSystem.work()
@@ -101,6 +103,7 @@ func main() {
 type deathable struct {
 	gotHit         bool
 	deathableShape *rectangle
+	redScale       int
 	currentHP      int
 	maxHP          int
 	associates     []*entityid
@@ -115,9 +118,13 @@ func addDeathable(id *entityid, d *deathable) {
 
 	hBarEnt := &entityid{}
 	d.healthbar = newRectangle(d.deathableShape.location, dimens{d.deathableShape.dimens.width, 10})
+
+	hBarRedScale := new(int)
+	*hBarRedScale = 100
 	sprite := &baseSprite{
 		d.healthbar,
 		emptyImage,
+		hBarRedScale,
 	}
 	d.associates = append(d.associates, hBarEnt)
 	addBasicSprite(sprite, hBarEnt)
@@ -127,7 +134,11 @@ func deathSystemwork() {
 	for dID, mDeathable := range deathables {
 		mDeathable.healthbar.location = location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
 		mDeathable.healthbar.dimens.width = mDeathable.currentHP * mDeathable.deathableShape.dimens.width / mDeathable.maxHP
+		if mDeathable.redScale > 0 {
+			mDeathable.redScale--
+		}
 		if mDeathable.gotHit {
+			mDeathable.redScale = 10
 			mDeathable.gotHit = false
 			mDeathable.currentHP--
 		}

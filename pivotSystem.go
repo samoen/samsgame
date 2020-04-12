@@ -117,7 +117,6 @@ func (p *pivotSystem) work() {
 	for id, bot := range p.pivoters {
 
 		if bot.doneAnimating {
-			// deathables[id] = deathable{}
 			eliminate(id)
 			continue
 		}
@@ -127,7 +126,6 @@ func (p *pivotSystem) work() {
 		blocked := p.checkBlocker(*bot.pivoterShape)
 		if blocked {
 			eliminate(id)
-			// deathables[id] = deathable{}
 			continue
 		} else {
 		foundSlashee:
@@ -141,17 +139,8 @@ func (p *pivotSystem) work() {
 				for _, slasheeLine := range slashee.deathableShape.shape.lines {
 					for _, bladeLine := range bot.pivoterShape.lines {
 						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-							// for pivID, ps := range p.pivoters {
-							// 	if ps.ownerid == slasheeid {
-							// 		deathables[pivID] = deathable{}
-							// 		// eliminate(pivID)
-							// 		break
-							// 	}
-							// }
 							slashee.gotHit = true
 							bot.alreadyHit[slasheeid] = true
-							// deathables[slasheeid] = deathable{}
-							// eliminate(slasheeid)
 							break foundSlashee
 						}
 					}

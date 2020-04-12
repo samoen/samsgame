@@ -64,7 +64,7 @@ func (s *slashAttackSystem) work() {
 			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
 			addHitbox(ps.pivoterShape, wepid)
 			pivotingSystem.addPivoter(wepid, ps)
-			bs := baseSprite{bot.ent.rect, swordImage}
+			bs := baseSprite{bot.ent.rect, swordImage, new(int)}
 			ws := weaponSprite{&ps.animationCount, bs}
 			addWeaponSprite(&ws, wepid)
 

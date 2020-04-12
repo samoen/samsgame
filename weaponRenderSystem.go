@@ -15,6 +15,7 @@ type weaponSprite struct {
 type baseSprite struct {
 	playerRect *rectangle
 	sprite     *ebiten.Image
+	redScale   *int
 }
 
 var basicSprites = make(map[*entityid]*baseSprite)
@@ -65,8 +66,9 @@ func renderEntSprites(s *ebiten.Image) {
 		imW, imH := ps.sprite.Size()
 		wRatio := float64(ps.playerRect.dimens.width) / float64(imW)
 		hRatio := float64(ps.playerRect.dimens.height) / float64(imH)
-		// pOps.GeoM.Scale(float64(ps.playerRect.dimens.width), float64(ps.playerRect.dimens.height))
 		pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
+
+		pOps.ColorM.Translate(float64(*ps.redScale), 0, 0, 0)
 
 		pSpriteOffset := center
 		pSpriteOffset.x += ps.playerRect.location.x
@@ -81,9 +83,8 @@ func renderEntSprites(s *ebiten.Image) {
 		wepOffset.x += ownerCenter.x
 		wepOffset.y += ownerCenter.y
 
-		ew, _ := wep.basicSprite.sprite.Size()
 		wepOps := &ebiten.DrawImageOptions{}
-		wepOps.GeoM.Translate(-float64(ew)/2, 0)
+		wepOps.GeoM.Translate(-float64(wep.basicSprite.playerRect.dimens.width)/2, 0)
 		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
 		wepOps.GeoM.Translate(float64(wepOffset.x), float64(wepOffset.y))
 		s.DrawImage(wep.basicSprite.sprite, wepOps)
