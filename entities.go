@@ -8,7 +8,7 @@ func initEntities() {
 	addPlayerControlled(accelplayer, playerid)
 	collideSystem.addEnt(accelplayer, playerid)
 	collideSystem.addSolid(accelplayer.rect.shape, playerid)
-	renderingSystem.addShape(accelplayer.rect.shape, playerid)
+	addHitbox(accelplayer.rect.shape, playerid)
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.addSlasher(playerid, playerSlasher)
@@ -24,7 +24,7 @@ func initEntities() {
 		enemySlasher := newSlasher(moveEnemy)
 		slashSystem.addSlasher(enemyid, enemySlasher)
 		// pivotingSystem.addSlashee(moveEnemy.rect.shape, enemyid)
-		renderingSystem.addShape(moveEnemy.rect.shape, enemyid)
+		addHitbox(moveEnemy.rect.shape, enemyid)
 		collideSystem.addEnt(moveEnemy, enemyid)
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
 		botsMoveSystem.addEnemy(moveEnemy, enemyid)
@@ -43,7 +43,7 @@ func initEntities() {
 		location{0, 0},
 		dimens{worldWidth, worldWidth},
 	)
-	renderingSystem.addShape(worldBoundRect.shape, worldBoundaryID)
+	addHitbox(worldBoundRect.shape, worldBoundaryID)
 	collideSystem.addSolid(worldBoundRect.shape, worldBoundaryID)
 	pivotingSystem.addBlocker(worldBoundRect.shape, worldBoundaryID)
 
@@ -56,7 +56,7 @@ func initEntities() {
 		},
 	}
 
-	renderingSystem.addShape(diagonalWall, diagonalWallID)
+	addHitbox(diagonalWall, diagonalWallID)
 	collideSystem.addSolid(diagonalWall, diagonalWallID)
 	pivotingSystem.addBlocker(diagonalWall, diagonalWallID)
 
@@ -66,11 +66,11 @@ func initEntities() {
 		dimens{70, 20},
 	)
 	pivotingSystem.addBlocker(lilRoom.shape, lilRoomID)
-	renderingSystem.addShape(lilRoom.shape, lilRoomID)
+	addHitbox(lilRoom.shape, lilRoomID)
 	collideSystem.addSolid(lilRoom.shape, lilRoomID)
 
 	anotherRoomID := &entityid{}
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	renderingSystem.addShape(anotherRoom.shape, anotherRoomID)
+	addHitbox(anotherRoom.shape, anotherRoomID)
 	collideSystem.addSolid(anotherRoom.shape, anotherRoomID)
 }

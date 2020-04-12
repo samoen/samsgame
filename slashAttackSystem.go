@@ -62,7 +62,7 @@ func (s *slashAttackSystem) work() {
 		if bot.ent.atkButton && !bot.onCooldown {
 			wepid := &entityid{}
 			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
-			renderingSystem.addShape(ps.pivoterShape, wepid)
+			addHitbox(ps.pivoterShape, wepid)
 			pivotingSystem.addPivoter(wepid, ps)
 			bs := baseSprite{bot.ent.rect, swordImage}
 			ws := weaponSprite{&ps.animationCount, bs}

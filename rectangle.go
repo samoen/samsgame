@@ -57,11 +57,11 @@ func newShape() *shape {
 }
 
 func normalcollides(checkcopy shape, entities map[*entityid]*shape, exclude *entityid) bool {
-	for _, li := range checkcopy.lines {
-		for solidID, obj := range entities {
-			if solidID == exclude {
-				continue
-			}
+	for solidID, obj := range entities {
+		if solidID == exclude {
+			continue
+		}
+		for _, li := range checkcopy.lines {
 			for _, subline := range obj.lines {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true

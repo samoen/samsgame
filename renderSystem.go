@@ -6,30 +6,20 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-var renderingSystem = newRenderSystem()
-
 var bgOps = &ebiten.DrawImageOptions{}
 
 func init() {
 	bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
 }
 
-func newRenderSystem() renderSystem {
-	r := renderSystem{}
-	r.shapes = make(map[*entityid]*shape)
-	return r
-}
+var hitBoxes = make(map[*entityid]*shape)
 
-type renderSystem struct {
-	shapes map[*entityid]*shape
-}
-
-func (r *renderSystem) addShape(s *shape, id *entityid) {
-	r.shapes[id] = s
+func addHitbox(s *shape, id *entityid) {
+	hitBoxes[id] = s
 	id.systems = append(id.systems, hitBoxRenderable)
 }
 
-func (r *renderSystem) work(s *ebiten.Image) {
+func drawHitboxes(s *ebiten.Image) {
 	center := renderOffset()
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
@@ -57,7 +47,7 @@ func (r *renderSystem) work(s *ebiten.Image) {
 		s.DrawImage(&imgToDraw, &op)
 	}
 
-	for _, shape := range r.shapes {
+	for _, shape := range hitBoxes {
 		for _, l := range shape.lines {
 			samDrawLine(l)
 		}

@@ -86,7 +86,7 @@ func main() {
 
 		renderEntSprites(screen)
 
-		renderingSystem.work(screen)
+		drawHitboxes(screen)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
 
@@ -147,7 +147,7 @@ func eliminate(id *entityid) {
 		case spriteRenderable:
 			delete(basicSprites, id)
 		case hitBoxRenderable:
-			delete(renderingSystem.shapes, id)
+			delete(hitBoxes, id)
 		case moveCollider:
 			delete(collideSystem.movers, id)
 		case solidCollider:
