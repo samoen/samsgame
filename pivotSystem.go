@@ -33,7 +33,7 @@ func newPivotingShape(owner *entityid, r *rectangle, heading float64) *pivotingS
 	p := &pivotingShape{}
 	p.pivotPoint = r
 	p.ownerid = owner
-	p.animationCount = heading + 1.6
+	p.animationCount = heading + 1.2
 	p.pivoterShape = newShape()
 	p.pivoterShape.lines = makeAxe(p.animationCount, *r)
 	p.alreadyHit = make(map[*entityid]bool)
@@ -66,13 +66,13 @@ func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
 		if !pivotingSystem.checkBlocker(*s.pivoterShape) {
 			break
 		} else {
-			s.animationCount -= 0.4
+			s.animationCount -= 0.2
 			s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
 		}
 	}
 
 	s.animating = true
-	animChan := time.NewTimer(310 * time.Millisecond).C
+	animChan := time.NewTimer(290 * time.Millisecond).C
 	go func() {
 		select {
 		case <-animChan:
@@ -121,7 +121,7 @@ func (p *pivotSystem) work() {
 			continue
 		}
 
-		bot.animationCount -= 0.16
+		bot.animationCount -= 0.12
 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
 		blocked := p.checkBlocker(*bot.pivoterShape)
 		if blocked {

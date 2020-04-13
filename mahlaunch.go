@@ -25,7 +25,7 @@ var playerStandImage, _, _ = ebitenutil.NewImageFromFile("assets/playerstand.png
 
 var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 
-var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/sword.png", ebiten.FilterDefault)
+var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.FilterDefault)
 
 // var swordImage *ebiten.Image
 
@@ -72,22 +72,8 @@ func main() {
 			return nil
 		}
 
-		myBgOps := *bgOps
-		myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
-		myBgOps.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
-
-		tilesAcross := worldWidth / bgTileWidth
-
-		for i := 0; i < tilesAcross; i++ {
-			for j := 0; j < tilesAcross; j++ {
-				tileOps := myBgOps
-				tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-				screen.DrawImage(bgImage, &tileOps)
-			}
-		}
-
+		drawBackground(screen)
 		renderEntSprites(screen)
-
 		drawHitboxes(screen)
 
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)

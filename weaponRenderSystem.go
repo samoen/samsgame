@@ -58,6 +58,22 @@ func rectCenterPoint(r rectangle) location {
 	return location{x, y}
 }
 
+func drawBackground(screen *ebiten.Image) {
+	myBgOps := *bgOps
+	myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
+	myBgOps.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
+
+	tilesAcross := worldWidth / bgTileWidth
+
+	for i := 0; i < tilesAcross; i++ {
+		for j := 0; j < tilesAcross; j++ {
+			tileOps := myBgOps
+			tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+			screen.DrawImage(bgImage, &tileOps)
+		}
+	}
+}
+
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
@@ -98,6 +114,11 @@ func renderEntSprites(s *ebiten.Image) {
 		wepOffset.y += ownerCenter.y
 
 		wepOps := &ebiten.DrawImageOptions{}
+
+		_, imH := wep.basicSprite.sprite.Size()
+		hRatio := float64(swordLength+swordLength/4) / float64(imH)
+		wepOps.GeoM.Scale(float64(hRatio), float64(hRatio))
+
 		wepOps.GeoM.Translate(-float64(wep.basicSprite.playerRect.dimens.width)/2, 0)
 		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
 		wepOps.GeoM.Translate(float64(wepOffset.x), float64(wepOffset.y))
