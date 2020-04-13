@@ -116,18 +116,16 @@ func addDeathable(id *entityid, d *deathable) {
 	id.systems = append(id.systems, hurtable)
 	deathables[id] = d
 
-	hBarEnt := &entityid{}
 	d.healthbar = newRectangle(d.deathableShape.location, dimens{d.deathableShape.dimens.width, 10})
-
+	hBarEnt := &entityid{}
 	hBarRedScale := new(int)
-	*hBarRedScale = 100
-	sprite := &baseSprite{
-		d.healthbar,
-		emptyImage,
-		hBarRedScale,
-	}
+	healthBarSprite := &baseSprite{}
+	healthBarSprite.playerRect = d.healthbar
+	healthBarSprite.sprite = emptyImage
+	healthBarSprite.redScale = hBarRedScale
+	healthBarSprite.flip = &directions{}
 	d.associates = append(d.associates, hBarEnt)
-	addBasicSprite(sprite, hBarEnt)
+	addBasicSprite(healthBarSprite, hBarEnt)
 }
 
 func deathSystemwork() {

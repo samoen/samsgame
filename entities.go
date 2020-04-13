@@ -12,13 +12,12 @@ func initEntities() {
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	slashSystem.addSlasher(playerid, playerSlasher)
-	// pivotingSystem.addSlashee(accelplayer.rect.shape, playerid)
 
 	ps := &baseSprite{}
 	ps.playerRect = accelplayer.rect
 	ps.sprite = playerStandImage
 	ps.redScale = new(int)
-	*ps.redScale = 0
+	ps.flip = &accelplayer.directions
 	addBasicSprite(ps, playerid)
 
 	for i := 1; i < 30; i++ {
@@ -27,7 +26,6 @@ func initEntities() {
 		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
 		enemySlasher := newSlasher(moveEnemy)
 		slashSystem.addSlasher(enemyid, enemySlasher)
-		// pivotingSystem.addSlashee(moveEnemy.rect.shape, enemyid)
 		addHitbox(moveEnemy.rect.shape, enemyid)
 		collideSystem.addEnt(moveEnemy, enemyid)
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
@@ -42,6 +40,7 @@ func initEntities() {
 		es.playerRect = moveEnemy.rect
 		es.sprite = playerStandImage
 		es.redScale = &botDeathable.redScale
+		es.flip = &moveEnemy.directions
 		addBasicSprite(es, enemyid)
 	}
 

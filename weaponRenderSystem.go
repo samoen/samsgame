@@ -16,6 +16,8 @@ type baseSprite struct {
 	playerRect *rectangle
 	sprite     *ebiten.Image
 	redScale   *int
+	flip       *directions
+	lastflip   bool
 }
 
 var basicSprites = make(map[*entityid]*baseSprite)
@@ -67,6 +69,18 @@ func renderEntSprites(s *ebiten.Image) {
 		wRatio := float64(ps.playerRect.dimens.width) / float64(imW)
 		hRatio := float64(ps.playerRect.dimens.height) / float64(imH)
 		pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
+
+		if ps.flip.left && !ps.flip.right {
+			ps.lastflip = true
+		}
+		if ps.flip.right && !ps.flip.left {
+			ps.lastflip = false
+		}
+
+		if ps.lastflip {
+			pOps.GeoM.Scale(-1, 1)
+			pOps.GeoM.Translate(float64(ps.playerRect.dimens.width), 0)
+		}
 
 		pOps.ColorM.Translate(float64(*ps.redScale), 0, 0, 0)
 
