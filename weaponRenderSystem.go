@@ -84,73 +84,63 @@ func drawBackground(screen *ebiten.Image) {
 	}
 }
 
+func makeOps(dims dimens, img *ebiten.Image) *ebiten.DrawImageOptions {
+	pOps := &ebiten.DrawImageOptions{}
+	imW, imH := img.Size()
+	wRatio := float64(dims.width) / float64(imW)
+	hRatio := float64(dims.height) / float64(imH)
+	pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
+
+	return pOps
+}
+
+func cameraShift(ops *ebiten.DrawImageOptions, loc location, pSpriteOffset location) {
+	pSpriteOffset.x += loc.x
+	pSpriteOffset.y += loc.y
+	ops.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
+}
+
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
-		pOps := &ebiten.DrawImageOptions{}
-		// offsetx := -playerSpriteHitboxExceed
-		// offsety :=-(2*playerSpriteHitboxExceed)
-
-		imW, imH := ps.sprite.Size()
-		wRatio := float64(ps.owner.rect.dimens.width) / float64(imW)
-		hRatio := float64(ps.owner.rect.dimens.height) / float64(imH)
-		pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
-
 		if ps.owner.directions.left && !ps.owner.directions.right {
 			ps.lastflip = true
 		}
 		if ps.owner.directions.right && !ps.owner.directions.left {
 			ps.lastflip = false
 		}
-
+		pOps := makeOps(ps.owner.rect.dimens, ps.sprite)
 		if ps.lastflip {
 			pOps.GeoM.Scale(-1, 1)
 			pOps.GeoM.Translate(float64(ps.owner.rect.dimens.width), 0)
 		}
+		cameraShift(pOps, ps.owner.rect.location, center)
 
 		pOps.ColorM.Translate(float64(*ps.redScale), 0, 0, 0)
-
-		pSpriteOffset := center
-		pSpriteOffset.x += ps.owner.rect.location.x
-		pSpriteOffset.y += ps.owner.rect.location.y
-		pOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 
 		s.DrawImage(ps.sprite, pOps)
 	}
 	for _, wep := range weapons {
-		wepOffset := center
-		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
-		wepOffset.x += ownerCenter.x
-		wepOffset.y += ownerCenter.y
 
 		wepOps := &ebiten.DrawImageOptions{}
-
 		_, imH := wep.sprite.Size()
 		hRatio := float64(swordLength+swordLength/4) / float64(imH)
 		wepOps.GeoM.Scale(float64(hRatio), float64(hRatio))
 
 		wepOps.GeoM.Translate(-float64(wep.owner.ent.rect.dimens.width)/2, 0)
 		wepOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
-		wepOps.GeoM.Translate(float64(wepOffset.x), float64(wepOffset.y))
+
+		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
+		cameraShift(wepOps, ownerCenter, center)
+
 		s.DrawImage(wep.sprite, wepOps)
 	}
 
 	for _, hBarSprite := range healthbars {
-		pOps := &ebiten.DrawImageOptions{}
-
 		healthbarlocation := location{hBarSprite.ownerDeathable.deathableShape.location.x, hBarSprite.ownerDeathable.deathableShape.location.y - 10}
 		healthbardimenswidth := hBarSprite.ownerDeathable.currentHP * hBarSprite.ownerDeathable.deathableShape.dimens.width / hBarSprite.ownerDeathable.maxHP
-
-		imW, imH := emptyImage.Size()
-		wRatio := float64(healthbardimenswidth) / float64(imW)
-		hRatio := float64(5) / float64(imH)
-		pOps.GeoM.Scale(float64(wRatio), float64(hRatio))
-
-		pSpriteOffset := center
-		pSpriteOffset.x += healthbarlocation.x
-		pSpriteOffset.y += healthbarlocation.y
-		pOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
-
+		pOps := makeOps(dimens{healthbardimenswidth, 5}, emptyImage)
+		cameraShift(pOps, healthbarlocation, center)
 		s.DrawImage(emptyImage, pOps)
 	}
 }

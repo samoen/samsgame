@@ -12,6 +12,11 @@ func initEntities() {
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	addSlasher(playerid, playerSlasher)
+	pDeathable := deathable{}
+	pDeathable.currentHP = 6
+	pDeathable.maxHP = 6
+	pDeathable.deathableShape = accelplayer.rect
+	addDeathable(playerid, &pDeathable)
 
 	ps := &baseSprite{}
 	ps.redScale = new(int)
