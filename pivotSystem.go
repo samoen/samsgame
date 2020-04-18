@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"time"
 )
 
 type entityid struct {
@@ -14,9 +13,8 @@ type pivotingShape struct {
 	pivotPoint     *rectangle
 	ownerid        *entityid
 	animationCount float64
-	animating      bool
-	doneAnimating  bool
 	alreadyHit     map[*entityid]bool
+	startCount     float64
 }
 
 func makeAxe(heading float64, centerRect rectangle) []line {
@@ -47,13 +45,11 @@ var swordLength = 45
 type pivotSystem struct {
 	pivoters map[*entityid]*pivotingShape
 	blockers map[*entityid]*shape
-	// slashees map[*entityid]*shape
 }
 
 func newPivotSystem() pivotSystem {
 	p := pivotSystem{}
 	p.pivoters = make(map[*entityid]*pivotingShape)
-	// p.slashees = make(map[*entityid]*shape)
 	p.blockers = make(map[*entityid]*shape)
 	return p
 }
@@ -70,15 +66,7 @@ func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
 			s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
 		}
 	}
-
-	s.animating = true
-	animChan := time.NewTimer(290 * time.Millisecond).C
-	go func() {
-		select {
-		case <-animChan:
-			s.doneAnimating = true
-		}
-	}()
+	s.startCount = s.animationCount
 }
 
 func (p *pivotSystem) addBlocker(b *shape, id *entityid) {
@@ -116,7 +104,7 @@ func newLinePolar(loc location, length int, angle float64) line {
 func (p *pivotSystem) work() {
 	for id, bot := range p.pivoters {
 
-		if bot.doneAnimating {
+		if math.Abs(bot.startCount-bot.animationCount) > 2 {
 			eliminate(id)
 			continue
 		}

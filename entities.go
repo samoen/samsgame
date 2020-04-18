@@ -11,7 +11,7 @@ func initEntities() {
 	addHitbox(accelplayer.rect.shape, playerid)
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
-	slashSystem.addSlasher(playerid, playerSlasher)
+	addSlasher(playerid, playerSlasher)
 
 	ps := &baseSprite{}
 	ps.playerRect = accelplayer.rect
@@ -25,11 +25,13 @@ func initEntities() {
 		moveEnemy := newControlledEntity()
 		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
 		enemySlasher := newSlasher(moveEnemy)
-		slashSystem.addSlasher(enemyid, enemySlasher)
+		addSlasher(enemyid, enemySlasher)
 		addHitbox(moveEnemy.rect.shape, enemyid)
 		collideSystem.addEnt(moveEnemy, enemyid)
 		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
-		botsMoveSystem.addEnemy(moveEnemy, enemyid)
+		eController := &enemyController{}
+		eController.aEnt = moveEnemy
+		addEnemyController(eController, enemyid)
 
 		botDeathable := deathable{}
 		botDeathable.currentHP = 3

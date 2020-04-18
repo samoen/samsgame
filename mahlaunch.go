@@ -38,8 +38,9 @@ func (g *game) Update(screen *ebiten.Image) error {
 		return errors.New("game ended by player")
 	}
 	updatePlayerControl()
+	enemyControlWork()
 	collideSystem.work()
-	slashSystem.work()
+	slashersWork()
 	pivotingSystem.work()
 	deathSystemwork()
 	return nil
@@ -152,9 +153,9 @@ func eliminate(id *entityid) {
 		case solidCollider:
 			delete(collideSystem.solids, id)
 		case enemyControlled:
-			delete(botsMoveSystem.movers, id)
+			delete(enemyControllers, id)
 		case abilityActivator:
-			delete(slashSystem.slashers, id)
+			delete(slashers, id)
 		case hurtable:
 			delete(deathables, id)
 		case pivotingHitbox:
