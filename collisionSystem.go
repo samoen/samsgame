@@ -59,7 +59,7 @@ func (p *acceleratingEnt) drive() {
 	}
 
 	movedx := false
-	if p.directions.left {
+	if p.directions.left && !p.directions.right {
 		movedx = true
 		desired := p.moment.xaxis - correctedAgilityX
 		if desired > -speedLimitx {
@@ -68,7 +68,7 @@ func (p *acceleratingEnt) drive() {
 			p.moment.xaxis = -speedLimitx
 		}
 	}
-	if p.directions.right {
+	if p.directions.right && !p.directions.left {
 		movedx = true
 		desired := p.moment.xaxis + correctedAgilityX
 		if desired < speedLimitx {
@@ -78,7 +78,7 @@ func (p *acceleratingEnt) drive() {
 		}
 	}
 	movedy := false
-	if p.directions.down {
+	if p.directions.down && !p.directions.up {
 		movedy = true
 		desired := p.moment.yaxis + correctedAgilityY
 		if desired < speedLimity {
@@ -87,7 +87,7 @@ func (p *acceleratingEnt) drive() {
 			p.moment.yaxis = speedLimity
 		}
 	}
-	if p.directions.up {
+	if p.directions.up && !p.directions.down {
 		movedy = true
 		desired := p.moment.yaxis - correctedAgilityY
 		if desired > -speedLimity {
