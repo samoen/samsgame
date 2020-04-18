@@ -4,14 +4,8 @@ import (
 	"math"
 )
 
-var collideSystem = newCollideSystem()
-
-func newCollideSystem() collisionSystem {
-	c := collisionSystem{}
-	c.movers = make(map[*entityid]*acceleratingEnt)
-	c.solids = make(map[*entityid]*shape)
-	return c
-}
+var movers = make(map[*entityid]*acceleratingEnt)
+var solids = make(map[*entityid]*shape)
 
 type momentum struct {
 	xaxis, yaxis float64
@@ -42,18 +36,13 @@ func newControlledEntity() *acceleratingEnt {
 	return c
 }
 
-type collisionSystem struct {
-	movers map[*entityid]*acceleratingEnt
-	solids map[*entityid]*shape
-}
-
-func (c *collisionSystem) addEnt(p *acceleratingEnt, id *entityid) {
-	c.movers[id] = p
+func addEnt(p *acceleratingEnt, id *entityid) {
+	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }
 
-func (c *collisionSystem) addSolid(s *shape, id *entityid) {
-	c.solids[id] = s
+func addSolid(s *shape, id *entityid) {
+	solids[id] = s
 	id.systems = append(id.systems, solidCollider)
 }
 
@@ -131,8 +120,8 @@ func (p *acceleratingEnt) drive() {
 	}
 }
 
-func (c *collisionSystem) work() {
-	for moverid, p := range c.movers {
+func collisionSystemWork() {
+	for moverid, p := range movers {
 		p.drive()
 		unitmovex := 1
 		if p.moment.xaxis < 0 {
@@ -155,7 +144,7 @@ func (c *collisionSystem) work() {
 				checklocx := p.rect.location
 				checklocx.x += unitmovex
 				checkRect := newRectangle(checklocx, p.rect.dimens)
-				if !normalcollides(*checkRect.shape, c.solids, moverid) {
+				if !normalcollides(*checkRect.shape, solids, moverid) {
 					p.rect.refreshShape(checklocx)
 				} else {
 					p.moment.xaxis = 0
@@ -170,7 +159,7 @@ func (c *collisionSystem) work() {
 				checklocy := checkrecty.location
 				checklocy.y += unitmovey
 				checkrecty.refreshShape(checklocy)
-				if !normalcollides(*checkrecty.shape, c.solids, moverid) {
+				if !normalcollides(*checkrecty.shape, solids, moverid) {
 					p.rect.refreshShape(checklocy)
 				} else {
 					p.moment.yaxis = 0

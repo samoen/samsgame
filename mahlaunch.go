@@ -39,9 +39,9 @@ func (g *game) Update(screen *ebiten.Image) error {
 	}
 	updatePlayerControl()
 	enemyControlWork()
-	collideSystem.work()
+	collisionSystemWork()
 	slashersWork()
-	pivotingSystem.work()
+	pivotSystemWork()
 	deathSystemwork()
 	return nil
 }
@@ -149,9 +149,9 @@ func eliminate(id *entityid) {
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
 		case moveCollider:
-			delete(collideSystem.movers, id)
+			delete(movers, id)
 		case solidCollider:
-			delete(collideSystem.solids, id)
+			delete(solids, id)
 		case enemyControlled:
 			delete(enemyControllers, id)
 		case abilityActivator:
@@ -159,13 +159,13 @@ func eliminate(id *entityid) {
 		case hurtable:
 			delete(deathables, id)
 		case pivotingHitbox:
-			delete(pivotingSystem.pivoters, id)
+			delete(pivoters, id)
 		case rotatingSprite:
 			delete(weapons, id)
 		case playerControlled:
 			delete(playerControllables, id)
 		case weaponBlocker:
-			delete(pivotingSystem.blockers, id)
+			delete(wepBlockers, id)
 		}
 	}
 }

@@ -55,7 +55,7 @@ func slashersWork() {
 			wepid := &entityid{}
 			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
 			addHitbox(ps.pivoterShape, wepid)
-			pivotingSystem.addPivoter(wepid, ps)
+			addPivoter(wepid, ps)
 			bs := baseSprite{}
 			bs.playerRect = bot.ent.rect
 			bs.sprite = swordImage

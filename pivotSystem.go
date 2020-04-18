@@ -38,28 +38,17 @@ func newPivotingShape(owner *entityid, r *rectangle, heading float64) *pivotingS
 	return p
 }
 
-var pivotingSystem = newPivotSystem()
-
 var swordLength = 45
 
-type pivotSystem struct {
-	pivoters map[*entityid]*pivotingShape
-	blockers map[*entityid]*shape
-}
+var pivoters = make(map[*entityid]*pivotingShape)
+var wepBlockers = make(map[*entityid]*shape)
 
-func newPivotSystem() pivotSystem {
-	p := pivotSystem{}
-	p.pivoters = make(map[*entityid]*pivotingShape)
-	p.blockers = make(map[*entityid]*shape)
-	return p
-}
-
-func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
-	p.pivoters[eid] = s
+func addPivoter(eid *entityid, s *pivotingShape) {
+	pivoters[eid] = s
 	eid.systems = append(eid.systems, pivotingHitbox)
 
 	for i := 1; i < 15; i++ {
-		if !pivotingSystem.checkBlocker(*s.pivoterShape) {
+		if !checkBlocker(*s.pivoterShape) {
 			break
 		} else {
 			s.animationCount -= 0.2
@@ -69,13 +58,13 @@ func (p *pivotSystem) addPivoter(eid *entityid, s *pivotingShape) {
 	s.startCount = s.animationCount
 }
 
-func (p *pivotSystem) addBlocker(b *shape, id *entityid) {
-	p.blockers[id] = b
+func addBlocker(b *shape, id *entityid) {
+	wepBlockers[id] = b
 	id.systems = append(id.systems, weaponBlocker)
 }
 
-func (p *pivotSystem) checkBlocker(sh shape) bool {
-	for _, blocker := range p.blockers {
+func checkBlocker(sh shape) bool {
+	for _, blocker := range wepBlockers {
 		for _, blockerLine := range blocker.lines {
 			for _, bladeLine := range sh.lines {
 				if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
@@ -101,8 +90,8 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	return result
 // }
 
-func (p *pivotSystem) work() {
-	for id, bot := range p.pivoters {
+func pivotSystemWork() {
+	for id, bot := range pivoters {
 
 		if math.Abs(bot.startCount-bot.animationCount) > 2 {
 			eliminate(id)
@@ -111,7 +100,7 @@ func (p *pivotSystem) work() {
 
 		bot.animationCount -= 0.12
 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
-		blocked := p.checkBlocker(*bot.pivoterShape)
+		blocked := checkBlocker(*bot.pivoterShape)
 		if blocked {
 			eliminate(id)
 			continue

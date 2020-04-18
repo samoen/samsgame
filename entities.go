@@ -6,8 +6,8 @@ func initEntities() {
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
-	collideSystem.addEnt(accelplayer, playerid)
-	collideSystem.addSolid(accelplayer.rect.shape, playerid)
+	addEnt(accelplayer, playerid)
+	addSolid(accelplayer.rect.shape, playerid)
 	addHitbox(accelplayer.rect.shape, playerid)
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
@@ -27,8 +27,8 @@ func initEntities() {
 		enemySlasher := newSlasher(moveEnemy)
 		addSlasher(enemyid, enemySlasher)
 		addHitbox(moveEnemy.rect.shape, enemyid)
-		collideSystem.addEnt(moveEnemy, enemyid)
-		collideSystem.addSolid(moveEnemy.rect.shape, enemyid)
+		addEnt(moveEnemy, enemyid)
+		addSolid(moveEnemy.rect.shape, enemyid)
 		eController := &enemyController{}
 		eController.aEnt = moveEnemy
 		addEnemyController(eController, enemyid)
@@ -52,8 +52,8 @@ func initEntities() {
 		dimens{worldWidth, worldWidth},
 	)
 	addHitbox(worldBoundRect.shape, worldBoundaryID)
-	collideSystem.addSolid(worldBoundRect.shape, worldBoundaryID)
-	pivotingSystem.addBlocker(worldBoundRect.shape, worldBoundaryID)
+	addSolid(worldBoundRect.shape, worldBoundaryID)
+	addBlocker(worldBoundRect.shape, worldBoundaryID)
 
 	diagonalWallID := &entityid{}
 	diagonalWall := newShape()
@@ -65,20 +65,20 @@ func initEntities() {
 	}
 
 	addHitbox(diagonalWall, diagonalWallID)
-	collideSystem.addSolid(diagonalWall, diagonalWallID)
-	pivotingSystem.addBlocker(diagonalWall, diagonalWallID)
+	addSolid(diagonalWall, diagonalWallID)
+	addBlocker(diagonalWall, diagonalWallID)
 
 	lilRoomID := &entityid{}
 	lilRoom := newRectangle(
 		location{45, 400},
 		dimens{70, 20},
 	)
-	pivotingSystem.addBlocker(lilRoom.shape, lilRoomID)
+	addBlocker(lilRoom.shape, lilRoomID)
 	addHitbox(lilRoom.shape, lilRoomID)
-	collideSystem.addSolid(lilRoom.shape, lilRoomID)
+	addSolid(lilRoom.shape, lilRoomID)
 
 	anotherRoomID := &entityid{}
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
 	addHitbox(anotherRoom.shape, anotherRoomID)
-	collideSystem.addSolid(anotherRoom.shape, anotherRoomID)
+	addSolid(anotherRoom.shape, anotherRoomID)
 }
