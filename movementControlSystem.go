@@ -8,10 +8,6 @@ type directions struct {
 	right, down, left, up bool
 }
 
-type moveSpeed struct {
-	currentSpeed int
-}
-
 var playerControllables = make(map[*entityid]*acceleratingEnt)
 
 func addPlayerControlled(m *acceleratingEnt, id *entityid) {
