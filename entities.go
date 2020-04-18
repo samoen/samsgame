@@ -14,10 +14,9 @@ func initEntities() {
 	addSlasher(playerid, playerSlasher)
 
 	ps := &baseSprite{}
-	ps.playerRect = accelplayer.rect
-	ps.sprite = playerStandImage
 	ps.redScale = new(int)
-	ps.flip = &accelplayer.directions
+	ps.sprite = playerStandImage
+	ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
 
 	for i := 1; i < 30; i++ {
@@ -39,10 +38,9 @@ func initEntities() {
 		botDeathable.deathableShape = moveEnemy.rect
 		addDeathable(enemyid, &botDeathable)
 		es := &baseSprite{}
-		es.playerRect = moveEnemy.rect
-		es.sprite = playerStandImage
 		es.redScale = &botDeathable.redScale
-		es.flip = &moveEnemy.directions
+		es.sprite = playerStandImage
+		es.owner = moveEnemy
 		addBasicSprite(es, enemyid)
 	}
 

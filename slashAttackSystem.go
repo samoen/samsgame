@@ -56,12 +56,7 @@ func slashersWork() {
 			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
 			addHitbox(ps.pivoterShape, wepid)
 			addPivoter(wepid, ps)
-			bs := baseSprite{}
-			bs.playerRect = bot.ent.rect
-			bs.sprite = swordImage
-			bs.redScale = new(int)
-			bs.flip = &directions{}
-			ws := weaponSprite{&ps.animationCount, bs}
+			ws := weaponSprite{&ps.animationCount, bot, swordImage}
 			addWeaponSprite(&ws, wepid)
 
 			if d, ok := deathables[slasherid]; ok {

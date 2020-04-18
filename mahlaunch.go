@@ -98,7 +98,6 @@ type deathable struct {
 	currentHP      int
 	maxHP          int
 	associates     []*entityid
-	healthbar      *rectangle
 }
 
 var deathables = make(map[*entityid]*deathable)
@@ -107,22 +106,16 @@ func addDeathable(id *entityid, d *deathable) {
 	id.systems = append(id.systems, hurtable)
 	deathables[id] = d
 
-	d.healthbar = newRectangle(d.deathableShape.location, dimens{d.deathableShape.dimens.width, 10})
 	hBarEnt := &entityid{}
-	hBarRedScale := new(int)
-	healthBarSprite := &baseSprite{}
-	healthBarSprite.playerRect = d.healthbar
-	healthBarSprite.sprite = emptyImage
-	healthBarSprite.redScale = hBarRedScale
-	healthBarSprite.flip = &directions{}
+	healthBarSprite := &healthBarSprite{}
+	healthBarSprite.ownerDeathable = d
 	d.associates = append(d.associates, hBarEnt)
-	addBasicSprite(healthBarSprite, hBarEnt)
+	addHealthBarSprite(healthBarSprite, hBarEnt)
 }
 
 func deathSystemwork() {
 	for dID, mDeathable := range deathables {
-		mDeathable.healthbar.location = location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
-		mDeathable.healthbar.dimens.width = mDeathable.currentHP * mDeathable.deathableShape.dimens.width / mDeathable.maxHP
+
 		if mDeathable.redScale > 0 {
 			mDeathable.redScale--
 		}
@@ -146,6 +139,8 @@ func eliminate(id *entityid) {
 		switch sys {
 		case spriteRenderable:
 			delete(basicSprites, id)
+		case healthBarRenderable:
+			delete(healthbars, id)
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
 		case moveCollider:
