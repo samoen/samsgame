@@ -47,12 +47,14 @@ func addPivoter(eid *entityid, s *pivotingShape) {
 	pivoters[eid] = s
 	eid.systems = append(eid.systems, pivotingHitbox)
 
-	for i := 1; i < 15; i++ {
-		if !checkBlocker(*s.pivoterShape) {
-			break
-		} else {
-			s.animationCount -= 0.2
-			s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
+	if ok, _, _ := checkSlashee(s); !ok {
+		for i := 1; i < 20; i++ {
+			if !checkBlocker(*s.pivoterShape) {
+				break
+			} else {
+				s.animationCount -= 0.2
+				s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
+			}
 		}
 	}
 	s.startCount = s.animationCount
@@ -93,36 +95,39 @@ func newLinePolar(loc location, length int, angle float64) line {
 func pivotSystemWork() {
 	for id, bot := range pivoters {
 
-		if math.Abs(bot.startCount-bot.animationCount) > 2 {
-			eliminate(id)
-			continue
-		}
-
 		bot.animationCount -= 0.12
 		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
 		blocked := checkBlocker(*bot.pivoterShape)
+
+		if ok, slashee, slasheeid := checkSlashee(bot); ok {
+			slashee.gotHit = true
+			bot.alreadyHit[slasheeid] = true
+		}
 		if blocked {
 			eliminate(id)
 			continue
-		} else {
-		foundSlashee:
-			for slasheeid, slashee := range deathables {
-				if slasheeid == bot.ownerid {
-					continue foundSlashee
-				}
-				if _, ok := bot.alreadyHit[slasheeid]; ok {
-					continue foundSlashee
-				}
-				for _, slasheeLine := range slashee.deathableShape.shape.lines {
-					for _, bladeLine := range bot.pivoterShape.lines {
-						if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-							slashee.gotHit = true
-							bot.alreadyHit[slasheeid] = true
-							break foundSlashee
-						}
-					}
+		} else if math.Abs(bot.startCount-bot.animationCount) > 2 {
+			eliminate(id)
+			continue
+		}
+	}
+}
+
+func checkSlashee(bot *pivotingShape) (bool, *deathable, *entityid) {
+	for slasheeid, slashee := range deathables {
+		if slasheeid == bot.ownerid {
+			continue
+		}
+		if _, ok := bot.alreadyHit[slasheeid]; ok {
+			continue
+		}
+		for _, slasheeLine := range slashee.deathableShape.shape.lines {
+			for _, bladeLine := range bot.pivoterShape.lines {
+				if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+					return true, slashee, slasheeid
 				}
 			}
 		}
 	}
+	return false, nil, nil
 }
