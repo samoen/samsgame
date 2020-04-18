@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-
 	"image/color"
 	_ "image/png"
 	"log"
@@ -11,7 +10,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
@@ -32,6 +30,31 @@ var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.Filt
 var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
 
 // var bgImage *ebiten.Image
+
+type game struct{}
+
+func (g *game) Update(screen *ebiten.Image) error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		return errors.New("game ended by player")
+	}
+	updatePlayerControl()
+	collideSystem.work()
+	slashSystem.work()
+	pivotingSystem.work()
+	deathSystemwork()
+	return nil
+}
+
+func (g *game) Draw(screen *ebiten.Image) {
+	drawBackground(screen)
+	renderEntSprites(screen)
+	drawHitboxes(screen)
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
+}
+
+func (g *game) Layout(outsideWidth, outsideHeight int) (w, h int) {
+	return screenWidth, screenHeight
+}
 
 func main() {
 
@@ -56,32 +79,13 @@ func main() {
 
 	initEntities()
 
-	update := func(screen *ebiten.Image) error {
+	ebiten.SetRunnableOnUnfocused(true)
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("sams cool game")
 
-		if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-			return errors.New("game ended by player")
-		}
+	samgame := &game{}
 
-		updatePlayerControl()
-		collideSystem.work()
-		slashSystem.work()
-		pivotingSystem.work()
-		deathSystemwork()
-
-		if ebiten.IsDrawingSkipped() {
-			return nil
-		}
-
-		drawBackground(screen)
-		renderEntSprites(screen)
-		drawHitboxes(screen)
-
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
-
-		return nil
-	}
-
-	if err := ebiten.Run(update, screenWidth, screenHeight, 1, "sam's cool game"); err != nil {
+	if err := ebiten.RunGame(samgame); err != nil {
 		log.Fatal(err)
 	}
 }
