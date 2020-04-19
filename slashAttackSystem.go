@@ -69,9 +69,7 @@ func slashersWork() {
 			addPivoter(wepid, p)
 			addWeaponSprite(&ws, wepid)
 
-			if d, ok := deathables[slasherid]; ok {
-				d.associates = append(d.associates, wepid)
-			}
+			slasherid.linked = append(slasherid.linked, wepid)
 
 			bot.cooldownCount = 60
 		}

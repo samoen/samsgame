@@ -53,7 +53,16 @@ func (g *game) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
 	renderEntSprites(screen)
 	drawHitboxes(screen)
-	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("TPS: %0.2f FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS()), 0, 0)
+	ebitenutil.DebugPrintAt(
+		screen,
+		fmt.Sprintf(
+			"TPS: %0.2f FPS: %0.2f",
+			ebiten.CurrentTPS(),
+			ebiten.CurrentFPS(),
+		),
+		0,
+		0,
+	)
 }
 
 func (g *game) Layout(outsideWidth, outsideHeight int) (w, h int) {
@@ -100,7 +109,6 @@ type deathable struct {
 	redScale       int
 	currentHP      int
 	maxHP          int
-	associates     []*entityid
 }
 
 var deathables = make(map[*entityid]*deathable)
@@ -112,7 +120,7 @@ func addDeathable(id *entityid, d *deathable) {
 	hBarEnt := &entityid{}
 	healthBarSprite := &healthBarSprite{}
 	healthBarSprite.ownerDeathable = d
-	d.associates = append(d.associates, hBarEnt)
+	id.linked = append(id.linked, hBarEnt)
 	addHealthBarSprite(healthBarSprite, hBarEnt)
 }
 
@@ -128,15 +136,16 @@ func deathSystemwork() {
 			mDeathable.currentHP--
 		}
 		if mDeathable.currentHP < 1 {
-			for _, associate := range mDeathable.associates {
-				eliminate(associate)
-			}
 			eliminate(dID)
 		}
 	}
 }
 
 func eliminate(id *entityid) {
+
+	for _, asc := range id.linked {
+		eliminate(asc)
+	}
 
 	for _, sys := range id.systems {
 		switch sys {

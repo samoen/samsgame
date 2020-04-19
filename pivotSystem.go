@@ -6,6 +6,7 @@ import (
 
 type entityid struct {
 	systems []sysIndex
+	linked []*entityid
 }
 
 type pivotingShape struct {
