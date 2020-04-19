@@ -36,7 +36,7 @@ func newControlledEntity() *acceleratingEnt {
 	return c
 }
 
-func addEnt(p *acceleratingEnt, id *entityid) {
+func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }

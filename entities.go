@@ -6,7 +6,7 @@ func initEntities() {
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
-	addEnt(accelplayer, playerid)
+	addMoveCollider(accelplayer, playerid)
 	addSolid(accelplayer.rect.shape, playerid)
 	addHitbox(accelplayer.rect.shape, playerid)
 	centerOn = accelplayer.rect
@@ -20,6 +20,7 @@ func initEntities() {
 
 	ps := &baseSprite{}
 	ps.redScale = new(int)
+	ps.swinging = &playerSlasher.swangin
 	ps.sprite = playerStandImage
 	ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
@@ -31,7 +32,7 @@ func initEntities() {
 		enemySlasher := newSlasher(moveEnemy)
 		addSlasher(enemyid, enemySlasher)
 		addHitbox(moveEnemy.rect.shape, enemyid)
-		addEnt(moveEnemy, enemyid)
+		addMoveCollider(moveEnemy, enemyid)
 		addSolid(moveEnemy.rect.shape, enemyid)
 		eController := &enemyController{}
 		eController.aEnt = moveEnemy
@@ -43,6 +44,7 @@ func initEntities() {
 		botDeathable.deathableShape = moveEnemy.rect
 		addDeathable(enemyid, &botDeathable)
 		es := &baseSprite{}
+		es.swinging = &enemySlasher.swangin
 		es.redScale = &botDeathable.redScale
 		es.sprite = playerStandImage
 		es.owner = moveEnemy

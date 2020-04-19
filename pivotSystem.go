@@ -15,6 +15,7 @@ type pivotingShape struct {
 	animationCount float64
 	alreadyHit     map[*entityid]bool
 	startCount     float64
+	swangin *bool
 }
 
 func makeAxe(heading float64, centerRect rectangle) []line {
@@ -27,17 +28,6 @@ func makeAxe(heading float64, centerRect rectangle) []line {
 	return []line{rotLine, crossLine, frontCrossLine}
 }
 
-func newPivotingShape(owner *entityid, r *rectangle, heading float64) *pivotingShape {
-	p := &pivotingShape{}
-	p.pivotPoint = r
-	p.ownerid = owner
-	p.animationCount = heading + 1.2
-	p.pivoterShape = newShape()
-	p.pivoterShape.lines = makeAxe(p.animationCount, *r)
-	p.alreadyHit = make(map[*entityid]bool)
-	return p
-}
-
 var swordLength = 45
 
 var pivoters = make(map[*entityid]*pivotingShape)
@@ -47,7 +37,7 @@ func addPivoter(eid *entityid, s *pivotingShape) {
 	pivoters[eid] = s
 	eid.systems = append(eid.systems, pivotingHitbox)
 
-	if ok, _, _ := checkSlashee(s); !ok {
+	//if ok, _, _ := checkSlashee(s); !ok {
 		for i := 1; i < 20; i++ {
 			if !checkBlocker(*s.pivoterShape) {
 				break
@@ -56,7 +46,7 @@ func addPivoter(eid *entityid, s *pivotingShape) {
 				s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
 			}
 		}
-	}
+	//}
 	s.startCount = s.animationCount
 }
 
@@ -104,9 +94,11 @@ func pivotSystemWork() {
 			bot.alreadyHit[slasheeid] = true
 		}
 		if blocked {
+			*bot.swangin = false
 			eliminate(id)
 			continue
 		} else if math.Abs(bot.startCount-bot.animationCount) > 2 {
+			*bot.swangin = false
 			eliminate(id)
 			continue
 		}

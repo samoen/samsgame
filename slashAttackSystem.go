@@ -8,6 +8,7 @@ type slasher struct {
 	ent           *acceleratingEnt
 	startangle    float64
 	cooldownCount int
+	swangin       bool
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
@@ -53,10 +54,19 @@ func slashersWork() {
 
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
 			wepid := &entityid{}
-			ps := newPivotingShape(slasherid, bot.ent.rect, bot.startangle)
-			addHitbox(ps.pivoterShape, wepid)
-			addPivoter(wepid, ps)
-			ws := weaponSprite{&ps.animationCount, bot, swordImage}
+			p := &pivotingShape{}
+			p.pivotPoint = bot.ent.rect
+			p.ownerid = slasherid
+			p.animationCount = bot.startangle + 1.2
+			p.pivoterShape = newShape()
+			p.pivoterShape.lines = makeAxe(p.animationCount, *bot.ent.rect)
+			p.alreadyHit = make(map[*entityid]bool)
+			p.swangin = &bot.swangin
+			bot.swangin = true
+			ws := weaponSprite{&p.animationCount, bot, swordImage}
+
+			addHitbox(p.pivoterShape, wepid)
+			addPivoter(wepid, p)
 			addWeaponSprite(&ws, wepid)
 
 			if d, ok := deathables[slasherid]; ok {

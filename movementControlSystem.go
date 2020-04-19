@@ -16,8 +16,6 @@ func addPlayerControlled(m *acceleratingEnt, id *entityid) {
 }
 
 func updatePlayerControl() {
-	// select {
-	// case <-b.events:
 	for _, bot := range playerControllables {
 		bot.directions = directions{
 			ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight),
@@ -27,6 +25,4 @@ func updatePlayerControl() {
 		}
 		bot.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 	}
-	// default:
-	// }
 }

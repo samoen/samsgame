@@ -17,7 +17,10 @@ const screenWidth = 1400
 const screenHeight = 1000
 const bgTileWidth = 2500
 
-var playerStandImage, _, _ = ebitenutil.NewImageFromFile("assets/playerstand.png", ebiten.FilterDefault)
+var playerStandImage, _, _ = ebitenutil.NewImageFromFile(
+	"assets/playerstand.png",
+	ebiten.FilterDefault,
+)
 
 // var playerStandImage *ebiten.Image
 
