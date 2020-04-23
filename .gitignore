@@ -1,2 +1,6 @@
-go_build_mahgame.exe
+client.exe
+server.exe
 .idea
+wasgame.wasm
+wasm_exec.js
+

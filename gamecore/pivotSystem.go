@@ -1,4 +1,4 @@
-package main
+package gamecore
 
 import (
 	"math"
@@ -124,3 +124,4 @@ func checkSlashee(bot *pivotingShape) (bool, *deathable, *entityid) {
 	}
 	return false, nil, nil
 }
+

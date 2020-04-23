@@ -1,6 +1,7 @@
-package main
+package gamecore
 
 import (
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 	"math"
 
@@ -24,7 +25,26 @@ type baseSprite struct {
 type healthBarSprite struct {
 	ownerDeathable *deathable
 }
+var ScreenWidth = 1400
+var ScreenHeight = 1000
+var bgTileWidth = 2500
 
+var playerStandImage, _, _ = ebitenutil.NewImageFromFile(
+	"assets/playerstand.png",
+	ebiten.FilterDefault,
+)
+
+// var playerStandImage *ebiten.Image
+
+var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+
+var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.FilterDefault)
+
+// var swordImage *ebiten.Image
+
+var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
+
+// var bgImage *ebiten.Image
 var healthbars = make(map[*entityid]*healthBarSprite)
 
 func addHealthBarSprite(h *healthBarSprite, id *entityid) {
@@ -59,8 +79,8 @@ func renderingCenter() location {
 
 func renderOffset() location {
 	center := renderingCenter()
-	center.x += screenWidth / 2
-	center.y += screenHeight / 2
+	center.x += ScreenWidth / 2
+	center.y += ScreenHeight / 2
 	return center
 }
 
@@ -68,6 +88,12 @@ func rectCenterPoint(r rectangle) location {
 	x := r.location.x + (r.dimens.width / 2)
 	y := r.location.y + (r.dimens.height / 2)
 	return location{x, y}
+}
+
+var bgOps = &ebiten.DrawImageOptions{}
+
+func init() {
+	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 }
 
 func drawBackground(screen *ebiten.Image) {

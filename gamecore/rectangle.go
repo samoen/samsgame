@@ -1,4 +1,4 @@
-package main
+package gamecore
 
 type location struct {
 	x, y int

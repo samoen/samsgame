@@ -1,4 +1,4 @@
-package main
+package gamecore
 
 import (
 	"math"
@@ -6,11 +6,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-var bgOps = &ebiten.DrawImageOptions{}
-
-func init() {
-	bgOps.GeoM.Translate(float64(screenWidth/2), float64(screenHeight/2))
-}
 
 var hitBoxes = make(map[*entityid]*shape)
 

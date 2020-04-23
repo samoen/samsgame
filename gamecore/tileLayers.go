@@ -1,4 +1,4 @@
-package main
+package gamecore
 
 var (
 	layers = [][]int{

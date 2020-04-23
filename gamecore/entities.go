@@ -1,8 +1,54 @@
-package main
+package gamecore
+
+import (
+	"errors"
+	"fmt"
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/inpututil"
+)
 
 const worldWidth = 5000
+type SamGame struct{}
 
-func initEntities() {
+func (g *SamGame) Update(screen *ebiten.Image) error {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		return errors.New("SamGame ended by player")
+	}
+	updatePlayerControl()
+	enemyControlWork()
+	collisionSystemWork()
+	slashersWork()
+	pivotSystemWork()
+	deathSystemwork()
+	return nil
+}
+
+func (g *SamGame) Draw(screen *ebiten.Image) {
+	drawBackground(screen)
+	renderEntSprites(screen)
+	drawHitboxes(screen)
+	ebitenutil.DebugPrintAt(
+		screen,
+		fmt.Sprintf(
+			"TPS: %0.2f FPS: %0.2f",
+			ebiten.CurrentTPS(),
+			ebiten.CurrentFPS(),
+		),
+		0,
+		0,
+	)
+}
+
+func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
+	ScreenWidth = outsideWidth
+	ScreenHeight = outsideHeight
+	//return ScreenWidth, ScreenHeight
+	//magnification := outsideWidth/ScreenWidth
+	//return outsideWidth+outsideWidth-ScreenWidth, outsideHeight+outsideWidth-ScreenHeight
+	return outsideWidth, outsideHeight
+}
+func init() {
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
