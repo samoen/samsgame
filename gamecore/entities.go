@@ -1,11 +1,16 @@
 package gamecore
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
+	"log"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
+	"time"
 )
 
 const worldWidth = 5000
@@ -41,14 +46,40 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 }
 
 func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
-	ScreenWidth = outsideWidth
-	ScreenHeight = outsideHeight
-	//return ScreenWidth, ScreenHeight
+	//ScreenWidth = outsideWidth
+	//ScreenHeight = outsideHeight
+	return ScreenWidth, ScreenHeight
 	//magnification := outsideWidth/ScreenWidth
 	//return outsideWidth+outsideWidth-ScreenWidth, outsideHeight+outsideWidth-ScreenHeight
-	return outsideWidth, outsideHeight
+	//return outsideWidth, outsideHeight
 }
+
+func connectToServer(){
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	c, _, err := websocket.Dial(ctx, "ws://localhost:8080/ws", nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer c.Close(websocket.StatusInternalError, "the sky is falling")
+
+	for{
+		err = wsjson.Write(ctx, c, "hi")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		fmt.Println("sent it and waited")
+	}
+
+	c.Close(websocket.StatusNormalClosure, "")
+}
+
 func init() {
+	go connectToServer()
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)

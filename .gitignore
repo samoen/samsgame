@@ -3,4 +3,5 @@ server.exe
 .idea
 wasgame.wasm
 wasm_exec.js
+run_server.exe
 
