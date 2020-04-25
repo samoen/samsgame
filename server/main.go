@@ -65,10 +65,14 @@ func main(){
 		for{
 			conMutex.Lock()
 			for conno,_ := range connections{
-				var locs []gamecore.ServerLocation
+				var locs []gamecore.LocWithPNum
 				for subcon,loc := range connections{
 					if subcon != conno{
-						locs = append(locs,loc)
+						locWithP := gamecore.LocWithPNum{
+							Loc: loc,
+							PNum: fmt.Sprintf("%p",subcon),
+						}
+						locs = append(locs,locWithP)
 					}
 				}
 				toSend := gamecore.LocationList{Locs:locs}

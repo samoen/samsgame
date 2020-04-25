@@ -16,6 +16,12 @@ const worldWidth = 5000
 type SamGame struct{}
 var sendCount int = 60
 var receiveChan = make(chan LocationList)
+var otherPlayers = make(map[string]*ServeLocAndEntID)
+
+type ServeLocAndEntID struct{
+	serveloc ServerLocation
+	entID *rectangle
+}
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("SamGame ended by player")
@@ -30,6 +36,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 			if writeErr != nil {
 				log.Println(writeErr)
 				closeConn()
+				socketConnection = nil
 			}
 			fmt.Println("sent my pos",message)
 		}
@@ -37,6 +44,17 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	select {
 	case msg := <-receiveChan:
 				fmt.Println("received message", msg)
+				for _,l:=range msg.Locs{
+					if res,ok := otherPlayers[l.PNum]; !ok{
+						newOtherPlayer := &entityid{}
+						rect := newRectangle(location{l.Loc.X,l.Loc.Y},dimens{20,40})
+						addHitbox(rect.shape,newOtherPlayer)
+						otherPlay := &ServeLocAndEntID{serveloc: l.Loc,entID: rect}
+						otherPlayers[l.PNum] = otherPlay
+					}else{
+						res.entID.refreshShape(location{l.Loc.X,l.Loc.Y})
+					}
+				}
 	default:
 	}
 
@@ -86,8 +104,14 @@ type ServerMessage struct{
 	Myloc ServerLocation `json:"myloc"`
 }
 type LocationList struct{
-	Locs []ServerLocation `json:"locs"`
+	Locs []LocWithPNum `json:"locs"`
 }
+
+type LocWithPNum struct{
+	Loc ServerLocation
+	PNum string
+}
+
 type ServerLocation struct{
 	X int `json:"x"`
 	Y int `json:"y"`
