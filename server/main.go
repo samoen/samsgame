@@ -3,11 +3,19 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/http"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
+	"time"
 )
-
+type serverMessage struct{
+	Myloc serverLocation `json:"myloc"`
+}
+type serverLocation struct{
+	X int `json:"x"`
+	Y int `json:"y"`
+}
 func main(){
 	fmt.Println("server go brr")
 	http.Handle("/", http.FileServer(http.Dir(".")))
@@ -24,26 +32,35 @@ func main(){
 			return
 		}
 		defer func(){
-			err = c.Close(websocket.StatusInternalError, "closed from defer")
+			err = c.Close(websocket.StatusInternalError, "closed from server defer")
 			if err != nil {
 				log.Println(err)
 			}
 		}()
 
-
-		for{
+		go func(){
 			//ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
 			//defer cancel()
-
-			var v interface{}
-			err = wsjson.Read(r.Context(), c, &v)
-			if err != nil {
+			for{
+				var v serverMessage
+				err = wsjson.Read(r.Context(), c, &v)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("received: ",v.Myloc.X,v.Myloc.Y)
+			}
+		}()
+		for{
+			toSend := serverMessage{serverLocation{30,30}}
+			err = wsjson.Write(r.Context(),c,toSend)
+			//_,err = w.Write([]byte("ahoy from server"))
+			if err != nil{
 				log.Println(err)
 				return
 			}
-			log.Printf("received: %v", v)
-			//_,err = w.Write([]byte("ahoy from server"))
-
+			log.Println("sent message: ",toSend)
+			time.Sleep(500 * time.Millisecond)
 		}
 
 		//err = c.Close(websocket.StatusNormalClosure, "ended normally")

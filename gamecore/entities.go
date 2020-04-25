@@ -10,16 +10,35 @@ import (
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
-	"time"
 )
 
 const worldWidth = 5000
 type SamGame struct{}
-
+var sendCount int = 60
+var receiveChan chan serverMessage = make(chan serverMessage)
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		closeConn()
 		return errors.New("SamGame ended by player")
 	}
+	if sendCount>0{
+		sendCount--
+	}else{
+		sendCount = 60
+		message := serverMessage{Myloc: serverLocation{4,5}}
+		writeErr := wsjson.Write(context.Background(), socketConnection, message)
+		if writeErr != nil {
+			log.Println(writeErr)
+			return writeErr
+		}
+		fmt.Println("sent my pos",message)
+	}
+	select {
+	case msg := <-receiveChan:
+				fmt.Println("received message", msg)
+	default:
+	}
+
 	updatePlayerControl()
 	enemyControlWork()
 	collisionSystemWork()
@@ -54,32 +73,49 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 	//return outsideWidth, outsideHeight
 }
 
-func connectToServer(){
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
+var socketConnection *websocket.Conn
 
-	c, _, err := websocket.Dial(ctx, "ws://localhost:8080/ws", nil)
+func closeConn(){
+	err := socketConnection.Close(websocket.StatusInternalError, "closed from client defer")
+	if err != nil{
+		log.Println(err)
+	}
+}
+type serverMessage struct{
+	Myloc serverLocation `json:"myloc"`
+}
+type serverLocation struct{
+	X int `json:"x"`
+	Y int `json:"y"`
+}
+func connectToServer(){
+	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	//defer cancel()
+
+	var err error
+	socketConnection, _, err = websocket.Dial(context.Background(), "ws://localhost:8080/ws", nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer c.Close(websocket.StatusInternalError, "the sky is falling")
-
-	for{
-		err = wsjson.Write(ctx, c, "hi")
-		if err != nil {
-			log.Println(err)
-			return
+	defer func(){
+		closeConn()
+	}()
+	//go func(){
+		for{
+			var v serverMessage
+			err1 := wsjson.Read(context.Background(),socketConnection,&v)
+			if err1 != nil{
+				log.Println(err1)
+				return
+			}
+			receiveChan <- v
 		}
-		time.Sleep(500 * time.Millisecond)
-		fmt.Println("sent it and waited")
-	}
-
-	c.Close(websocket.StatusNormalClosure, "")
+	//}()
 }
 
-func init() {
-	go connectToServer()
+func ClientInit() {
+
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
@@ -163,4 +199,6 @@ func init() {
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
 	addHitbox(anotherRoom.shape, anotherRoomID)
 	addSolid(anotherRoom.shape, anotherRoomID)
+
+	go connectToServer()
 }
