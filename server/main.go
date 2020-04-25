@@ -64,8 +64,14 @@ func main(){
 	go func(){
 		for{
 			conMutex.Lock()
-			for conno,loc := range connections{
-				toSend := gamecore.ServerMessage{Myloc:loc}
+			for conno,_ := range connections{
+				var locs []gamecore.ServerLocation
+				for subcon,loc := range connections{
+					if subcon != conno{
+						locs = append(locs,loc)
+					}
+				}
+				toSend := gamecore.LocationList{Locs:locs}
 				err := wsjson.Write(context.Background(),conno,toSend)
 				if err != nil{
 					log.Println(err)

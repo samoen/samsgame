@@ -25,8 +25,8 @@ type baseSprite struct {
 type healthBarSprite struct {
 	ownerDeathable *deathable
 }
-var ScreenWidth = 1400
-var ScreenHeight = 1000
+var ScreenWidth = 700
+var ScreenHeight = 500
 var bgTileWidth = 2500
 
 var playerStandImage, _, _ = ebitenutil.NewImageFromFile(

@@ -15,23 +15,24 @@ import (
 const worldWidth = 5000
 type SamGame struct{}
 var sendCount int = 60
-var receiveChan chan ServerMessage = make(chan ServerMessage)
+var receiveChan = make(chan LocationList)
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		closeConn()
 		return errors.New("SamGame ended by player")
 	}
-	if sendCount>0{
-		sendCount--
-	}else{
-		sendCount = 60
-		message := ServerMessage{Myloc: ServerLocation{4,5}}
-		writeErr := wsjson.Write(context.Background(), socketConnection, message)
-		if writeErr != nil {
-			log.Println(writeErr)
-			return writeErr
+	if socketConnection != nil{
+		if sendCount>0{
+			sendCount--
+		}else{
+			sendCount = 60
+			message := ServerMessage{Myloc: ServerLocation{centerOn.location.x,centerOn.location.y}}
+			writeErr := wsjson.Write(context.Background(), socketConnection, message)
+			if writeErr != nil {
+				log.Println(writeErr)
+				closeConn()
+			}
+			fmt.Println("sent my pos",message)
 		}
-		fmt.Println("sent my pos",message)
 	}
 	select {
 	case msg := <-receiveChan:
@@ -84,6 +85,9 @@ func closeConn(){
 type ServerMessage struct{
 	Myloc ServerLocation `json:"myloc"`
 }
+type LocationList struct{
+	Locs []ServerLocation `json:"locs"`
+}
 type ServerLocation struct{
 	X int `json:"x"`
 	Y int `json:"y"`
@@ -103,7 +107,7 @@ func connectToServer(){
 	}()
 	//go func(){
 		for{
-			var v ServerMessage
+			var v LocationList
 			err1 := wsjson.Read(context.Background(),socketConnection,&v)
 			if err1 != nil{
 				log.Println(err1)
