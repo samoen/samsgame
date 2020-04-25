@@ -13,48 +13,61 @@ import (
 )
 
 const worldWidth = 5000
+
 type SamGame struct{}
+
 var sendCount int = 60
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*ServeLocAndEntID)
 
-type ServeLocAndEntID struct{
+type ServeLocAndEntID struct {
 	serveloc ServerLocation
-	entID *rectangle
+	entID    *rectangle
 }
+
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("SamGame ended by player")
 	}
-	if socketConnection != nil{
-		if sendCount>0{
-			sendCount--
-		}else{
-			sendCount = 60
-			message := ServerMessage{Myloc: ServerLocation{centerOn.location.x,centerOn.location.y}}
-			writeErr := wsjson.Write(context.Background(), socketConnection, message)
-			if writeErr != nil {
-				log.Println(writeErr)
-				closeConn()
-				socketConnection = nil
-			}
-			fmt.Println("sent my pos",message)
-		}
-	}
+	//if socketConnection != nil {
+	//	if sendCount > 0 {
+	//		sendCount--
+	//	} else {
+	//		sendCount = 30
+	//		message := ServerMessage{Myloc: ServerLocation{centerOn.location.x, centerOn.location.y}}
+	//		writeErr := wsjson.Write(context.Background(), socketConnection, message)
+	//		if writeErr != nil {
+	//			log.Println(writeErr)
+	//			closeConn()
+	//			socketConnection = nil
+	//		}
+	//		fmt.Println("sent my pos", message)
+	//	}
+	//}
 	select {
 	case msg := <-receiveChan:
-				fmt.Println("received message", msg)
-				for _,l:=range msg.Locs{
-					if res,ok := otherPlayers[l.PNum]; !ok{
-						newOtherPlayer := &entityid{}
-						rect := newRectangle(location{l.Loc.X,l.Loc.Y},dimens{20,40})
-						addHitbox(rect.shape,newOtherPlayer)
-						otherPlay := &ServeLocAndEntID{serveloc: l.Loc,entID: rect}
-						otherPlayers[l.PNum] = otherPlay
-					}else{
-						res.entID.refreshShape(location{l.Loc.X,l.Loc.Y})
-					}
-				}
+		fmt.Println("received message", msg)
+		for _, l := range msg.Locs {
+			if res, ok := otherPlayers[l.PNum]; !ok {
+				fmt.Println("adding new player")
+				newOtherPlayer := &entityid{}
+				rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
+				addHitbox(rect.shape, newOtherPlayer)
+				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: rect}
+				otherPlayers[l.PNum] = otherPlay
+			} else {
+				fmt.Println("updating player at:", l.Loc)
+				res.entID.refreshShape(location{l.Loc.X, l.Loc.Y})
+			}
+		}
+		message := ServerMessage{Myloc: ServerLocation{centerOn.location.x, centerOn.location.y}}
+		writeErr := wsjson.Write(context.Background(), socketConnection, message)
+		if writeErr != nil {
+			log.Println(writeErr)
+			closeConn()
+			socketConnection = nil
+		}
+		fmt.Println("sent my pos", message)
 	default:
 	}
 
@@ -94,29 +107,31 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 
 var socketConnection *websocket.Conn
 
-func closeConn(){
+func closeConn() {
 	err := socketConnection.Close(websocket.StatusInternalError, "closed from client defer")
-	if err != nil{
+	if err != nil {
 		log.Println(err)
 	}
 }
-type ServerMessage struct{
+
+type ServerMessage struct {
 	Myloc ServerLocation `json:"myloc"`
 }
-type LocationList struct{
+type LocationList struct {
 	Locs []LocWithPNum `json:"locs"`
 }
 
-type LocWithPNum struct{
-	Loc ServerLocation
+type LocWithPNum struct {
+	Loc  ServerLocation
 	PNum string
 }
 
-type ServerLocation struct{
+type ServerLocation struct {
 	X int `json:"x"`
 	Y int `json:"y"`
 }
-func connectToServer(){
+
+func connectToServer() {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	//defer cancel()
 
@@ -126,19 +141,19 @@ func connectToServer(){
 		log.Println(err)
 		return
 	}
-	defer func(){
+	defer func() {
 		closeConn()
 	}()
 	//go func(){
-		for{
-			var v LocationList
-			err1 := wsjson.Read(context.Background(),socketConnection,&v)
-			if err1 != nil{
-				log.Println(err1)
-				return
-			}
-			receiveChan <- v
+	for {
+		var v LocationList
+		err1 := wsjson.Read(context.Background(), socketConnection, &v)
+		if err1 != nil {
+			log.Println(err1)
+			return
 		}
+		receiveChan <- v
+	}
 	//}()
 }
 

@@ -86,7 +86,7 @@ func main(){
 				log.Println("sent message: ",toSend)
 			}
 			conMutex.Unlock()
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 	http.Handle("/ws",hf)
