@@ -1,21 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"mahgame/gamecore"
+	"sync"
+	"time"
 
 	"net/http"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
-	"time"
 )
-type serverMessage struct{
-	Myloc serverLocation `json:"myloc"`
-}
-type serverLocation struct{
-	X int `json:"x"`
-	Y int `json:"y"`
-}
+var connections = make(map[*websocket.Conn]gamecore.ServerLocation)
+var conMutex = sync.Mutex{}
+
 func main(){
 	fmt.Println("server go brr")
 	http.Handle("/", http.FileServer(http.Dir(".")))
@@ -25,47 +24,61 @@ func main(){
 	//http.HandleFunc("/play", func(w http.ResponseWriter, r *http.Request) {
 	//	http.ServeFile(w, r, "index.html")
 	//})
+
 	hf := http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
 		c, err := websocket.Accept(w, r, nil)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		defer func(){
-			err = c.Close(websocket.StatusInternalError, "closed from server defer")
-			if err != nil {
-				log.Println(err)
-			}
-		}()
-
-		go func(){
-			//ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
-			//defer cancel()
-			for{
-				var v serverMessage
-				err = wsjson.Read(r.Context(), c, &v)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				log.Println("received: ",v.Myloc.X,v.Myloc.Y)
-			}
-		}()
-		for{
-			toSend := serverMessage{serverLocation{30,30}}
-			err = wsjson.Write(r.Context(),c,toSend)
-			//_,err = w.Write([]byte("ahoy from server"))
-			if err != nil{
-				log.Println(err)
-				return
-			}
-			log.Println("sent message: ",toSend)
-			time.Sleep(500 * time.Millisecond)
-		}
-
+		connections[c] = gamecore.ServerLocation{}
+		//defer func(){
+		//	err = c.Close(websocket.StatusInternalError, "closed from server defer")
+		//	if err != nil {
+		//		log.Println(err)
+		//	}
+		//}()
 		//err = c.Close(websocket.StatusNormalClosure, "ended normally")
 
 	})
+	go func(){
+		//ctx, cancel := context.WithTimeout(r.Context(), time.Second*10)
+		//defer cancel()
+		for{
+			for conno,_ := range connections{
+				var v gamecore.ServerMessage
+				err := wsjson.Read(context.Background(), conno, &v)
+				if err != nil {
+					log.Println(err)
+					err = conno.Close(websocket.StatusInternalError, "couldn't read from socket, removing from connections")
+					delete(connections,conno)
+					continue
+				}
+				log.Println("received: ",v.Myloc.X,v.Myloc.Y)
+				conMutex.Lock()
+				connections[conno] = v.Myloc
+				conMutex.Unlock()
+			}
+		}
+	}()
+	go func(){
+		for{
+			conMutex.Lock()
+			for conno,loc := range connections{
+				toSend := gamecore.ServerMessage{Myloc:loc}
+				err := wsjson.Write(context.Background(),conno,toSend)
+				if err != nil{
+					log.Println(err)
+					err = conno.Close(websocket.StatusInternalError, "couldn't write to socket, removing from connections")
+					delete(connections,conno)
+					continue
+				}
+				log.Println("sent message: ",toSend)
+			}
+			conMutex.Unlock()
+			time.Sleep(500 * time.Millisecond)
+		}
+	}()
 	http.Handle("/ws",hf)
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {

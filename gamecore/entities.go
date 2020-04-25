@@ -15,7 +15,7 @@ import (
 const worldWidth = 5000
 type SamGame struct{}
 var sendCount int = 60
-var receiveChan chan serverMessage = make(chan serverMessage)
+var receiveChan chan ServerMessage = make(chan ServerMessage)
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		closeConn()
@@ -25,7 +25,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		sendCount--
 	}else{
 		sendCount = 60
-		message := serverMessage{Myloc: serverLocation{4,5}}
+		message := ServerMessage{Myloc: ServerLocation{4,5}}
 		writeErr := wsjson.Write(context.Background(), socketConnection, message)
 		if writeErr != nil {
 			log.Println(writeErr)
@@ -81,10 +81,10 @@ func closeConn(){
 		log.Println(err)
 	}
 }
-type serverMessage struct{
-	Myloc serverLocation `json:"myloc"`
+type ServerMessage struct{
+	Myloc ServerLocation `json:"myloc"`
 }
-type serverLocation struct{
+type ServerLocation struct{
 	X int `json:"x"`
 	Y int `json:"y"`
 }
@@ -103,7 +103,7 @@ func connectToServer(){
 	}()
 	//go func(){
 		for{
-			var v serverMessage
+			var v ServerMessage
 			err1 := wsjson.Read(context.Background(),socketConnection,&v)
 			if err1 != nil{
 				log.Println(err1)
