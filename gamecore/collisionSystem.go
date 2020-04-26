@@ -8,8 +8,8 @@ var movers = make(map[*entityid]*acceleratingEnt)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
-	Xaxis float64 `json:"Xaxis"`
-	Yaxis float64 `json:"Yaxis"`
+	Xaxis int `json:"Xaxis"`
+	Yaxis int `json:"Yaxis"`
 }
 type acceleratingEnt struct {
 	rect       *rectangle
@@ -76,22 +76,22 @@ func collisionSystemWork() {
 		}
 
 		if xmov < 0 {
-			p.moment.Xaxis -= correctedAgility
+			p.moment.Xaxis -= int(correctedAgility*10)
 		}
 		if xmov > 0 {
-			p.moment.Xaxis += correctedAgility
+			p.moment.Xaxis += int(correctedAgility*10)
 		}
 		if ymov > 0 {
-			p.moment.Yaxis += correctedAgility
+			p.moment.Yaxis += int(correctedAgility*10)
 		}
 		if ymov < 0 {
-			p.moment.Yaxis -= correctedAgility
+			p.moment.Yaxis -= int(correctedAgility*10)
 		}
 
-		magnitude := math.Sqrt(math.Pow(p.moment.Xaxis, 2) + math.Pow(p.moment.Yaxis, 2))
+		magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis)/10, 2) + math.Pow(float64(p.moment.Yaxis)/10, 2))
 		if magnitude > p.moveSpeed {
-			p.moment.Xaxis = (p.moment.Xaxis / magnitude) * p.moveSpeed
-			p.moment.Yaxis = (p.moment.Yaxis / magnitude) * p.moveSpeed
+			p.moment.Xaxis = int((float64(p.moment.Xaxis) / magnitude) * p.moveSpeed)
+			p.moment.Yaxis = int((float64(p.moment.Yaxis) / magnitude) * p.moveSpeed)
 		}
 
 		unitmovex := 1
@@ -103,10 +103,10 @@ func collisionSystemWork() {
 			unitmovey = -1
 		}
 		if !movedx {
-			p.moment.Xaxis += p.tracktion * -float64(unitmovex)
+			p.moment.Xaxis += int(10*(p.tracktion * -float64(unitmovex)))
 		}
 		if !movedy {
-			p.moment.Yaxis += p.tracktion * -float64(unitmovey)
+			p.moment.Yaxis += int(10*(p.tracktion * -float64(unitmovey)))
 		}
 
 		if !p.collides{
@@ -117,8 +117,8 @@ func collisionSystemWork() {
 			continue
 		}
 
-		absSpdx := math.Abs(p.moment.Xaxis)
-		absSpdy := math.Abs(p.moment.Yaxis)
+		absSpdx := math.Abs(float64(p.moment.Xaxis)/10)
+		absSpdy := math.Abs(float64(p.moment.Yaxis)/10)
 		maxSpd := math.Max(absSpdx, absSpdy)
 
 		for i := 1; i < int(maxSpd+1); i++ {

@@ -53,12 +53,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				fmt.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
-				accelEnt.collides = false
+				//accelEnt.collides = false
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				addMoveCollider(accelEnt, newOtherPlayer)
 				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
-
+				addSolid(accelEnt.rect.shape,newOtherPlayer)
 				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: accelEnt}
 				otherPlayers[l.PNum] = otherPlay
 			} else {
@@ -68,6 +68,8 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				res.entID.moment = l.HisMom
 			}
 		}
+		//formatMomentum := Momentum{}
+		//formatMomentum.Xaxis = fmt.Sprintf("%.2f",myAccelEnt.moment)
 		message := ServerMessage{
 			Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
 			Mymom: myAccelEnt.moment,
