@@ -25,28 +25,68 @@ type ServeLocAndEntID struct {
 	entID    *acceleratingEnt
 }
 
+var netbusy = false
+
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("SamGame ended by player")
 	}
-	//if socketConnection != nil {
-	//	if sendCount > 0 {
-	//		sendCount--
-	//	} else {
-	//		sendCount = 30
-	//		message := ServerMessage{Myloc: ServerLocation{centerOn.location.x, centerOn.location.y}}
-	//		writeErr := wsjson.Write(context.Background(), socketConnection, message)
-	//		if writeErr != nil {
-	//			log.Println(writeErr)
-	//			closeConn()
-	//			socketConnection = nil
-	//		}
-	//		fmt.Println("sent my pos", message)
-	//	}
-	//}
+	if socketConnection != nil && !netbusy {
+		if sendCount > 0 {
+			sendCount--
+		} else {
+			sendCount = 5
+			go func(){
+				netbusy = true
+				message := ServerMessage{
+					Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
+					Mymom: myAccelEnt.moment,
+					Mydir: myAccelEnt.directions,
+				}
+				writeErr := wsjson.Write(context.Background(), socketConnection, message)
+				if writeErr != nil {
+					log.Println(writeErr)
+					closeConn()
+					socketConnection = nil
+					return
+				}
+				fmt.Println("sent my pos", message)
+				//go func() {
+				var v LocationList
+				err1 := wsjson.Read(context.Background(), socketConnection, &v)
+				if err1 != nil {
+					log.Println(err1)
+					closeConn()
+					socketConnection = nil
+					return
+				}
+				select{
+				case ll:= <- receiveChan:
+					log.Println("discarded",ll)
+				default:
+				}
+				receiveChan <- v
+				//}()
+			netbusy = false
+			}()
+
+		}
+	}
 	select {
 	case msg := <-receiveChan:
 		fmt.Println("received message", msg)
+		//message := ServerMessage{
+		//	Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
+		//	Mymom: myAccelEnt.moment,
+		//	Mydir: myAccelEnt.directions,
+		//}
+		//writeErr := wsjson.Write(context.Background(), socketConnection, message)
+		//if writeErr != nil {
+		//	log.Println(writeErr)
+		//	closeConn()
+		//	socketConnection = nil
+		//}
+		//fmt.Println("sent my pos", message)
 
 		for _, l := range msg.Locs {
 			if res, ok := otherPlayers[l.PNum]; !ok {
@@ -54,6 +94,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
 				//accelEnt.collides = false
+				accelEnt.remote = true
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				addMoveCollider(accelEnt, newOtherPlayer)
 				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
@@ -66,22 +107,10 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				res.entID.directions = l.HisDir
 				res.entID.moment = l.HisMom
+				lagcompcount = 3
 			}
 		}
-		//formatMomentum := Momentum{}
-		//formatMomentum.Xaxis = fmt.Sprintf("%.2f",myAccelEnt.moment)
-		message := ServerMessage{
-			Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
-			Mymom: myAccelEnt.moment,
-			Mydir: myAccelEnt.directions,
-		}
-		writeErr := wsjson.Write(context.Background(), socketConnection, message)
-		if writeErr != nil {
-			log.Println(writeErr)
-			closeConn()
-			socketConnection = nil
-		}
-		fmt.Println("sent my pos", message)
+
 	default:
 	}
 
@@ -159,19 +188,24 @@ func connectToServer() {
 		log.Println(err)
 		return
 	}
-	defer func() {
-		closeConn()
-	}()
+	//defer func() {
+	//	closeConn()
+	//}()
 	//go func(){
-	for {
-		var v LocationList
-		err1 := wsjson.Read(context.Background(), socketConnection, &v)
-		if err1 != nil {
-			log.Println(err1)
-			return
-		}
-		receiveChan <- v
-	}
+	//for {
+	//	var v LocationList
+	//	err1 := wsjson.Read(context.Background(), socketConnection, &v)
+	//	if err1 != nil {
+	//		log.Println(err1)
+	//		return
+	//	}
+	//	select{
+	//	case ll:= <- receiveChan:
+	//		log.Println("discarded",ll)
+	//		default:
+	//	}
+	//	receiveChan <- v
+	//}
 	//}()
 }
 

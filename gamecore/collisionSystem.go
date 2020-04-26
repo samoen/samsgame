@@ -20,6 +20,7 @@ type acceleratingEnt struct {
 	directions Directions
 	atkButton  bool
 	collides   bool
+	remote bool
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -35,6 +36,7 @@ func newControlledEntity() *acceleratingEnt {
 		Directions{},
 		false,
 		true,
+		false,
 	}
 	return c
 }
@@ -48,7 +50,7 @@ func addSolid(s *shape, id *entityid) {
 	solids[id] = s
 	id.systems = append(id.systems, solidCollider)
 }
-
+var lagcompcount = 0
 func collisionSystemWork() {
 	for moverid, p := range movers {
 		xmov := 0
@@ -56,15 +58,29 @@ func collisionSystemWork() {
 
 		if p.directions.Left {
 			xmov--
+			//lagcompcount = 5
 		}
 		if p.directions.Right {
 			xmov++
+			//lagcompcount = 5
 		}
 		if p.directions.Up {
 			ymov--
+			//lagcompcount = 5
 		}
 		if p.directions.Down {
 			ymov++
+			//lagcompcount = 5
+		}
+		if p.remote{
+			if lagcompcount>1{
+				lagcompcount--
+			}else{
+				p.directions.Left = false
+				p.directions.Right = false
+				p.directions.Up = false
+				p.directions.Down = false
+			}
 		}
 
 		movedx := xmov != 0
@@ -104,9 +120,27 @@ func collisionSystemWork() {
 		}
 		if !movedx {
 			p.moment.Xaxis += int(10*(p.tracktion * -float64(unitmovex)))
+			if unitmovex>0{
+				if p.moment.Xaxis<0{
+					p.moment.Xaxis = 0
+				}
+			}else{
+				if p.moment.Xaxis>0{
+					p.moment.Xaxis = 0
+				}
+			}
 		}
 		if !movedy {
 			p.moment.Yaxis += int(10*(p.tracktion * -float64(unitmovey)))
+			if unitmovey>0{
+				if p.moment.Yaxis<0{
+					p.moment.Yaxis = 0
+				}
+			}else{
+				if p.moment.Yaxis>0{
+					p.moment.Yaxis = 0
+				}
+			}
 		}
 
 		if !p.collides{
