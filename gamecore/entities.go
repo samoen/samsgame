@@ -22,7 +22,7 @@ var otherPlayers = make(map[string]*ServeLocAndEntID)
 
 type ServeLocAndEntID struct {
 	serveloc ServerLocation
-	entID    *rectangle
+	entID    *acceleratingEnt
 }
 
 func (g *SamGame) Update(screen *ebiten.Image) error {
@@ -47,20 +47,32 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	select {
 	case msg := <-receiveChan:
 		fmt.Println("received message", msg)
+
 		for _, l := range msg.Locs {
 			if res, ok := otherPlayers[l.PNum]; !ok {
 				fmt.Println("adding new player")
 				newOtherPlayer := &entityid{}
-				rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
-				addHitbox(rect.shape, newOtherPlayer)
-				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: rect}
+				accelEnt := newControlledEntity()
+				accelEnt.collides = false
+				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				addMoveCollider(accelEnt, newOtherPlayer)
+				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
+				addHitbox(accelEnt.rect.shape, newOtherPlayer)
+
+				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: accelEnt}
 				otherPlayers[l.PNum] = otherPlay
 			} else {
 				fmt.Println("updating player at:", l.Loc)
-				res.entID.refreshShape(location{l.Loc.X, l.Loc.Y})
+				res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				res.entID.directions = l.HisDir
+				res.entID.moment = l.HisMom
 			}
 		}
-		message := ServerMessage{Myloc: ServerLocation{centerOn.location.x, centerOn.location.y}}
+		message := ServerMessage{
+			Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
+			Mymom: myAccelEnt.moment,
+			Mydir: myAccelEnt.directions,
+		}
 		writeErr := wsjson.Write(context.Background(), socketConnection, message)
 		if writeErr != nil {
 			log.Println(writeErr)
@@ -116,14 +128,18 @@ func closeConn() {
 
 type ServerMessage struct {
 	Myloc ServerLocation `json:"myloc"`
+	Mymom Momentum       `json:"mymom"`
+	Mydir Directions `json:"mydir"`
 }
 type LocationList struct {
 	Locs []LocWithPNum `json:"locs"`
 }
 
 type LocWithPNum struct {
-	Loc  ServerLocation
-	PNum string
+	Loc    ServerLocation `json:"locus"`
+	PNum   string         `json:"pnum"`
+	HisMom Momentum       `json:"itmom"`
+	HisDir Directions       `json:"itdir"`
 }
 
 type ServerLocation struct {
@@ -157,10 +173,13 @@ func connectToServer() {
 	//}()
 }
 
+var myAccelEnt *acceleratingEnt
+
 func ClientInit() {
 
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
+	myAccelEnt = accelplayer
 	addPlayerControlled(accelplayer, playerid)
 	addMoveCollider(accelplayer, playerid)
 	addSolid(accelplayer.rect.shape, playerid)
@@ -181,31 +200,31 @@ func ClientInit() {
 	ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
 
-	for i := 1; i < 30; i++ {
-		enemyid := &entityid{}
-		moveEnemy := newControlledEntity()
-		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
-		enemySlasher := newSlasher(moveEnemy)
-		addSlasher(enemyid, enemySlasher)
-		addHitbox(moveEnemy.rect.shape, enemyid)
-		addMoveCollider(moveEnemy, enemyid)
-		addSolid(moveEnemy.rect.shape, enemyid)
-		eController := &enemyController{}
-		eController.aEnt = moveEnemy
-		addEnemyController(eController, enemyid)
-
-		botDeathable := deathable{}
-		botDeathable.currentHP = 3
-		botDeathable.maxHP = 3
-		botDeathable.deathableShape = moveEnemy.rect
-		addDeathable(enemyid, &botDeathable)
-		es := &baseSprite{}
-		es.swinging = &enemySlasher.swangin
-		es.redScale = &botDeathable.redScale
-		es.sprite = playerStandImage
-		es.owner = moveEnemy
-		addBasicSprite(es, enemyid)
-	}
+	//for i := 1; i < 30; i++ {
+	//	enemyid := &entityid{}
+	//	moveEnemy := newControlledEntity()
+	//	moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
+	//	enemySlasher := newSlasher(moveEnemy)
+	//	addSlasher(enemyid, enemySlasher)
+	//	addHitbox(moveEnemy.rect.shape, enemyid)
+	//	addMoveCollider(moveEnemy, enemyid)
+	//	addSolid(moveEnemy.rect.shape, enemyid)
+	//	eController := &enemyController{}
+	//	eController.aEnt = moveEnemy
+	//	addEnemyController(eController, enemyid)
+	//
+	//	botDeathable := deathable{}
+	//	botDeathable.currentHP = 3
+	//	botDeathable.maxHP = 3
+	//	botDeathable.deathableShape = moveEnemy.rect
+	//	addDeathable(enemyid, &botDeathable)
+	//	es := &baseSprite{}
+	//	es.swinging = &enemySlasher.swangin
+	//	es.redScale = &botDeathable.redScale
+	//	es.sprite = playerStandImage
+	//	es.owner = moveEnemy
+	//	addBasicSprite(es, enemyid)
+	//}
 
 	worldBoundaryID := &entityid{}
 	worldBoundRect := newRectangle(

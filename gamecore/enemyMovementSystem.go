@@ -21,7 +21,7 @@ func enemyControlWork() {
 		bot.controlCount--
 		if bot.controlCount < 1 {
 			bot.controlCount = rand.Intn(100)
-			bot.aEnt.directions = directions{
+			bot.aEnt.directions = Directions{
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,
 				rand.Intn(2) == 0,

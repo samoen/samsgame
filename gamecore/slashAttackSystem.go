@@ -28,21 +28,21 @@ func addSlasher(id *entityid, b *slasher) {
 func slashersWork() {
 	for slasherid, bot := range slashers {
 		bot := bot
-		if bot.ent.directions.down ||
-			bot.ent.directions.up ||
-			bot.ent.directions.right ||
-			bot.ent.directions.left {
+		if bot.ent.directions.Down ||
+			bot.ent.directions.Up ||
+			bot.ent.directions.Right ||
+			bot.ent.directions.Left {
 			hitRange := 1
 			moveTipX := 0
-			if bot.ent.directions.right {
+			if bot.ent.directions.Right {
 				moveTipX = hitRange
-			} else if bot.ent.directions.left {
+			} else if bot.ent.directions.Left {
 				moveTipX = -hitRange
 			}
 			moveTipY := 0
-			if bot.ent.directions.up {
+			if bot.ent.directions.Up {
 				moveTipY = -hitRange
-			} else if bot.ent.directions.down {
+			} else if bot.ent.directions.Down {
 				moveTipY = hitRange
 			}
 			bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))

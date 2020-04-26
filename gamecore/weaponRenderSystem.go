@@ -132,10 +132,10 @@ func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
 		if !*ps.swinging{
-			if ps.owner.directions.left && !ps.owner.directions.right {
+			if ps.owner.directions.Left && !ps.owner.directions.Right {
 				ps.lastflip = true
 			}
-			if ps.owner.directions.right && !ps.owner.directions.left {
+			if ps.owner.directions.Right && !ps.owner.directions.Left {
 				ps.lastflip = false
 			}
 		}

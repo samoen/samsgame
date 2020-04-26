@@ -12,7 +12,7 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
-var connections = make(map[*websocket.Conn]gamecore.ServerLocation)
+var connections = make(map[*websocket.Conn]gamecore.ServerMessage)
 var conMutex = sync.Mutex{}
 
 func main(){
@@ -31,7 +31,7 @@ func main(){
 			log.Println(err)
 			return
 		}
-		connections[c] = gamecore.ServerLocation{}
+		connections[c] = gamecore.ServerMessage{}
 		//defer func(){
 		//	err = c.Close(websocket.StatusInternalError, "closed from server defer")
 		//	if err != nil {
@@ -54,9 +54,9 @@ func main(){
 					delete(connections,conno)
 					continue
 				}
-				log.Println("received: ",v.Myloc.X,v.Myloc.Y)
+				log.Println("received: ",v)
 				conMutex.Lock()
-				connections[conno] = v.Myloc
+				connections[conno] = v
 				conMutex.Unlock()
 			}
 		}
@@ -68,11 +68,13 @@ func main(){
 				var locs []gamecore.LocWithPNum
 				for subcon,loc := range connections{
 					if subcon != conno{
-						locWithP := gamecore.LocWithPNum{
-							Loc: loc,
-							PNum: fmt.Sprintf("%p",subcon),
-						}
-						locs = append(locs,locWithP)
+					locWithP := gamecore.LocWithPNum{
+						Loc: loc.Myloc,
+						PNum: fmt.Sprintf("%p",subcon),
+						HisMom: loc.Mymom,
+						HisDir: loc.Mydir,
+					}
+					locs = append(locs,locWithP)
 					}
 				}
 				toSend := gamecore.LocationList{Locs:locs}
@@ -86,7 +88,7 @@ func main(){
 				log.Println("sent message: ",toSend)
 			}
 			conMutex.Unlock()
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(150 * time.Millisecond)
 		}
 	}()
 	http.Handle("/ws",hf)
