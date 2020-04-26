@@ -16,7 +16,7 @@ const worldWidth = 5000
 
 type SamGame struct{}
 
-var sendCount int = 60
+var sendCount int = 10
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*ServeLocAndEntID)
 
@@ -31,50 +31,52 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("SamGame ended by player")
 	}
-	if socketConnection != nil && !netbusy {
+	if socketConnection != nil {
 		if sendCount > 0 {
 			sendCount--
 		} else {
-			sendCount = 5
-			go func(){
+			if !netbusy {
+				sendCount = 10
 				netbusy = true
-				message := ServerMessage{
-					Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
-					Mymom: myAccelEnt.moment,
-					Mydir: myAccelEnt.directions,
-				}
-				writeErr := wsjson.Write(context.Background(), socketConnection, message)
-				if writeErr != nil {
-					log.Println(writeErr)
-					closeConn()
-					socketConnection = nil
-					return
-				}
-				fmt.Println("sent my pos", message)
-				//go func() {
-				var v LocationList
-				err1 := wsjson.Read(context.Background(), socketConnection, &v)
-				if err1 != nil {
-					log.Println(err1)
-					closeConn()
-					socketConnection = nil
-					return
-				}
-				select{
-				case ll:= <- receiveChan:
-					log.Println("discarded",ll)
-				default:
-				}
-				receiveChan <- v
-				//}()
-			netbusy = false
-			}()
+				go func(){
+					message := ServerMessage{
+						Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
+						Mymom: myAccelEnt.moment,
+						Mydir: myAccelEnt.directions,
+					}
+					writeErr := wsjson.Write(context.Background(), socketConnection, message)
+					if writeErr != nil {
+						log.Println(writeErr)
+						closeConn()
+						socketConnection = nil
+						return
+					}
+					log.Println("sent my pos", message)
+					//go func() {
+					var v LocationList
+					err1 := wsjson.Read(context.Background(), socketConnection, &v)
+					if err1 != nil {
+						log.Println(err1)
+						closeConn()
+						socketConnection = nil
+						return
+					}
+					select{
+					case ll:= <- receiveChan:
+						log.Println("discarded",ll)
+					default:
+					}
+					receiveChan <- v
+					//}()
+					netbusy = false
+				}()
+			}
 
 		}
 	}
 	select {
 	case msg := <-receiveChan:
-		fmt.Println("received message", msg)
+		log.Println("received message", msg)
 		//message := ServerMessage{
 		//	Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
 		//	Mymom: myAccelEnt.moment,
@@ -90,7 +92,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 		for _, l := range msg.Locs {
 			if res, ok := otherPlayers[l.PNum]; !ok {
-				fmt.Println("adding new player")
+				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
 				//accelEnt.collides = false
@@ -103,11 +105,31 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: accelEnt}
 				otherPlayers[l.PNum] = otherPlay
 			} else {
-				fmt.Println("updating player at:", l.Loc)
-				res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				res.entID.directions = l.HisDir
-				res.entID.moment = l.HisMom
-				lagcompcount = 3
+				log.Println("updating player at:", l.Loc)
+				diffx:=l.Loc.X - res.entID.rect.location.x
+				diffy:=l.Loc.Y - res.entID.rect.location.y
+
+				//if diffx > 0{
+				//	l.HisDir.Right = true
+				//}else if diffx<0{
+				//	l.HisDir.Left = true
+				//}
+				//if diffy > 0{
+				//	l.HisDir.Up = true
+				//}else if diffy<0{
+				//	l.HisDir.Down = true
+				//}
+
+				interpMoment := Momentum{diffx,diffy}
+				//interpMoment := l.HisMom
+				//interpMoment.Xaxis += diffx
+				//interpMoment.Yaxis -= diffy
+
+				//res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				//res.entID.directions = l.HisDir
+				//res.entID.moment = l.HisMom
+				res.entID.moment = interpMoment
+				lagcompcount = DEADRECKON
 			}
 		}
 

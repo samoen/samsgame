@@ -30,8 +30,8 @@ func newControlledEntity() *acceleratingEnt {
 			dimens{20, 40},
 		),
 		Momentum{},
-		0.4,
-		0.4,
+		0.1,
+		1,
 		10,
 		Directions{},
 		false,
@@ -50,6 +50,8 @@ func addSolid(s *shape, id *entityid) {
 	solids[id] = s
 	id.systems = append(id.systems, solidCollider)
 }
+
+const DEADRECKON = 8
 var lagcompcount = 0
 func collisionSystemWork() {
 	for moverid, p := range movers {
@@ -58,19 +60,15 @@ func collisionSystemWork() {
 
 		if p.directions.Left {
 			xmov--
-			//lagcompcount = 5
 		}
 		if p.directions.Right {
 			xmov++
-			//lagcompcount = 5
 		}
 		if p.directions.Up {
 			ymov--
-			//lagcompcount = 5
 		}
 		if p.directions.Down {
 			ymov++
-			//lagcompcount = 5
 		}
 		if p.remote{
 			if lagcompcount>1{
@@ -103,44 +101,57 @@ func collisionSystemWork() {
 		if ymov < 0 {
 			p.moment.Yaxis -= int(correctedAgility*10)
 		}
-
-		magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis)/10, 2) + math.Pow(float64(p.moment.Yaxis)/10, 2))
-		if magnitude > p.moveSpeed {
-			p.moment.Xaxis = int((float64(p.moment.Xaxis) / magnitude) * p.moveSpeed)
-			p.moment.Yaxis = int((float64(p.moment.Yaxis) / magnitude) * p.moveSpeed)
-		}
-
+		//if !p.remote{
+			magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis)/10, 2) + math.Pow(float64(p.moment.Yaxis)/10, 2))
+			if magnitude > p.moveSpeed {
+				p.moment.Xaxis = int((float64(p.moment.Xaxis) / magnitude) * p.moveSpeed)
+				p.moment.Yaxis = int((float64(p.moment.Yaxis) / magnitude) * p.moveSpeed)
+			}
+		//}
 		unitmovex := 1
+		unitmovey := 1
 		if p.moment.Xaxis < 0 {
 			unitmovex = -1
 		}
-		unitmovey := 1
 		if p.moment.Yaxis < 0 {
 			unitmovey = -1
 		}
-		if !movedx {
-			p.moment.Xaxis += int(10*(p.tracktion * -float64(unitmovex)))
-			if unitmovex>0{
-				if p.moment.Xaxis<0{
-					p.moment.Xaxis = 0
-				}
-			}else{
-				if p.moment.Xaxis>0{
-					p.moment.Xaxis = 0
-				}
-			}
+		//if !movedx {
+		p.moment.Xaxis += int(float64(-p.moment.Xaxis)*(p.tracktion))
+		if math.Abs(float64(p.moment.Xaxis))<2{
+			p.moment.Xaxis = 0
 		}
-		if !movedy {
-			p.moment.Yaxis += int(10*(p.tracktion * -float64(unitmovey)))
-			if unitmovey>0{
-				if p.moment.Yaxis<0{
-					p.moment.Yaxis = 0
-				}
-			}else{
-				if p.moment.Yaxis>0{
-					p.moment.Yaxis = 0
-				}
-			}
+		//if unitmovex>0{
+		//	if p.moment.Xaxis<0{
+		//		p.moment.Xaxis = 0
+		//	}
+		//}else{
+		//	if p.moment.Xaxis>0{
+		//		p.moment.Xaxis = 0
+		//	}
+		//}
+		//}
+		//if !movedy {
+		p.moment.Yaxis += int(float64(-p.moment.Yaxis)*(p.tracktion))
+		if math.Abs(float64(p.moment.Yaxis))<2{
+			p.moment.Yaxis = 0
+		}
+		//if unitmovey>0{
+		//	if p.moment.Yaxis<0{
+		//		p.moment.Yaxis = 0
+		//	}
+		//}else{
+		//	if p.moment.Yaxis>0{
+		//		p.moment.Yaxis = 0
+		//	}
+		//}
+		//}
+
+		if p.moment.Xaxis < 0 {
+			unitmovex = -1
+		}
+		if p.moment.Yaxis < 0 {
+			unitmovey = -1
 		}
 
 		if !p.collides{
@@ -151,14 +162,16 @@ func collisionSystemWork() {
 			continue
 		}
 
-		absSpdx := math.Abs(float64(p.moment.Xaxis)/10)
-		absSpdy := math.Abs(float64(p.moment.Yaxis)/10)
-		maxSpd := math.Max(absSpdx, absSpdy)
-
-		for i := 1; i < int(maxSpd+1); i++ {
+		absSpdx := int(math.Abs(float64(p.moment.Xaxis)/10))
+		absSpdy := int(math.Abs(float64(p.moment.Yaxis)/10))
+		maxSpd := absSpdx
+		if absSpdy>absSpdx{
+			maxSpd = absSpdy
+		}
+		for i := 1; i < maxSpd+1; i++ {
 			xcollided := false
 			ycollided := false
-			if int(absSpdx) > 0 {
+			if absSpdx > 0 {
 				absSpdx--
 				checklocx := p.rect.location
 				checklocx.x += unitmovex
@@ -171,7 +184,7 @@ func collisionSystemWork() {
 				}
 			}
 
-			if int(absSpdy) > 0 {
+			if absSpdy > 0 {
 				absSpdy--
 				checkrecty := *p.rect
 				checkrecty.shape = newShape()

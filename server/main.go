@@ -52,7 +52,7 @@ func main(){
 				//conMutex.Unlock()
 				var locs []gamecore.LocWithPNum
 				for subcon,loc := range connections{
-					if subcon != conno{
+					if subcon != conno && loc.Myloc.X!=0{
 						locWithP := gamecore.LocWithPNum{
 							Loc: loc.Myloc,
 							PNum: fmt.Sprintf("%p",subcon),
