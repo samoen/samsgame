@@ -95,10 +95,10 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
-				//accelEnt.collides = false
+				accelEnt.collides = false
 				accelEnt.remote = true
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				addMoveCollider(accelEnt, newOtherPlayer)
+				addRemoteMover(accelEnt, newOtherPlayer)
 				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
 				addSolid(accelEnt.rect.shape,newOtherPlayer)
@@ -120,7 +120,9 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//	l.HisDir.Down = true
 				//}
 
-				interpMoment := Momentum{diffx,diffy}
+				interpMoment := Momentum{int(float64(diffx)*2),int(float64(diffy)*2)}
+				interpMoment.Xaxis+= l.HisMom.Xaxis
+				interpMoment.Yaxis+= l.HisMom.Yaxis
 				//interpMoment := l.HisMom
 				//interpMoment.Xaxis += diffx
 				//interpMoment.Yaxis -= diffy
@@ -135,6 +137,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	default:
 	}
+	remoteMoversWork()
 
 	updatePlayerControl()
 	enemyControlWork()

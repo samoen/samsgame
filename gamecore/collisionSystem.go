@@ -5,6 +5,7 @@ import (
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
+var remoteMovers = make(map[*entityid]*acceleratingEnt)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
@@ -30,9 +31,9 @@ func newControlledEntity() *acceleratingEnt {
 			dimens{20, 40},
 		),
 		Momentum{},
-		0.1,
-		1,
-		10,
+		3,
+		0.4,
+		100,
 		Directions{},
 		false,
 		true,
@@ -44,6 +45,10 @@ func newControlledEntity() *acceleratingEnt {
 func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
+}
+func addRemoteMover(p *acceleratingEnt, id *entityid) {
+	remoteMovers[id] = p
+	id.systems = append(id.systems, remoteMover)
 }
 
 func addSolid(s *shape, id *entityid) {
@@ -70,16 +75,6 @@ func collisionSystemWork() {
 		if p.directions.Down {
 			ymov++
 		}
-		if p.remote{
-			if lagcompcount>1{
-				lagcompcount--
-			}else{
-				p.directions.Left = false
-				p.directions.Right = false
-				p.directions.Up = false
-				p.directions.Down = false
-			}
-		}
 
 		movedx := xmov != 0
 		movedy := ymov != 0
@@ -101,13 +96,7 @@ func collisionSystemWork() {
 		if ymov < 0 {
 			p.moment.Yaxis -= int(correctedAgility*10)
 		}
-		//if !p.remote{
-			magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis)/10, 2) + math.Pow(float64(p.moment.Yaxis)/10, 2))
-			if magnitude > p.moveSpeed {
-				p.moment.Xaxis = int((float64(p.moment.Xaxis) / magnitude) * p.moveSpeed)
-				p.moment.Yaxis = int((float64(p.moment.Yaxis) / magnitude) * p.moveSpeed)
-			}
-		//}
+
 		unitmovex := 1
 		unitmovey := 1
 		if p.moment.Xaxis < 0 {
@@ -116,11 +105,12 @@ func collisionSystemWork() {
 		if p.moment.Yaxis < 0 {
 			unitmovey = -1
 		}
-		//if !movedx {
-		p.moment.Xaxis += int(float64(-p.moment.Xaxis)*(p.tracktion))
-		if math.Abs(float64(p.moment.Xaxis))<2{
-			p.moment.Xaxis = 0
-		}
+		if !movedx {
+		//p.moment.Xaxis = int(1/float64(p.moment.Xaxis))
+		p.moment.Xaxis += int(float64(-unitmovex)*(p.tracktion))
+		//if math.Abs(float64(p.moment.Xaxis))<2{
+		//	p.moment.Xaxis = 0
+		//}
 		//if unitmovex>0{
 		//	if p.moment.Xaxis<0{
 		//		p.moment.Xaxis = 0
@@ -130,12 +120,13 @@ func collisionSystemWork() {
 		//		p.moment.Xaxis = 0
 		//	}
 		//}
-		//}
-		//if !movedy {
-		p.moment.Yaxis += int(float64(-p.moment.Yaxis)*(p.tracktion))
-		if math.Abs(float64(p.moment.Yaxis))<2{
-			p.moment.Yaxis = 0
 		}
+		if !movedy {
+		//p.moment.Yaxis = int(1/float64(p.moment.Yaxis))
+		p.moment.Yaxis += int(float64(-unitmovey)*(p.tracktion))
+		//if math.Abs(float64(p.moment.Yaxis))<2{
+		//	p.moment.Yaxis = 0
+		//}
 		//if unitmovey>0{
 		//	if p.moment.Yaxis<0{
 		//		p.moment.Yaxis = 0
@@ -145,8 +136,7 @@ func collisionSystemWork() {
 		//		p.moment.Yaxis = 0
 		//	}
 		//}
-		//}
-
+		}
 		if p.moment.Xaxis < 0 {
 			unitmovex = -1
 		}
@@ -154,12 +144,29 @@ func collisionSystemWork() {
 			unitmovey = -1
 		}
 
-		if !p.collides{
-			newLoc := p.rect.location
-			newLoc.x+=int(p.moment.Xaxis)
-			newLoc.y+=int(p.moment.Yaxis)
-			p.rect.refreshShape(newLoc)
-			continue
+		magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis), 2) + math.Pow(float64(p.moment.Yaxis), 2))
+		if magnitude > p.moveSpeed {
+			//if math.Abs(float64(p.moment.Xaxis))>math.Abs(float64(p.moment.Yaxis)){
+			//	p.moment.Xaxis = int(float64(p.moment.Xaxis)* 0.707)
+			//}else{
+			//	p.moment.Yaxis = int(float64(p.moment.Yaxis)* 0.707)
+			//}
+			if math.Abs(float64(p.moment.Xaxis))>p.moveSpeed*0.707{
+				p.moment.Xaxis = int(p.moveSpeed * 0.707 * float64(unitmovex))
+			}
+			if math.Abs(float64(p.moment.Yaxis))>p.moveSpeed*0.707{
+				p.moment.Yaxis = int(p.moveSpeed * 0.707 * float64(unitmovey))
+			}
+
+			//p.moment.Xaxis = int((float64(p.moment.Xaxis) / magnitude) * p.moveSpeed)
+			//p.moment.Yaxis = int((float64(p.moment.Yaxis) / magnitude) * p.moveSpeed)
+		}
+
+		if p.moment.Xaxis < 0 {
+			unitmovex = -1
+		}
+		if p.moment.Yaxis < 0 {
+			unitmovey = -1
 		}
 
 		absSpdx := int(math.Abs(float64(p.moment.Xaxis)/10))
@@ -203,5 +210,94 @@ func collisionSystemWork() {
 				break
 			}
 		}
+	}
+}
+func remoteMoversWork() {
+	for _, p := range remoteMovers {
+		xmov := 0
+		ymov := 0
+
+		if p.directions.Left {
+			xmov--
+		}
+		if p.directions.Right {
+			xmov++
+		}
+		if p.directions.Up {
+			ymov--
+		}
+		if p.directions.Down {
+			ymov++
+		}
+		//if p.remote{
+		//	if lagcompcount>1{
+		//		lagcompcount--
+		//	}else{
+		//		p.directions.Left = false
+		//		p.directions.Right = false
+		//		p.directions.Up = false
+		//		p.directions.Down = false
+		//	}
+		//}
+
+		movedx := xmov != 0
+		movedy := ymov != 0
+
+		correctedAgility := p.agility
+		if movedx && movedy {
+			correctedAgility = p.agility * 0.707
+		}
+		//if p.remote{
+		//	correctedAgility = correctedAgility/3
+		//}
+		if xmov < 0 {
+			p.moment.Xaxis -= int(correctedAgility*10)
+		}
+		if xmov > 0 {
+			p.moment.Xaxis += int(correctedAgility*10)
+		}
+		if ymov > 0 {
+			p.moment.Yaxis += int(correctedAgility*10)
+		}
+		if ymov < 0 {
+			p.moment.Yaxis -= int(correctedAgility*10)
+		}
+
+		unitmovex := 1
+		unitmovey := 1
+		if p.moment.Xaxis < 0 {
+			unitmovex = -1
+		}
+		if p.moment.Yaxis < 0 {
+			unitmovey = -1
+		}
+		if !movedx {
+			p.moment.Xaxis += int(float64(-unitmovex)*(p.tracktion))
+		}
+		if !movedy {
+			p.moment.Yaxis += int(float64(-unitmovey)*(p.tracktion))
+		}
+		if p.moment.Xaxis < 0 {
+			unitmovex = -1
+		}
+		if p.moment.Yaxis < 0 {
+			unitmovey = -1
+		}
+
+		magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis), 2) + math.Pow(float64(p.moment.Yaxis), 2))
+		if magnitude > p.moveSpeed {
+			if math.Abs(float64(p.moment.Xaxis))>p.moveSpeed*0.707{
+				p.moment.Xaxis = int(p.moveSpeed * 0.707 * float64(unitmovex))
+			}
+			if math.Abs(float64(p.moment.Yaxis))>p.moveSpeed*0.707{
+				p.moment.Yaxis = int(p.moveSpeed * 0.707 * float64(unitmovey))
+			}
+		}
+
+		newLoc := p.rect.location
+		newLoc.x+=int(p.moment.Xaxis/10)
+		newLoc.y+=int(p.moment.Yaxis/10)
+		p.rect.refreshShape(newLoc)
+
 	}
 }

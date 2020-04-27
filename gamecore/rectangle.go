@@ -38,6 +38,7 @@ const (
 	spriteRenderable
 	healthBarRenderable
 	moveCollider
+	remoteMover
 	solidCollider
 	enemyControlled
 	playerControlled
