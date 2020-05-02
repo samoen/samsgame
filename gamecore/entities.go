@@ -16,12 +16,13 @@ const worldWidth = 5000
 
 type SamGame struct{}
 
-var sendCount int = 10
+const SENDRATE = 10
+var sendCount int = SENDRATE
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*ServeLocAndEntID)
 
 type ServeLocAndEntID struct {
-	serveloc ServerLocation
+	//serveloc ServerLocation
 	entID    *acceleratingEnt
 }
 
@@ -36,14 +37,14 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 			sendCount--
 		} else {
 			if !netbusy {
-				sendCount = 10
+				sendCount = SENDRATE
 				netbusy = true
+				message := ServerMessage{
+					Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
+					Mymom: myAccelEnt.moment,
+					Mydir: myAccelEnt.directions,
+				}
 				go func(){
-					message := ServerMessage{
-						Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
-						Mymom: myAccelEnt.moment,
-						Mydir: myAccelEnt.directions,
-					}
 					writeErr := wsjson.Write(context.Background(), socketConnection, message)
 					if writeErr != nil {
 						log.Println(writeErr)
@@ -95,42 +96,73 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
-				accelEnt.collides = false
-				accelEnt.remote = true
+
+				//accelEnt.tracktion = 2
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				addRemoteMover(accelEnt, newOtherPlayer)
 				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
 				addSolid(accelEnt.rect.shape,newOtherPlayer)
-				otherPlay := &ServeLocAndEntID{serveloc: l.Loc, entID: accelEnt}
+				otherPlay := &ServeLocAndEntID{entID: accelEnt}
 				otherPlayers[l.PNum] = otherPlay
 			} else {
-				log.Println("updating player at:", l.Loc)
+
 				diffx:=l.Loc.X - res.entID.rect.location.x
 				diffy:=l.Loc.Y - res.entID.rect.location.y
 
+				//interpMomentX := res.entID.agility*10
 				//if diffx > 0{
 				//	l.HisDir.Right = true
 				//}else if diffx<0{
+				//	interpMomentX = -interpMomentX
 				//	l.HisDir.Left = true
 				//}
+				//interpMomentY := res.entID.agility*10
 				//if diffy > 0{
 				//	l.HisDir.Up = true
+				//	interpMomentY = - interpMomentY
 				//}else if diffy<0{
 				//	l.HisDir.Down = true
 				//}
 
-				interpMoment := Momentum{int(float64(diffx)*2),int(float64(diffy)*2)}
-				interpMoment.Xaxis+= l.HisMom.Xaxis
-				interpMoment.Yaxis+= l.HisMom.Yaxis
-				//interpMoment := l.HisMom
-				//interpMoment.Xaxis += diffx
-				//interpMoment.Yaxis -= diffy
+				//interpMoment := Momentum{int(float64(diffx)*1),int(float64(diffy)*1)}
+				//interpMomentX := (diffx*1) + (l.HisMom.Xaxis/2)
+				interpMomentX := (l.HisMom.Xaxis/1)
 
+
+				//maxinterp := int(res.entID.agility*10)
+				//if interpMomentX > int(res.entID.agility){
+				//	interpMomentX = int(res.entID.agility)
+				//}
+				//if interpMomentX < int(-res.entID.agility){
+				//	interpMomentX = int(-res.entID.agility)
+				//}
+				//if math.Abs(float64(res.entID.moment.Xaxis)/10)<1{
+				//	interpMomentX+=res.entID.moment.Xaxis
+				//}
+				//interpMomentY := (diffy*1) + (l.HisMom.Yaxis/2)
+				interpMomentY := (l.HisMom.Yaxis/1)
+				//if interpMomentY > int(res.entID.agility){
+				//	interpMomentY = int(res.entID.agility)
+				//}
+				//if interpMomentY < int(-res.entID.agility){
+				//	interpMomentY = int(-res.entID.agility)
+				//}
+
+
+				//if math.Abs(float64(res.entID.moment.Yaxis)/10)<1{
+				//	interpMomentY+=res.entID.moment.Yaxis
+				//}
+				//interpMomentX := (l.HisMom.Xaxis + res.entID.moment.Xaxis)/2
+				//interpMomentY := (l.HisMom.Yaxis + res.entID.moment.Yaxis)/2
+
+				res.entID.destination = location{diffx/(SENDRATE/2), diffy/(SENDRATE/2)}
 				//res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				//res.entID.directions = l.HisDir
+				res.entID.directions = l.HisDir
 				//res.entID.moment = l.HisMom
-				res.entID.moment = interpMoment
+				res.entID.moment.Xaxis = int(interpMomentX)
+				res.entID.moment.Yaxis = int(interpMomentY)
+				log.Println("updating player at:", res)
 				lagcompcount = DEADRECKON
 			}
 		}

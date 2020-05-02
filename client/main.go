@@ -9,9 +9,6 @@ import (
 )
 
 
-
-
-
 func main() {
 
 	//emptyImage.Fill(color.White)

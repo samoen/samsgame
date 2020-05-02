@@ -13,6 +13,10 @@ import (
 var connections = make(map[*websocket.Conn]gamecore.ServerMessage)
 var conMutex = sync.Mutex{}
 
+func Servite(){
+	main()
+}
+
 func main(){
 	fmt.Println("server go brr")
 	http.Handle("/", http.FileServer(http.Dir(".")))
