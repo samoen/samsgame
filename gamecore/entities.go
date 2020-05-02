@@ -18,6 +18,7 @@ type SamGame struct{}
 
 const SENDRATE = 10
 var sendCount int = SENDRATE
+var receiveCount int = SENDRATE
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*ServeLocAndEntID)
 
@@ -75,9 +76,13 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 		}
 	}
+	if receiveCount>1{
+		receiveCount--
+	}
 	select {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
+		receiveCount = SENDRATE
 		//message := ServerMessage{
 		//	Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
 		//	Mymom: myAccelEnt.moment,
@@ -162,7 +167,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//res.entID.moment = l.HisMom
 				res.entID.moment.Xaxis = int(interpMomentX)
 				res.entID.moment.Yaxis = int(interpMomentY)
-				log.Println("updating player at:", res)
+				//log.Println("updating player at:", res)
 				lagcompcount = DEADRECKON
 			}
 		}
