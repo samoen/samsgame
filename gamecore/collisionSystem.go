@@ -1,6 +1,7 @@
 package gamecore
 
 import (
+	"log"
 	"math"
 )
 
@@ -13,38 +14,27 @@ type Momentum struct {
 	Yaxis int `json:"Yaxis"`
 }
 type acceleratingEnt struct {
-	rect       *rectangle
-	moment     Momentum
-	tracktion  float64
-	agility    float64
-	moveSpeed  float64
-	directions Directions
-	atkButton  bool
-	collides   bool
-	remote bool
+	rect        *rectangle
+	moment      Momentum
+	tracktion   float64
+	agility     float64
+	moveSpeed   float64
+	directions  Directions
+	atkButton   bool
 	destination location
-	baseloc location
-	endpoint location
+	baseloc     location
+	endpoint    location
 }
 
 func newControlledEntity() *acceleratingEnt {
-	c := &acceleratingEnt{
-		newRectangle(
-			location{1, 1},
-			dimens{20, 40},
-		),
-		Momentum{},
-		3,
-		4,
-		100,
-		Directions{},
-		false,
-		true,
-		false,
-		location{},
-		location{},
-		location{},
-	}
+	c := &acceleratingEnt{}
+	c.rect = newRectangle(
+		location{50, 50},
+		dimens{20, 40},
+	)
+	c.tracktion = 3
+	c.agility = 4
+	c.moveSpeed = 100
 	return c
 }
 
@@ -62,10 +52,7 @@ func addSolid(s *shape, id *entityid) {
 	id.systems = append(id.systems, solidCollider)
 }
 
-const DEADRECKON = 10
-var lagcompcount = DEADRECKON
-
-func calcMomentum(p acceleratingEnt)Momentum{
+func calcMomentum(p acceleratingEnt) Momentum {
 
 	xmov := 0
 	ymov := 0
@@ -113,8 +100,8 @@ func calcMomentum(p acceleratingEnt)Momentum{
 		unitmovey = -1
 	}
 	if !movedx {
-		p.moment.Xaxis = int(float64(p.moment.Xaxis)*0.9)
-		if	int(math.Abs(float64(p.moment.Xaxis)/10))<1{
+		p.moment.Xaxis = int(float64(p.moment.Xaxis) * 0.9)
+		if int(math.Abs(float64(p.moment.Xaxis)/10)) < 1 {
 			p.moment.Xaxis = 0
 		}
 		//p.moment.Xaxis += int(float64(-unitmovex)*(p.tracktion))
@@ -132,8 +119,8 @@ func calcMomentum(p acceleratingEnt)Momentum{
 		//}
 	}
 	if !movedy {
-		p.moment.Yaxis = int(float64(p.moment.Yaxis)*0.9)
-		if	int(math.Abs(float64(p.moment.Yaxis)/10))<1{
+		p.moment.Yaxis = int(float64(p.moment.Yaxis) * 0.9)
+		if int(math.Abs(float64(p.moment.Yaxis)/10)) < 1 {
 			p.moment.Yaxis = 0
 		}
 		//p.moment.Yaxis += int(float64(-unitmovey)*(p.tracktion))
@@ -159,17 +146,17 @@ func calcMomentum(p acceleratingEnt)Momentum{
 
 	magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis), 2) + math.Pow(float64(p.moment.Yaxis), 2))
 	if magnitude > p.moveSpeed {
-		if math.Abs(float64(p.moment.Xaxis))>p.moveSpeed*0.707{
+		if math.Abs(float64(p.moment.Xaxis)) > p.moveSpeed*0.707 {
 			p.moment.Xaxis = int(p.moveSpeed * 0.707 * float64(unitmovex))
 		}
-		if math.Abs(float64(p.moment.Yaxis))>p.moveSpeed*0.707{
+		if math.Abs(float64(p.moment.Yaxis)) > p.moveSpeed*0.707 {
 			p.moment.Yaxis = int(p.moveSpeed * 0.707 * float64(unitmovey))
 		}
 	}
 	return p.moment
 }
 
-func moveCollide(p *acceleratingEnt, moverid *entityid){
+func moveCollide(p *acceleratingEnt, moverid *entityid) {
 	unitmovex := 1
 	unitmovey := 1
 
@@ -180,11 +167,11 @@ func moveCollide(p *acceleratingEnt, moverid *entityid){
 		unitmovey = -1
 	}
 
-	absSpdx := int(math.Abs(float64(p.moment.Xaxis)/10))
-	absSpdy := int(math.Abs(float64(p.moment.Yaxis)/10))
+	absSpdx := int(math.Abs(float64(p.moment.Xaxis) / 10))
+	absSpdy := int(math.Abs(float64(p.moment.Yaxis) / 10))
 	//fmt.Println("moving at speed:",absSpdx,absSpdy)
 	maxSpd := absSpdx
-	if absSpdy>absSpdx{
+	if absSpdy > absSpdx {
 		maxSpd = absSpdy
 	}
 	for i := 1; i < maxSpd+1; i++ {
@@ -229,31 +216,62 @@ func moveCollide(p *acceleratingEnt, moverid *entityid){
 func collisionSystemWork() {
 	for moverid, p := range movers {
 		p.moment = calcMomentum(*p)
-		moveCollide(p,moverid)
+		moveCollide(p, moverid)
 	}
 }
 
 func remoteMoversWork() {
-	for id, p := range remoteMovers {
+	if receiveCount < SENDRATE {
+		receiveCount++
+	}
+	select {
+	case msg := <-receiveChan:
+		log.Println("received message", msg)
+		receiveCount = 1
+		for _, l := range msg.Locs {
+			if res, ok := otherPlayers[l.PNum]; !ok {
+				log.Println("adding new player")
+				newOtherPlayer := &entityid{}
+				accelEnt := newControlledEntity()
+				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				accelEnt.baseloc = accelEnt.rect.location
+				accelEnt.endpoint = accelEnt.rect.location
+				addRemoteMover(accelEnt, newOtherPlayer)
+				addHitbox(accelEnt.rect.shape, newOtherPlayer)
+				addSolid(accelEnt.rect.shape, newOtherPlayer)
+				otherPlay := &ServeLocAndEntID{entID: accelEnt}
+				otherPlayers[l.PNum] = otherPlay
+			} else {
+				diffx := l.Loc.X - res.entID.rect.location.x
+				diffy := l.Loc.Y - res.entID.rect.location.y
+				res.entID.baseloc = res.entID.rect.location
+				res.entID.destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
+				res.entID.endpoint = location{l.Loc.X, l.Loc.Y}
+				res.entID.directions = l.HisDir
+				res.entID.moment = l.HisMom
+			}
+		}
 
-		if receiveCount<=(SENDRATE/2)+1{
+	default:
+	}
+	for id, p := range remoteMovers {
+		if receiveCount <= (SENDRATE/2)+1 {
 			newplace := p.baseloc
-			newplace.x += p.destination.x*receiveCount
-			newplace.y += p.destination.y*receiveCount
-			if receiveCount == (SENDRATE/2)+1{
+			newplace.x += p.destination.x * receiveCount
+			newplace.y += p.destination.y * receiveCount
+			if receiveCount == (SENDRATE/2)+1 {
 				newplace = p.endpoint
 			}
 			checkrect := *p.rect
 			checkrect.refreshShape(newplace)
-			if !normalcollides(*checkrect.shape,solids,id){
+			if !normalcollides(*checkrect.shape, solids, id) {
 				p.rect.refreshShape(newplace)
 			}
 			continue
 		}
 
 		p.moment = calcMomentum(*p)
-		moveCollide(p,id)
-
+		moveCollide(p, id)
 
 		//newLocx := p.rect.location.x
 		//newLocx+=int(p.moment.Xaxis/10)
