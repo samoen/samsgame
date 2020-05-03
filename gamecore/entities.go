@@ -155,7 +155,6 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//	interpMomentY = int(-res.entID.agility)
 				//}
 
-
 				//if math.Abs(float64(res.entID.moment.Yaxis)/10)<1{
 				//	interpMomentY+=res.entID.moment.Yaxis
 				//}
@@ -163,6 +162,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//interpMomentY := (l.HisMom.Yaxis + res.entID.moment.Yaxis)/2
 				res.entID.baseloc = res.entID.rect.location
 				res.entID.destination = location{diffx/(SENDRATE/2), diffy/(SENDRATE/2)}
+				res.entID.endpoint = location{l.Loc.X,l.Loc.Y}
 				//res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				res.entID.directions = l.HisDir
 				res.entID.moment = l.HisMom

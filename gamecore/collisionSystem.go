@@ -24,6 +24,7 @@ type acceleratingEnt struct {
 	remote bool
 	destination location
 	baseloc location
+	endpoint location
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -40,6 +41,7 @@ func newControlledEntity() *acceleratingEnt {
 		false,
 		true,
 		false,
+		location{},
 		location{},
 		location{},
 	}
@@ -230,24 +232,29 @@ func collisionSystemWork() {
 		moveCollide(p,moverid)
 	}
 }
+
 func remoteMoversWork() {
 	for id, p := range remoteMovers {
 
-		if receiveCount-1<SENDRATE/2{
+		if receiveCount<=(SENDRATE/2)+1{
 			newplace := p.baseloc
 			newplace.x += p.destination.x*receiveCount
 			newplace.y += p.destination.y*receiveCount
+			if receiveCount == (SENDRATE/2)+1{
+				newplace = p.endpoint
+			}
 			checkrect := *p.rect
 			checkrect.refreshShape(newplace)
 			if !normalcollides(*checkrect.shape,solids,id){
 				p.rect.refreshShape(newplace)
 			}
-
 			continue
 		}
 
 		p.moment = calcMomentum(*p)
 		moveCollide(p,id)
+
+
 		//newLocx := p.rect.location.x
 		//newLocx+=int(p.moment.Xaxis/10)
 		//checkrect := *p.rect
