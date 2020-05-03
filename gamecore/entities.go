@@ -18,7 +18,7 @@ type SamGame struct{}
 
 const SENDRATE = 10
 var sendCount int = SENDRATE
-var receiveCount int = SENDRATE
+var receiveCount int = 1
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*ServeLocAndEntID)
 
@@ -76,13 +76,13 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 		}
 	}
-	if receiveCount>1{
-		receiveCount--
+	if receiveCount<SENDRATE{
+		receiveCount++
 	}
 	select {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
-		receiveCount = SENDRATE
+		receiveCount = 1
 		//message := ServerMessage{
 		//	Myloc: ServerLocation{centerOn.location.x, centerOn.location.y},
 		//	Mymom: myAccelEnt.moment,
@@ -104,6 +104,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 				//accelEnt.tracktion = 2
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				accelEnt.baseloc = accelEnt.rect.location
 				addRemoteMover(accelEnt, newOtherPlayer)
 				//rect := newRectangle(location{l.Loc.X, l.Loc.Y}, dimens{20, 40})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
@@ -132,7 +133,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 				//interpMoment := Momentum{int(float64(diffx)*1),int(float64(diffy)*1)}
 				//interpMomentX := (diffx*1) + (l.HisMom.Xaxis/2)
-				interpMomentX := (l.HisMom.Xaxis/1)
+				//interpMomentX := (l.HisMom.Xaxis/1)
 
 
 				//maxinterp := int(res.entID.agility*10)
@@ -146,7 +147,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//	interpMomentX+=res.entID.moment.Xaxis
 				//}
 				//interpMomentY := (diffy*1) + (l.HisMom.Yaxis/2)
-				interpMomentY := (l.HisMom.Yaxis/1)
+				//interpMomentY := (l.HisMom.Yaxis/1)
 				//if interpMomentY > int(res.entID.agility){
 				//	interpMomentY = int(res.entID.agility)
 				//}
@@ -160,13 +161,13 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 				//}
 				//interpMomentX := (l.HisMom.Xaxis + res.entID.moment.Xaxis)/2
 				//interpMomentY := (l.HisMom.Yaxis + res.entID.moment.Yaxis)/2
-
+				res.entID.baseloc = res.entID.rect.location
 				res.entID.destination = location{diffx/(SENDRATE/2), diffy/(SENDRATE/2)}
 				//res.entID.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				res.entID.directions = l.HisDir
-				//res.entID.moment = l.HisMom
-				res.entID.moment.Xaxis = int(interpMomentX)
-				res.entID.moment.Yaxis = int(interpMomentY)
+				res.entID.moment = l.HisMom
+				//res.entID.moment.Xaxis = int(interpMomentX)
+				//res.entID.moment.Yaxis = int(interpMomentY)
 				//log.Println("updating player at:", res)
 				lagcompcount = DEADRECKON
 			}

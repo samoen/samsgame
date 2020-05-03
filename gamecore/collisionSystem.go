@@ -23,6 +23,7 @@ type acceleratingEnt struct {
 	collides   bool
 	remote bool
 	destination location
+	baseloc location
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -39,6 +40,7 @@ func newControlledEntity() *acceleratingEnt {
 		false,
 		true,
 		false,
+		location{},
 		location{},
 	}
 	return c
@@ -165,166 +167,104 @@ func calcMomentum(p acceleratingEnt)Momentum{
 	return p.moment
 }
 
-func collisionSystemWork() {
-	for moverid, p := range movers {
+func moveCollide(p *acceleratingEnt, moverid *entityid){
+	unitmovex := 1
+	unitmovey := 1
 
-		p.moment = calcMomentum(*p)
-		unitmovex := 1
-		unitmovey := 1
+	if p.moment.Xaxis < 0 {
+		unitmovex = -1
+	}
+	if p.moment.Yaxis < 0 {
+		unitmovey = -1
+	}
 
-		if p.moment.Xaxis < 0 {
-			unitmovex = -1
-		}
-		if p.moment.Yaxis < 0 {
-			unitmovey = -1
-		}
-
-		absSpdx := int(math.Abs(float64(p.moment.Xaxis)/10))
-		absSpdy := int(math.Abs(float64(p.moment.Yaxis)/10))
-		//fmt.Println("moving at speed:",absSpdx,absSpdy)
-		maxSpd := absSpdx
-		if absSpdy>absSpdx{
-			maxSpd = absSpdy
-		}
-		for i := 1; i < maxSpd+1; i++ {
-			xcollided := false
-			ycollided := false
-			if absSpdx > 0 {
-				absSpdx--
-				checklocx := p.rect.location
-				checklocx.x += unitmovex
-				checkRect := newRectangle(checklocx, p.rect.dimens)
-				if !normalcollides(*checkRect.shape, solids, moverid) {
-					p.rect.refreshShape(checklocx)
-				} else {
-					p.moment.Xaxis = 0
-					absSpdx = 0
-					xcollided = true
-				}
+	absSpdx := int(math.Abs(float64(p.moment.Xaxis)/10))
+	absSpdy := int(math.Abs(float64(p.moment.Yaxis)/10))
+	//fmt.Println("moving at speed:",absSpdx,absSpdy)
+	maxSpd := absSpdx
+	if absSpdy>absSpdx{
+		maxSpd = absSpdy
+	}
+	for i := 1; i < maxSpd+1; i++ {
+		xcollided := false
+		ycollided := false
+		if absSpdx > 0 {
+			absSpdx--
+			checklocx := p.rect.location
+			checklocx.x += unitmovex
+			checkRect := newRectangle(checklocx, p.rect.dimens)
+			if !normalcollides(*checkRect.shape, solids, moverid) {
+				p.rect.refreshShape(checklocx)
+			} else {
+				p.moment.Xaxis = 0
+				absSpdx = 0
+				xcollided = true
 			}
+		}
 
-			if absSpdy > 0 {
-				absSpdy--
-				checkrecty := *p.rect
-				checkrecty.shape = newShape()
-				checklocy := checkrecty.location
-				checklocy.y += unitmovey
-				checkrecty.refreshShape(checklocy)
-				if !normalcollides(*checkrecty.shape, solids, moverid) {
-					p.rect.refreshShape(checklocy)
-				} else {
-					p.moment.Yaxis = 0
-					absSpdy = 0
-					ycollided = true
-				}
+		if absSpdy > 0 {
+			absSpdy--
+			checkrecty := *p.rect
+			checkrecty.shape = newShape()
+			checklocy := checkrecty.location
+			checklocy.y += unitmovey
+			checkrecty.refreshShape(checklocy)
+			if !normalcollides(*checkrecty.shape, solids, moverid) {
+				p.rect.refreshShape(checklocy)
+			} else {
+				p.moment.Yaxis = 0
+				absSpdy = 0
+				ycollided = true
 			}
+		}
 
-			if xcollided && ycollided {
-				break
-			}
+		if xcollided && ycollided {
+			break
 		}
 	}
 }
-func remoteMoversWork() {
-	for _, p := range remoteMovers {
 
-		if receiveCount>SENDRATE/2{
-			newplace := p.rect.location
-			newplace.x += p.destination.x
-			newplace.y += p.destination.y
-			p.rect.refreshShape(newplace)
+func collisionSystemWork() {
+	for moverid, p := range movers {
+		p.moment = calcMomentum(*p)
+		moveCollide(p,moverid)
+	}
+}
+func remoteMoversWork() {
+	for id, p := range remoteMovers {
+
+		if receiveCount-1<SENDRATE/2{
+			newplace := p.baseloc
+			newplace.x += p.destination.x*receiveCount
+			newplace.y += p.destination.y*receiveCount
+			checkrect := *p.rect
+			checkrect.refreshShape(newplace)
+			if !normalcollides(*checkrect.shape,solids,id){
+				p.rect.refreshShape(newplace)
+			}
+
 			continue
 		}
 
-		//if lagcompcount>1{
-		//	lagcompcount--
-		//}else{
-		//	p.directions.Left = false
-		//	p.directions.Right = false
-		//	p.directions.Up = false
-		//	p.directions.Down = false
-		//}
-		//xmov := 0
-		//ymov := 0
-		//if p.directions.Left {
-		//	xmov--
-		//}
-		//if p.directions.Right {
-		//	xmov++
-		//}
-		//if p.directions.Up {
-		//	ymov--
-		//}
-		//if p.directions.Down {
-		//	ymov++
-		//}
-		//
-		//
-		//movedx := xmov != 0
-		//movedy := ymov != 0
-		//
-		//correctedAgility := p.agility
-		//if movedx && movedy {
-		//	correctedAgility = p.agility * 0.707
-		//}
-		//correctedAgility *= 0.2
-		//
-		//if xmov < 0 {
-		//	p.moment.Xaxis -= int(correctedAgility)
-		//}
-		//if xmov > 0 {
-		//	p.moment.Xaxis += int(correctedAgility)
-		//}
-		//if ymov > 0 {
-		//	p.moment.Yaxis += int(correctedAgility)
-		//}
-		//if ymov < 0 {
-		//	p.moment.Yaxis -= int(correctedAgility)
-		//}
-		//
-		//
-		//unitmovex := 1
-		//unitmovey := 1
-		//
-		//if p.moment.Xaxis < 0 {
-		//	unitmovex = -1
-		//}
-		//if p.moment.Yaxis < 0 {
-		//	unitmovey = -1
-		//}
-		//if !movedx {
-		//	p.moment.Xaxis += int(float64(-unitmovex)*(p.tracktion))
-		//	if	int(math.Abs(float64(p.moment.Xaxis)/10))<1{
-		//		p.moment.Xaxis = 0
-		//	}
-		//}
-		//if !movedy {
-		//	p.moment.Yaxis += int(float64(-unitmovey)*(p.tracktion))
-		//	if	int(math.Abs(float64(p.moment.Yaxis)/10))<1{
-		//		p.moment.Yaxis = 0
-		//	}
-		//}
-		//
-		//if p.moment.Xaxis < 0 {
-		//	unitmovex = -1
-		//}
-		//if p.moment.Yaxis < 0 {
-		//	unitmovey = -1
-		//}
-		//magnitude := math.Sqrt(math.Pow(float64(p.moment.Xaxis), 2) + math.Pow(float64(p.moment.Yaxis), 2))
-		//if magnitude > p.moveSpeed {
-		//	if math.Abs(float64(p.moment.Xaxis))>p.moveSpeed*0.707{
-		//		p.moment.Xaxis = int(p.moveSpeed * 0.707 * float64(unitmovex))
-		//	}
-		//	if math.Abs(float64(p.moment.Yaxis))>p.moveSpeed*0.707{
-		//		p.moment.Yaxis = int(p.moveSpeed * 0.707 * float64(unitmovey))
-		//	}
-		//}
 		p.moment = calcMomentum(*p)
-		newLoc := p.rect.location
-		newLoc.x+=int(p.moment.Xaxis/10)
-		newLoc.y+=int(p.moment.Yaxis/10)
-		p.rect.refreshShape(newLoc)
-
+		moveCollide(p,id)
+		//newLocx := p.rect.location.x
+		//newLocx+=int(p.moment.Xaxis/10)
+		//checkrect := *p.rect
+		//checkrect.refreshShape(location{newLocx,p.rect.location.y})
+		//if !normalcollides(*checkrect.shape,solids,id){
+		//	p.rect.refreshShape(checkrect.location)
+		//}else{
+		//	p.moment.Xaxis = 0
+		//}
+		//newLocy := p.rect.location
+		//newLocy.y+=int(p.moment.Yaxis/10)
+		//checkrecty := *p.rect
+		//checkrecty.refreshShape(newLocy)
+		//if !normalcollides(*checkrecty.shape,solids,id){
+		//	p.rect.refreshShape(checkrecty.location)
+		//}else{
+		//	p.moment.Yaxis = 0
+		//}
 	}
 }
