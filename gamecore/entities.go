@@ -20,10 +20,12 @@ const SENDRATE = 10
 var sendCount int = SENDRATE
 var receiveCount int = 1
 var receiveChan = make(chan LocationList)
-var otherPlayers = make(map[string]*ServeLocAndEntID)
+var otherPlayers = make(map[string]*RemoteMover)
 
-type ServeLocAndEntID struct {
-	//serveloc ServerLocation
+type RemoteMover struct {
+	destination location
+	baseloc     location
+	endpoint    location
 	entID    *acceleratingEnt
 }
 

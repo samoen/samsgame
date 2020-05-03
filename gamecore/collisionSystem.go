@@ -6,7 +6,7 @@ import (
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
-var remoteMovers = make(map[*entityid]*acceleratingEnt)
+var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
@@ -21,9 +21,6 @@ type acceleratingEnt struct {
 	moveSpeed   float64
 	directions  Directions
 	atkButton   bool
-	destination location
-	baseloc     location
-	endpoint    location
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -42,7 +39,7 @@ func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }
-func addRemoteMover(p *acceleratingEnt, id *entityid) {
+func addRemoteMover(p *RemoteMover, id *entityid) {
 	remoteMovers[id] = p
 	id.systems = append(id.systems, remoteMover)
 }
@@ -234,19 +231,20 @@ func remoteMoversWork() {
 				newOtherPlayer := &entityid{}
 				accelEnt := newControlledEntity()
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				accelEnt.baseloc = accelEnt.rect.location
-				accelEnt.endpoint = accelEnt.rect.location
-				addRemoteMover(accelEnt, newOtherPlayer)
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
 				addSolid(accelEnt.rect.shape, newOtherPlayer)
-				otherPlay := &ServeLocAndEntID{entID: accelEnt}
+				otherPlay := &RemoteMover{}
+				otherPlay.baseloc = accelEnt.rect.location
+				otherPlay.endpoint = accelEnt.rect.location
+				otherPlay.entID= accelEnt
 				otherPlayers[l.PNum] = otherPlay
+				addRemoteMover(otherPlay, newOtherPlayer)
 			} else {
 				diffx := l.Loc.X - res.entID.rect.location.x
 				diffy := l.Loc.Y - res.entID.rect.location.y
-				res.entID.baseloc = res.entID.rect.location
-				res.entID.destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
-				res.entID.endpoint = location{l.Loc.X, l.Loc.Y}
+				res.baseloc = res.entID.rect.location
+				res.destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
+				res.endpoint = location{l.Loc.X, l.Loc.Y}
 				res.entID.directions = l.HisDir
 				res.entID.moment = l.HisMom
 			}
@@ -262,16 +260,16 @@ func remoteMoversWork() {
 			if receiveCount == (SENDRATE/2)+1 {
 				newplace = p.endpoint
 			}
-			checkrect := *p.rect
+			checkrect := *p.entID.rect
 			checkrect.refreshShape(newplace)
 			if !normalcollides(*checkrect.shape, solids, id) {
-				p.rect.refreshShape(newplace)
+				p.entID.rect.refreshShape(newplace)
 			}
 			continue
 		}
 
-		p.moment = calcMomentum(*p)
-		moveCollide(p, id)
+		p.entID.moment = calcMomentum(*p.entID)
+		moveCollide(p.entID, id)
 
 		//newLocx := p.rect.location.x
 		//newLocx+=int(p.moment.Xaxis/10)

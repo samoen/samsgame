@@ -145,6 +145,8 @@ func eliminate(id *entityid) {
 			delete(playerControllables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
+		case remoteMover:
+			delete(remoteMovers, id)
 		}
 	}
 }
