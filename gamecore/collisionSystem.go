@@ -1,8 +1,10 @@
 package gamecore
 
 import (
+	"context"
 	"log"
 	"math"
+	"nhooyr.io/websocket/wsjson"
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
@@ -218,13 +220,44 @@ func collisionSystemWork() {
 }
 
 func remoteMoversWork() {
-	if receiveCount < SENDRATE {
-		receiveCount++
+	if socketConnection != nil && !netbusy {
+		if sendCount > 0 {
+			sendCount--
+		} else {
+			sendCount = SENDRATE
+			netbusy = true
+			message := ServerMessage{
+				Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
+				Mymom: myAccelEnt.moment,
+				Mydir: myAccelEnt.directions,
+			}
+			go func() {
+				writeErr := wsjson.Write(context.Background(), socketConnection, message)
+				if writeErr != nil {
+					log.Println(writeErr)
+					closeConn()
+					socketConnection = nil
+					return
+				}
+				log.Println("sent my pos", message)
+
+				var v LocationList
+				err1 := wsjson.Read(context.Background(), socketConnection, &v)
+				if err1 != nil {
+					log.Println(err1)
+					closeConn()
+					socketConnection = nil
+					return
+				}
+				receiveChan <- v
+			}()
+		}
 	}
+
 	select {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
-		receiveCount = 1
+		receiveCount = 0
 		found:
 		for pnum,rm:=range otherPlayers{
 			for _, l := range msg.Locs {
@@ -262,6 +295,9 @@ func remoteMoversWork() {
 		}
 		netbusy = false
 	default:
+		if receiveCount < SENDRATE {
+			receiveCount++
+		}
 	}
 	for id, p := range remoteMovers {
 		if receiveCount <= (SENDRATE/2)+1 {

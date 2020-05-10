@@ -9,7 +9,6 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 	"log"
 	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 const worldWidth = 5000
@@ -17,8 +16,9 @@ const worldWidth = 5000
 type SamGame struct{}
 
 const SENDRATE = 10
-var sendCount int = SENDRATE
-var receiveCount int = 1
+
+var sendCount = SENDRATE
+var receiveCount = 1
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
@@ -34,49 +34,6 @@ var netbusy = false
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		return errors.New("SamGame ended by player")
-	}
-	if socketConnection != nil {
-		if sendCount > 0 {
-			sendCount--
-		} else {
-			if !netbusy {
-				sendCount = SENDRATE
-				netbusy = true
-				message := ServerMessage{
-					Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
-					Mymom: myAccelEnt.moment,
-					Mydir: myAccelEnt.directions,
-				}
-				go func(){
-					writeErr := wsjson.Write(context.Background(), socketConnection, message)
-					if writeErr != nil {
-						log.Println(writeErr)
-						closeConn()
-						socketConnection = nil
-						return
-					}
-					log.Println("sent my pos", message)
-					//go func() {
-					var v LocationList
-					err1 := wsjson.Read(context.Background(), socketConnection, &v)
-					if err1 != nil {
-						log.Println(err1)
-						closeConn()
-						socketConnection = nil
-						return
-					}
-					//select{
-					//case ll:= <- receiveChan:
-					//	log.Println("discarded",ll)
-					//default:
-					//}
-					receiveChan <- v
-					//}()
-					//netbusy = false
-				}()
-			}
-
-		}
 	}
 
 	remoteMoversWork()
@@ -126,7 +83,7 @@ func closeConn() {
 type ServerMessage struct {
 	Myloc ServerLocation `json:"myloc"`
 	Mymom Momentum       `json:"mymom"`
-	Mydir Directions `json:"mydir"`
+	Mydir Directions     `json:"mydir"`
 }
 type LocationList struct {
 	Locs []LocWithPNum `json:"locs"`
@@ -136,7 +93,7 @@ type LocWithPNum struct {
 	Loc    ServerLocation `json:"locus"`
 	PNum   string         `json:"pnum"`
 	HisMom Momentum       `json:"itmom"`
-	HisDir Directions       `json:"itdir"`
+	HisDir Directions     `json:"itdir"`
 }
 
 type ServerLocation struct {
