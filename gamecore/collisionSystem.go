@@ -260,7 +260,7 @@ func remoteMoversWork() {
 				remoteMovers[res].accelEnt.moment = l.HisMom
 			}
 		}
-
+		netbusy = false
 	default:
 	}
 	for id, p := range remoteMovers {

@@ -36,7 +36,7 @@ func main(){
 		//conMutex.Lock()
 		log.Println("adding connection")
 		connections[conno] = gamecore.ServerMessage{}
-		go func(){
+		//go func(){
 			defer func(){
 				err = conno.Close(websocket.StatusInternalError, "couldn't read from socket, removing from connections")
 				delete(connections,conno)
@@ -75,7 +75,7 @@ func main(){
 				}
 				log.Println("sent message: ",toSend)
 			}
-		}()
+		//}()
 		//conMutex.Unlock()
 		//defer func(){
 		//	err = conno.Close(websocket.StatusInternalError, "closed from server defer")

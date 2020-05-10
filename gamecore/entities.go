@@ -65,14 +65,14 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 						socketConnection = nil
 						return
 					}
-					select{
-					case ll:= <- receiveChan:
-						log.Println("discarded",ll)
-					default:
-					}
+					//select{
+					//case ll:= <- receiveChan:
+					//	log.Println("discarded",ll)
+					//default:
+					//}
 					receiveChan <- v
 					//}()
-					netbusy = false
+					//netbusy = false
 				}()
 			}
 
