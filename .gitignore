@@ -1,5 +1,6 @@
 client.exe
 server.exe
+multibuild.exe
 .idea
 wasgame.wasm
 wasm_exec.js

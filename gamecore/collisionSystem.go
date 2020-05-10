@@ -225,6 +225,17 @@ func remoteMoversWork() {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
 		receiveCount = 1
+		found:
+		for pnum,rm:=range otherPlayers{
+			for _, l := range msg.Locs {
+				if l.PNum == pnum{
+					continue found
+				}
+			}
+			eliminate(rm)
+			delete(otherPlayers,pnum)
+		}
+
 		for _, l := range msg.Locs {
 			if res, ok := otherPlayers[l.PNum]; !ok {
 				log.Println("adding new player")
@@ -236,17 +247,17 @@ func remoteMoversWork() {
 				otherPlay := &RemoteMover{}
 				otherPlay.baseloc = accelEnt.rect.location
 				otherPlay.endpoint = accelEnt.rect.location
-				otherPlay.entID= accelEnt
-				otherPlayers[l.PNum] = otherPlay
+				otherPlay.accelEnt = accelEnt
+				otherPlayers[l.PNum] = newOtherPlayer
 				addRemoteMover(otherPlay, newOtherPlayer)
 			} else {
-				diffx := l.Loc.X - res.entID.rect.location.x
-				diffy := l.Loc.Y - res.entID.rect.location.y
-				res.baseloc = res.entID.rect.location
-				res.destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
-				res.endpoint = location{l.Loc.X, l.Loc.Y}
-				res.entID.directions = l.HisDir
-				res.entID.moment = l.HisMom
+				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
+				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y
+				remoteMovers[res].baseloc = remoteMovers[res].accelEnt.rect.location
+				remoteMovers[res].destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
+				remoteMovers[res].endpoint = location{l.Loc.X, l.Loc.Y}
+				remoteMovers[res].accelEnt.directions = l.HisDir
+				remoteMovers[res].accelEnt.moment = l.HisMom
 			}
 		}
 
@@ -260,16 +271,16 @@ func remoteMoversWork() {
 			if receiveCount == (SENDRATE/2)+1 {
 				newplace = p.endpoint
 			}
-			checkrect := *p.entID.rect
+			checkrect := *p.accelEnt.rect
 			checkrect.refreshShape(newplace)
 			if !normalcollides(*checkrect.shape, solids, id) {
-				p.entID.rect.refreshShape(newplace)
+				p.accelEnt.rect.refreshShape(newplace)
 			}
 			continue
 		}
 
-		p.entID.moment = calcMomentum(*p.entID)
-		moveCollide(p.entID, id)
+		p.accelEnt.moment = calcMomentum(*p.accelEnt)
+		moveCollide(p.accelEnt, id)
 
 		//newLocx := p.rect.location.x
 		//newLocx+=int(p.moment.Xaxis/10)

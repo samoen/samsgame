@@ -20,13 +20,13 @@ const SENDRATE = 10
 var sendCount int = SENDRATE
 var receiveCount int = 1
 var receiveChan = make(chan LocationList)
-var otherPlayers = make(map[string]*RemoteMover)
+var otherPlayers = make(map[string]*entityid)
 
 type RemoteMover struct {
 	destination location
 	baseloc     location
 	endpoint    location
-	entID    *acceleratingEnt
+	accelEnt    *acceleratingEnt
 }
 
 var netbusy = false
