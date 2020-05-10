@@ -20,14 +20,11 @@ func main(){
 	//<-t.C
 	//client.DoEet()
 	var err error
-	err = exec.Command("go", "build", "mahgame/client").Run()
-	if err != nil{
-		log.Fatal(err)
-	}
 	err = exec.Command("go", "build", "mahgame/server").Run()
 	if err != nil{
 		log.Fatal(err)
 	}
+
 	go func() {
 		err = exec.Command("server.exe").Run()
 		if err != nil{
@@ -35,13 +32,20 @@ func main(){
 		}
 	}()
 	time.Sleep(1000 * time.Millisecond)
+	err = exec.Command("go", "build", "mahgame/client").Run()
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	time.Sleep(1000 * time.Millisecond)
 	go func() {
 		err = exec.Command("client.exe").Run()
 		if err != nil{
 			log.Fatal(err)
 		}
 	}()
-	time.Sleep(1000 * time.Millisecond)
+
+	time.Sleep(3000 * time.Millisecond)
 	//go func() {
 		err = exec.Command("client.exe").Run()
 		if err != nil{
