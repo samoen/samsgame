@@ -4,21 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
-	"log"
 	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
 )
 
 const worldWidth = 5000
 
 type SamGame struct{}
 
-const SENDRATE = 10
+var SENDRATE = 10
 
-var sendCount = SENDRATE
-var receiveCount = 1
+// var sendCount = SENDRATE
+var receiveCount = SENDRATE
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
@@ -33,6 +35,7 @@ var netbusy = false
 
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		closeConn()
 		return errors.New("SamGame ended by player")
 	}
 
@@ -74,9 +77,11 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 var socketConnection *websocket.Conn
 
 func closeConn() {
-	err := socketConnection.Close(websocket.StatusInternalError, "closed from client defer")
-	if err != nil {
-		log.Println(err)
+	if socketConnection != nil {
+		err := socketConnection.Close(websocket.StatusInternalError, "closed from client defer")
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
@@ -111,6 +116,21 @@ func connectToServer() {
 		log.Println(err)
 		return
 	}
+
+	go func() {
+		for {
+			var v LocationList
+			err1 := wsjson.Read(context.Background(), socketConnection, &v)
+			if err1 != nil {
+				log.Println(err1)
+				closeConn()
+				socketConnection = nil
+				return
+			}
+			receiveChan <- v
+		}
+	}()
+
 	//defer func() {
 	//	closeConn()
 	//}()

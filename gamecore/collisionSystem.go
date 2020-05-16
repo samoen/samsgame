@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math"
+
 	"nhooyr.io/websocket/wsjson"
 )
 
@@ -16,13 +17,13 @@ type Momentum struct {
 	Yaxis int `json:"Yaxis"`
 }
 type acceleratingEnt struct {
-	rect        *rectangle
-	moment      Momentum
-	tracktion   float64
-	agility     float64
-	moveSpeed   float64
-	directions  Directions
-	atkButton   bool
+	rect       *rectangle
+	moment     Momentum
+	tracktion  float64
+	agility    float64
+	moveSpeed  float64
+	directions Directions
+	atkButton  bool
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -219,54 +220,38 @@ func collisionSystemWork() {
 	}
 }
 
-func remoteMoversWork() {
-	if socketConnection != nil && !netbusy {
-		if sendCount > 0 {
-			sendCount--
-		} else {
-			sendCount = SENDRATE
-			netbusy = true
-			message := ServerMessage{
-				Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
-				Mymom: myAccelEnt.moment,
-				Mydir: myAccelEnt.directions,
-			}
-			go func() {
-				writeErr := wsjson.Write(context.Background(), socketConnection, message)
-				if writeErr != nil {
-					log.Println(writeErr)
-					closeConn()
-					socketConnection = nil
-					return
-				}
-				log.Println("sent my pos", message)
+func receiveFromSock() {
 
-				var v LocationList
-				err1 := wsjson.Read(context.Background(), socketConnection, &v)
-				if err1 != nil {
-					log.Println(err1)
-					closeConn()
-					socketConnection = nil
-					return
-				}
-				receiveChan <- v
-			}()
-		}
+}
+
+func remoteMoversWork() {
+	// if socketConnection != nil && !netbusy {
+	// 	if sendCount > 0 {
+	// 		sendCount--
+	// 	} else {
+	// 		sendCount = SENDRATE
+	// 		netbusy = true
+
+	// 	}
+	// }
+	if socketConnection == nil {
+		return
 	}
 
 	select {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
-		receiveCount = 0
-		found:
-		for pnum,rm:=range otherPlayers{
+		SENDRATE = receiveCount
+		receiveCount = 1
+	found:
+		for pnum, rm := range otherPlayers {
 			for _, l := range msg.Locs {
-				if l.PNum == pnum{
+				if l.PNum == pnum {
 					continue found
 				}
 			}
 			eliminate(rm)
-			delete(otherPlayers,pnum)
+			delete(otherPlayers, pnum)
 		}
 
 		for _, l := range msg.Locs {
@@ -293,13 +278,33 @@ func remoteMoversWork() {
 				remoteMovers[res].accelEnt.moment = l.HisMom
 			}
 		}
-		netbusy = false
-	default:
-		if receiveCount < SENDRATE {
-			receiveCount++
+		message := ServerMessage{
+			Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
+			Mymom: myAccelEnt.moment,
+			Mydir: myAccelEnt.directions,
 		}
+		go func() {
+			writeErr := wsjson.Write(context.Background(), socketConnection, message)
+			if writeErr != nil {
+				log.Println(writeErr)
+				closeConn()
+				socketConnection = nil
+				return
+			}
+			log.Println("sent my pos", message)
+		}()
+		// netbusy = false
+	default:
+		// if receiveCount < SENDRATE+1 {
+		// receiveCount++
+		// }
+	}
+	receiveCount++
+	if receiveCount > SENDRATE+1 {
+		return
 	}
 	for id, p := range remoteMovers {
+
 		if receiveCount <= (SENDRATE/2)+1 {
 			newplace := p.baseloc
 			newplace.x += p.destination.x * receiveCount
@@ -317,24 +322,5 @@ func remoteMoversWork() {
 
 		p.accelEnt.moment = calcMomentum(*p.accelEnt)
 		moveCollide(p.accelEnt, id)
-
-		//newLocx := p.rect.location.x
-		//newLocx+=int(p.moment.Xaxis/10)
-		//checkrect := *p.rect
-		//checkrect.refreshShape(location{newLocx,p.rect.location.y})
-		//if !normalcollides(*checkrect.shape,solids,id){
-		//	p.rect.refreshShape(checkrect.location)
-		//}else{
-		//	p.moment.Xaxis = 0
-		//}
-		//newLocy := p.rect.location
-		//newLocy.y+=int(p.moment.Yaxis/10)
-		//checkrecty := *p.rect
-		//checkrecty.refreshShape(newLocy)
-		//if !normalcollides(*checkrecty.shape,solids,id){
-		//	p.rect.refreshShape(checkrecty.location)
-		//}else{
-		//	p.moment.Yaxis = 0
-		//}
 	}
 }
