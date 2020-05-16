@@ -234,6 +234,7 @@ func remoteMoversWork() {
 
 	// 	}
 	// }
+
 	if socketConnection == nil {
 		return
 	}
@@ -300,10 +301,13 @@ func remoteMoversWork() {
 		// }
 	}
 	receiveCount++
-	if receiveCount > SENDRATE+1 {
-		return
-	}
 	for id, p := range remoteMovers {
+		if receiveCount > SENDRATE+1 {
+			p.accelEnt.directions.Down = false
+			p.accelEnt.directions.Left = false
+			p.accelEnt.directions.Right = false
+			p.accelEnt.directions.Up = false
+		}
 
 		if receiveCount <= (SENDRATE/2)+1 {
 			newplace := p.baseloc
