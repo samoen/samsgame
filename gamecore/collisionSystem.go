@@ -274,6 +274,9 @@ func socketReceive() {
 				remoteMovers[res].accelEnt.moment = l.HisMom
 				slashers[res].startangle = l.HisAxe.Startangle
 				slashers[res].ent.atkButton = l.HisAxe.Swinging
+				if l.YouCopped{
+					myDeathable.gotHit = true
+				}
 			}
 		}
 		message := ServerMessage{}
@@ -292,7 +295,6 @@ func socketReceive() {
 			}
 		}
 		messageWep.IHit = hitlist
-		//mySlasher.pivShape.alreadyHit = make(map[*entityid]bool)
 		mySlasher.hitsToSend = nil
 		message.Myaxe = messageWep
 		go func() {

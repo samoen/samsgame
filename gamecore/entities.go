@@ -106,15 +106,17 @@ type Weapon struct {
 //LocationList message from server
 type LocationList struct {
 	Locs []LocWithPNum `json:"locs"`
+	//YourPnum string `json:"yourpnum"`
 }
 
 //LocWithPNum represents remote player
 type LocWithPNum struct {
-	Loc    ServerLocation `json:"locus"`
-	PNum   string         `json:"pnum"`
-	HisMom Momentum       `json:"itmom"`
-	HisDir Directions     `json:"itdir"`
-	HisAxe Weapon         `json:"hisaxe"`
+	Loc       ServerLocation `json:"locus"`
+	PNum      string         `json:"pnum"`
+	HisMom    Momentum       `json:"itmom"`
+	HisDir    Directions     `json:"itdir"`
+	HisAxe    Weapon         `json:"hisaxe"`
+	YouCopped bool           `json:"youcopped"`
 }
 
 //ServerLocation location
@@ -151,13 +153,13 @@ func connectToServer() {
 
 var myAccelEnt *acceleratingEnt
 var mySlasher *slasher
+var myDeathable *deathable
 
 //ClientInit inits client
 func ClientInit() {
 
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
-	myAccelEnt = accelplayer
 	addPlayerControlled(accelplayer, playerid)
 	addMoveCollider(accelplayer, playerid)
 	addSolid(accelplayer.rect.shape, playerid)
@@ -165,12 +167,15 @@ func ClientInit() {
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	addSlasher(playerid, playerSlasher)
-	mySlasher = playerSlasher
-	pDeathable := deathable{}
+	pDeathable := &deathable{}
 	pDeathable.currentHP = 6
 	pDeathable.maxHP = 6
 	pDeathable.deathableShape = accelplayer.rect
-	addDeathable(playerid, &pDeathable)
+	addDeathable(playerid, pDeathable)
+
+	mySlasher = playerSlasher
+	myAccelEnt = accelplayer
+	myDeathable = pDeathable
 
 	ps := &baseSprite{}
 	ps.redScale = new(int)
