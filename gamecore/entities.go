@@ -15,15 +15,16 @@ import (
 
 const worldWidth = 5000
 
+// SamGame hi
 type SamGame struct{}
 
-var SENDRATE = 10
+var pingFrames = 10
 
-// var sendCount = SENDRATE
-var receiveCount = SENDRATE
+var receiveCount = pingFrames
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
+// RemoteMover hi
 type RemoteMover struct {
 	destination location
 	baseloc     location
@@ -33,6 +34,7 @@ type RemoteMover struct {
 
 var netbusy = false
 
+// Update game
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		closeConn()
@@ -49,6 +51,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	return nil
 }
 
+// Draw Samgame
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
 	renderEntSprites(screen)
@@ -65,6 +68,7 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 	)
 }
 
+// Layout hi
 func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 	//ScreenWidth = outsideWidth
 	//ScreenHeight = outsideHeight
@@ -85,15 +89,20 @@ func closeConn() {
 	}
 }
 
+//ServerMessage message to server
 type ServerMessage struct {
 	Myloc ServerLocation `json:"myloc"`
 	Mymom Momentum       `json:"mymom"`
 	Mydir Directions     `json:"mydir"`
+	Myaxe bool           `json:"myaxe"`
 }
+
+//LocationList message from server
 type LocationList struct {
 	Locs []LocWithPNum `json:"locs"`
 }
 
+//LocWithPNum represents remote player
 type LocWithPNum struct {
 	Loc    ServerLocation `json:"locus"`
 	PNum   string         `json:"pnum"`
@@ -101,6 +110,7 @@ type LocWithPNum struct {
 	HisDir Directions     `json:"itdir"`
 }
 
+//ServerLocation location
 type ServerLocation struct {
 	X int `json:"x"`
 	Y int `json:"y"`
@@ -130,30 +140,11 @@ func connectToServer() {
 			receiveChan <- v
 		}
 	}()
-
-	//defer func() {
-	//	closeConn()
-	//}()
-	//go func(){
-	//for {
-	//	var v LocationList
-	//	err1 := wsjson.Read(context.Background(), socketConnection, &v)
-	//	if err1 != nil {
-	//		log.Println(err1)
-	//		return
-	//	}
-	//	select{
-	//	case ll:= <- receiveChan:
-	//		log.Println("discarded",ll)
-	//		default:
-	//	}
-	//	receiveChan <- v
-	//}
-	//}()
 }
 
 var myAccelEnt *acceleratingEnt
 
+//ClientInit inits client
 func ClientInit() {
 
 	playerid := &entityid{}

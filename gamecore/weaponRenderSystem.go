@@ -1,9 +1,10 @@
 package gamecore
 
 import (
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 	"math"
+
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -25,7 +26,11 @@ type baseSprite struct {
 type healthBarSprite struct {
 	ownerDeathable *deathable
 }
+
+//ScreenWidth hi
 var ScreenWidth = 700
+
+//ScreenHeight hi
 var ScreenHeight = 500
 var bgTileWidth = 2500
 
@@ -107,7 +112,7 @@ func drawBackground(screen *ebiten.Image) {
 		for j := 0; j < tilesAcross; j++ {
 			tileOps := myBgOps
 			tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-			if err:=screen.DrawImage(bgImage, &tileOps);err !=nil{
+			if err := screen.DrawImage(bgImage, &tileOps); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -126,12 +131,13 @@ func cameraShift(loc location, pSpriteOffset location) {
 	pSpriteOffset.y += loc.y
 	drawOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 }
+
 var drawOps = &ebiten.DrawImageOptions{}
 
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
-		if !*ps.swinging{
+		if !*ps.swinging {
 			if ps.owner.directions.Left && !ps.owner.directions.Right {
 				ps.lastflip = true
 			}
@@ -149,7 +155,7 @@ func renderEntSprites(s *ebiten.Image) {
 
 		drawOps.ColorM.Translate(float64(*ps.redScale), 0, 0, 0)
 
-		if err:= s.DrawImage(ps.sprite, drawOps);err != nil{
+		if err := s.DrawImage(ps.sprite, drawOps); err != nil {
 			log.Fatal(err)
 		}
 		drawOps.ColorM.Reset()
@@ -166,7 +172,7 @@ func renderEntSprites(s *ebiten.Image) {
 		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
 		cameraShift(ownerCenter, center)
 
-		if err:=s.DrawImage(wep.sprite, drawOps);err != nil{
+		if err := s.DrawImage(wep.sprite, drawOps); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -177,7 +183,7 @@ func renderEntSprites(s *ebiten.Image) {
 		drawOps.GeoM.Reset()
 		scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage)
 		cameraShift(healthbarlocation, center)
-		if err:=s.DrawImage(emptyImage, drawOps);err != nil{
+		if err := s.DrawImage(emptyImage, drawOps); err != nil {
 			log.Fatal(err)
 		}
 	}

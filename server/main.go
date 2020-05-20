@@ -42,13 +42,17 @@ func main() {
 		//conMutex.Lock()
 		log.Println("accepted connection")
 		//connections[conno] = gamecore.ServerMessage{}
-		removeConn := func() {
+		defer func() {
+			log.Println("removeConn called")
+			conMutex.Lock()
 			delete(connections, conno)
-			err = conno.Close(websocket.StatusInternalError, "removed from connections")
+			conMutex.Unlock()
+			err = conno.Close(websocket.StatusInternalError, "sam closing")
 			if err != nil {
 				log.Println(err)
 			}
-		}
+		}()
+
 		for {
 			timer1 := time.NewTimer(166 * time.Millisecond)
 			var locs []gamecore.LocWithPNum
@@ -67,7 +71,6 @@ func main() {
 			err = wsjson.Write(context.Background(), conno, toSend)
 			if err != nil {
 				log.Println(err)
-				removeConn()
 				return
 			}
 			log.Println("sent message: ", toSend)
@@ -76,7 +79,6 @@ func main() {
 			err := wsjson.Read(context.Background(), conno, &v)
 			if err != nil {
 				log.Println(err)
-				removeConn()
 				return
 			}
 			log.Println("received: ", v)

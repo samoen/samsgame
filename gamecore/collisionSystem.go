@@ -12,6 +12,7 @@ var movers = make(map[*entityid]*acceleratingEnt)
 var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
+//Momentum hi
 type Momentum struct {
 	Xaxis int `json:"Xaxis"`
 	Yaxis int `json:"Yaxis"`
@@ -220,10 +221,6 @@ func collisionSystemWork() {
 	}
 }
 
-func receiveFromSock() {
-
-}
-
 func remoteMoversWork() {
 	// if socketConnection != nil && !netbusy {
 	// 	if sendCount > 0 {
@@ -242,7 +239,7 @@ func remoteMoversWork() {
 	select {
 	case msg := <-receiveChan:
 		log.Println("received message", msg)
-		SENDRATE = receiveCount
+		pingFrames = receiveCount
 		receiveCount = 1
 	found:
 		for pnum, rm := range otherPlayers {
@@ -273,7 +270,7 @@ func remoteMoversWork() {
 				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
 				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y
 				remoteMovers[res].baseloc = remoteMovers[res].accelEnt.rect.location
-				remoteMovers[res].destination = location{diffx / (SENDRATE / 2), diffy / (SENDRATE / 2)}
+				remoteMovers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
 				remoteMovers[res].endpoint = location{l.Loc.X, l.Loc.Y}
 				remoteMovers[res].accelEnt.directions = l.HisDir
 				remoteMovers[res].accelEnt.moment = l.HisMom
@@ -302,18 +299,18 @@ func remoteMoversWork() {
 	}
 	receiveCount++
 	for id, p := range remoteMovers {
-		if receiveCount > SENDRATE+1 {
+		if receiveCount > pingFrames+1 {
 			p.accelEnt.directions.Down = false
 			p.accelEnt.directions.Left = false
 			p.accelEnt.directions.Right = false
 			p.accelEnt.directions.Up = false
 		}
 
-		if receiveCount <= (SENDRATE/2)+1 {
+		if receiveCount <= (pingFrames/2)+1 {
 			newplace := p.baseloc
 			newplace.x += p.destination.x * receiveCount
 			newplace.y += p.destination.y * receiveCount
-			if receiveCount == (SENDRATE/2)+1 {
+			if receiveCount == (pingFrames/2)+1 {
 				newplace = p.endpoint
 			}
 			checkrect := *p.accelEnt.rect

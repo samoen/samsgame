@@ -4,11 +4,12 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
+//Directions dirs
 type Directions struct {
 	Right bool `json:"right"`
-	Down bool `json:"down"`
-	Left bool `json:"left"`
-	Up bool `json:"up"`
+	Down  bool `json:"down"`
+	Left  bool `json:"left"`
+	Up    bool `json:"up"`
 }
 
 var playerControllables = make(map[*entityid]*acceleratingEnt)
