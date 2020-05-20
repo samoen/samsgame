@@ -94,7 +94,12 @@ type ServerMessage struct {
 	Myloc ServerLocation `json:"myloc"`
 	Mymom Momentum       `json:"mymom"`
 	Mydir Directions     `json:"mydir"`
-	Myaxe bool           `json:"myaxe"`
+	Myaxe Weapon         `json:"myaxe"`
+}
+
+type Weapon struct {
+	Swinging   bool    `json:"swinging"`
+	Startangle float64 `json:"startang"`
 }
 
 //LocationList message from server
@@ -108,6 +113,7 @@ type LocWithPNum struct {
 	PNum   string         `json:"pnum"`
 	HisMom Momentum       `json:"itmom"`
 	HisDir Directions     `json:"itdir"`
+	HisAxe Weapon         `json:"hisaxe"`
 }
 
 //ServerLocation location
@@ -143,6 +149,7 @@ func connectToServer() {
 }
 
 var myAccelEnt *acceleratingEnt
+var mySlasher *slasher
 
 //ClientInit inits client
 func ClientInit() {
@@ -157,6 +164,7 @@ func ClientInit() {
 	centerOn = accelplayer.rect
 	playerSlasher := newSlasher(accelplayer)
 	addSlasher(playerid, playerSlasher)
+	mySlasher = playerSlasher
 	pDeathable := deathable{}
 	pDeathable.currentHP = 6
 	pDeathable.maxHP = 6

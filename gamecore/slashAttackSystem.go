@@ -10,12 +10,14 @@ type slasher struct {
 	cooldownCount int
 	swangin       bool
 	pivShape *pivotingShape
+	remote bool
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
 	s := &slasher{}
 	s.ent = p
 	s.cooldownCount = 0
+	s.pivShape = &pivotingShape{}
 	return s
 }
 
@@ -29,24 +31,26 @@ func addSlasher(id *entityid, b *slasher) {
 func slashersWork() {
 	for slasherid, bot := range slashers {
 		bot := bot
-		if bot.ent.directions.Down ||
-			bot.ent.directions.Up ||
-			bot.ent.directions.Right ||
-			bot.ent.directions.Left {
-			hitRange := 1
-			moveTipX := 0
-			if bot.ent.directions.Right {
-				moveTipX = hitRange
-			} else if bot.ent.directions.Left {
-				moveTipX = -hitRange
+		if !bot.remote{
+			if bot.ent.directions.Down ||
+				bot.ent.directions.Up ||
+				bot.ent.directions.Right ||
+				bot.ent.directions.Left {
+				hitRange := 1
+				moveTipX := 0
+				if bot.ent.directions.Right {
+					moveTipX = hitRange
+				} else if bot.ent.directions.Left {
+					moveTipX = -hitRange
+				}
+				moveTipY := 0
+				if bot.ent.directions.Up {
+					moveTipY = -hitRange
+				} else if bot.ent.directions.Down {
+					moveTipY = hitRange
+				}
+				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 			}
-			moveTipY := 0
-			if bot.ent.directions.Up {
-				moveTipY = -hitRange
-			} else if bot.ent.directions.Down {
-				moveTipY = hitRange
-			}
-			bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 		}
 
 		if bot.cooldownCount > 0 {
@@ -58,27 +62,32 @@ func slashersWork() {
 			p := &pivotingShape{}
 			p.wepid = wepid
 			p.pivotPoint = bot.ent.rect
-			//p.ownerid = slasherid
-			p.animationCount = bot.startangle + 1.2
+
+			if bot.remote {
+				p.animationCount = bot.startangle
+
+			}
 			p.pivoterShape = newShape()
 			p.pivoterShape.lines = makeAxe(p.animationCount, *bot.ent.rect)
+			if !bot.remote{
+				p.animationCount = bot.startangle + 1.2
+				for i := 1; i < 20; i++ {
+					if !checkBlocker(*p.pivoterShape) {
+						break
+					} else {
+						p.animationCount -= 0.2
+						p.pivoterShape.lines = makeAxe(p.animationCount, *p.pivotPoint)
+					}
+				}
+			}
+
+
 			p.alreadyHit = make(map[*entityid]bool)
-			//p.swangin = &bot.swangin
 			bot.swangin = true
 			ws := weaponSprite{&p.animationCount, bot, swordImage}
 
 			addHitbox(p.pivoterShape, wepid)
-			//addPivoter(wepid, p)
-			//if ok, _, _ := checkSlashee(s); !ok {
-			for i := 1; i < 20; i++ {
-				if !checkBlocker(*p.pivoterShape) {
-					break
-				} else {
-					p.animationCount -= 0.2
-					p.pivoterShape.lines = makeAxe(p.animationCount, *p.pivotPoint)
-				}
-			}
-			//}
+
 			p.startCount = p.animationCount
 
 			bot.pivShape = p

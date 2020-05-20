@@ -63,6 +63,7 @@ func main() {
 						PNum:   fmt.Sprintf("%p", subcon),
 						HisMom: loc.Mymom,
 						HisDir: loc.Mydir,
+						HisAxe: loc.Myaxe,
 					}
 					locs = append(locs, locWithP)
 				}

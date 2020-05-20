@@ -256,6 +256,7 @@ func remoteMoversWork() {
 			if res, ok := otherPlayers[l.PNum]; !ok {
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
+				otherPlayers[l.PNum] = newOtherPlayer
 				accelEnt := newControlledEntity()
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
@@ -264,8 +265,10 @@ func remoteMoversWork() {
 				otherPlay.baseloc = accelEnt.rect.location
 				otherPlay.endpoint = accelEnt.rect.location
 				otherPlay.accelEnt = accelEnt
-				otherPlayers[l.PNum] = newOtherPlayer
 				addRemoteMover(otherPlay, newOtherPlayer)
+				remoteSlasher := newSlasher(accelEnt)
+				remoteSlasher.remote = true
+				addSlasher(newOtherPlayer,remoteSlasher)
 			} else {
 				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
 				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y
@@ -274,6 +277,8 @@ func remoteMoversWork() {
 				remoteMovers[res].endpoint = location{l.Loc.X, l.Loc.Y}
 				remoteMovers[res].accelEnt.directions = l.HisDir
 				remoteMovers[res].accelEnt.moment = l.HisMom
+				slashers[res].startangle = l.HisAxe.Startangle
+				slashers[res].ent.atkButton = l.HisAxe.Swinging
 			}
 		}
 		message := ServerMessage{
@@ -281,6 +286,7 @@ func remoteMoversWork() {
 			Mymom: myAccelEnt.moment,
 			Mydir: myAccelEnt.directions,
 		}
+		message.Myaxe = Weapon{mySlasher.swangin,mySlasher.pivShape.startCount}
 		go func() {
 			writeErr := wsjson.Write(context.Background(), socketConnection, message)
 			if writeErr != nil {
@@ -289,7 +295,7 @@ func remoteMoversWork() {
 				socketConnection = nil
 				return
 			}
-			log.Println("sent my pos", message)
+			log.Printf("sent my pos %+v", message)
 		}()
 		// netbusy = false
 	default:
