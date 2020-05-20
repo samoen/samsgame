@@ -9,6 +9,7 @@ type slasher struct {
 	startangle    float64
 	cooldownCount int
 	swangin       bool
+	pivShape *pivotingShape
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
@@ -55,23 +56,58 @@ func slashersWork() {
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
 			wepid := &entityid{}
 			p := &pivotingShape{}
+			p.wepid = wepid
 			p.pivotPoint = bot.ent.rect
-			p.ownerid = slasherid
+			//p.ownerid = slasherid
 			p.animationCount = bot.startangle + 1.2
 			p.pivoterShape = newShape()
 			p.pivoterShape.lines = makeAxe(p.animationCount, *bot.ent.rect)
 			p.alreadyHit = make(map[*entityid]bool)
-			p.swangin = &bot.swangin
+			//p.swangin = &bot.swangin
 			bot.swangin = true
 			ws := weaponSprite{&p.animationCount, bot, swordImage}
 
 			addHitbox(p.pivoterShape, wepid)
-			addPivoter(wepid, p)
+			//addPivoter(wepid, p)
+			//if ok, _, _ := checkSlashee(s); !ok {
+			for i := 1; i < 20; i++ {
+				if !checkBlocker(*p.pivoterShape) {
+					break
+				} else {
+					p.animationCount -= 0.2
+					p.pivoterShape.lines = makeAxe(p.animationCount, *p.pivotPoint)
+				}
+			}
+			//}
+			p.startCount = p.animationCount
+
+			bot.pivShape = p
+
 			addWeaponSprite(&ws, wepid)
 
 			slasherid.linked = append(slasherid.linked, wepid)
 
 			bot.cooldownCount = 60
+		}
+		if bot.swangin{
+
+			bot.pivShape.animationCount -= 0.12
+			bot.pivShape.pivoterShape.lines = makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
+			blocked := checkBlocker(*bot.pivShape.pivoterShape)
+
+			if ok, slashee, slasheeid := checkSlashee(bot.pivShape,slasherid); ok {
+				slashee.gotHit = true
+				bot.pivShape.alreadyHit[slasheeid] = true
+			}
+			if blocked {
+				bot.swangin = false
+				eliminate(bot.pivShape.wepid)
+				continue
+			} else if math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
+				bot.swangin = false
+				eliminate(bot.pivShape.wepid)
+				continue
+			}
 		}
 	}
 }
@@ -137,8 +173,8 @@ func eliminate(id *entityid) {
 			delete(slashers, id)
 		case hurtable:
 			delete(deathables, id)
-		case pivotingHitbox:
-			delete(pivoters, id)
+		//case pivotingHitbox:
+		//	delete(pivoters, id)
 		case rotatingSprite:
 			delete(weapons, id)
 		case playerControlled:

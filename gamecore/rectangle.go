@@ -46,7 +46,7 @@ const (
 	hurtable
 	rotatingSprite
 	weaponBlocker
-	pivotingHitbox
+	//pivotingHitbox
 )
 
 type shape struct {

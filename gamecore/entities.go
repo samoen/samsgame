@@ -46,7 +46,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	enemyControlWork()
 	collisionSystemWork()
 	slashersWork()
-	pivotSystemWork()
+	//pivotSystemWork()
 	deathSystemwork()
 	return nil
 }
