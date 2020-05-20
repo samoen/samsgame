@@ -63,7 +63,7 @@ func main() {
 				if loc.Myloc.X == 0 {
 					continue
 				}
-				if loc.Myhealth.CurrentHP == 0 {
+				if loc.Myhealth.CurrentHP < 1 {
 					continue
 				}
 				locWithP := gamecore.LocWithPNum{}

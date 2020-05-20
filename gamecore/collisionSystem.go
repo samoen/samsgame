@@ -259,8 +259,7 @@ func socketReceive() {
 				remoteSlasher.remote = true
 				addSlasher(newOtherPlayer, remoteSlasher)
 				pDeathable := deathable{}
-				pDeathable.hp.CurrentHP = 6
-				pDeathable.hp.MaxHP = 6
+				pDeathable.hp = l.ServMessage.Myhealth
 				pDeathable.deathableShape = accelEnt.rect
 				pDeathable.remote = true
 				addDeathable(newOtherPlayer, &pDeathable)

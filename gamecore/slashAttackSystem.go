@@ -1,6 +1,7 @@
 package gamecore
 
 import (
+	"github.com/hajimehoshi/ebiten"
 	"math"
 )
 
@@ -150,6 +151,16 @@ func addDeathable(id *entityid, d *deathable) {
 	healthBarSprite.ownerDeathable = d
 	id.linked = append(id.linked, hBarEnt)
 	addHealthBarSprite(healthBarSprite, hBarEnt)
+}
+
+func respawnsWork(){
+	if myDeathable.hp.CurrentHP>0{
+		return
+	}
+	if !ebiten.IsKeyPressed(ebiten.KeyX){
+		return
+	}
+	addLocalPlayer()
 }
 
 func deathSystemwork() {

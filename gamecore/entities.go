@@ -43,6 +43,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	slashersWork()
 	//pivotSystemWork()
 	deathSystemwork()
+	respawnsWork()
 	return nil
 }
 
@@ -142,7 +143,7 @@ var myAccelEnt *acceleratingEnt
 var mySlasher *slasher
 var myDeathable *deathable
 
-func ClientInit() {
+func addLocalPlayer(){
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
@@ -168,6 +169,10 @@ func ClientInit() {
 	ps.sprite = playerStandImage
 	ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
+}
+
+func ClientInit() {
+	addLocalPlayer()
 
 	//for i := 1; i < 30; i++ {
 	//	enemyid := &entityid{}
