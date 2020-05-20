@@ -11,7 +11,6 @@ var movers = make(map[*entityid]*acceleratingEnt)
 var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
-//Momentum hi
 type Momentum struct {
 	Xaxis int `json:"Xaxis"`
 	Yaxis int `json:"Yaxis"`
@@ -263,6 +262,13 @@ func socketReceive() {
 				pDeathable.deathableShape = accelEnt.rect
 				pDeathable.remote = true
 				addDeathable(newOtherPlayer, &pDeathable)
+				ps := &baseSprite{}
+				ps.redScale = &pDeathable.redScale
+				ps.swinging = &remoteSlasher.swangin
+				ps.sprite = playerStandImage
+				ps.owner = accelEnt
+				addBasicSprite(ps, newOtherPlayer)
+
 			} else {
 				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
 				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y

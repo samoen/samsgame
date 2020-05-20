@@ -164,7 +164,7 @@ func addLocalPlayer(){
 	myDeathable = pDeathable
 
 	ps := &baseSprite{}
-	ps.redScale = new(int)
+	ps.redScale = &pDeathable.redScale
 	ps.swinging = &playerSlasher.swangin
 	ps.sprite = playerStandImage
 	ps.owner = accelplayer
