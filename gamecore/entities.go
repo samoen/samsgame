@@ -91,10 +91,11 @@ func closeConn() {
 
 //ServerMessage message to server
 type ServerMessage struct {
-	Myloc ServerLocation `json:"myloc"`
-	Mymom Momentum       `json:"mymom"`
-	Mydir Directions     `json:"mydir"`
-	Myaxe Weapon         `json:"myaxe"`
+	Myloc    ServerLocation
+	Mymom    Momentum
+	Mydir    Directions
+	Myaxe    Weapon
+	Myhealth Hitpoints
 }
 
 type Weapon struct {
@@ -113,9 +114,10 @@ type LocationList struct {
 type LocWithPNum struct {
 	Loc       ServerLocation `json:"locus"`
 	PNum      string         `json:"pnum"`
-	HisMom    Momentum       `json:"itmom"`
-	HisDir    Directions     `json:"itdir"`
-	HisAxe    Weapon         `json:"hisaxe"`
+	ServMessage ServerMessage
+	//HisMom    Momentum       `json:"itmom"`
+	//HisDir    Directions     `json:"itdir"`
+	//HisAxe    Weapon         `json:"hisaxe"`
 	YouCopped bool           `json:"youcopped"`
 }
 
@@ -168,8 +170,8 @@ func ClientInit() {
 	playerSlasher := newSlasher(accelplayer)
 	addSlasher(playerid, playerSlasher)
 	pDeathable := &deathable{}
-	pDeathable.currentHP = 6
-	pDeathable.maxHP = 6
+	pDeathable.hp.CurrentHP = 6
+	pDeathable.hp.MaxHP = 6
 	pDeathable.deathableShape = accelplayer.rect
 	addDeathable(playerid, pDeathable)
 
@@ -198,8 +200,8 @@ func ClientInit() {
 	//	addEnemyController(eController, enemyid)
 	//
 	//	botDeathable := deathable{}
-	//	botDeathable.currentHP = 3
-	//	botDeathable.maxHP = 3
+	//	botDeathable.CurrentHP = 3
+	//	botDeathable.MaxHP = 3
 	//	botDeathable.deathableShape = moveEnemy.rect
 	//	addDeathable(enemyid, &botDeathable)
 	//	es := &baseSprite{}

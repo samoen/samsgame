@@ -259,8 +259,8 @@ func socketReceive() {
 				remoteSlasher.remote = true
 				addSlasher(newOtherPlayer, remoteSlasher)
 				pDeathable := deathable{}
-				pDeathable.currentHP = 6
-				pDeathable.maxHP = 6
+				pDeathable.hp.CurrentHP = 6
+				pDeathable.hp.MaxHP = 6
 				pDeathable.deathableShape = accelEnt.rect
 				pDeathable.remote = true
 				addDeathable(newOtherPlayer, &pDeathable)
@@ -270,10 +270,11 @@ func socketReceive() {
 				remoteMovers[res].baseloc = remoteMovers[res].accelEnt.rect.location
 				remoteMovers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
 				remoteMovers[res].endpoint = location{l.Loc.X, l.Loc.Y}
-				remoteMovers[res].accelEnt.directions = l.HisDir
-				remoteMovers[res].accelEnt.moment = l.HisMom
-				slashers[res].startangle = l.HisAxe.Startangle
-				slashers[res].ent.atkButton = l.HisAxe.Swinging
+				remoteMovers[res].accelEnt.directions = l.ServMessage.Mydir
+				remoteMovers[res].accelEnt.moment = l.ServMessage.Mymom
+				slashers[res].startangle = l.ServMessage.Myaxe.Startangle
+				slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
+				deathables[res].hp = l.ServMessage.Myhealth
 				if l.YouCopped{
 					myDeathable.gotHit = true
 				}
@@ -297,6 +298,7 @@ func socketReceive() {
 		messageWep.IHit = hitlist
 		mySlasher.hitsToSend = nil
 		message.Myaxe = messageWep
+		message.Myhealth = myDeathable.hp
 		go func() {
 			writeErr := wsjson.Write(context.Background(), socketConnection, message)
 			if writeErr != nil {

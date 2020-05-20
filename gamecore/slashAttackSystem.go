@@ -11,7 +11,7 @@ type slasher struct {
 	swangin       bool
 	pivShape      *pivotingShape
 	remote        bool
-	hitsToSend []*entityid
+	hitsToSend    []*entityid
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
@@ -112,7 +112,7 @@ func slashersWork() {
 						slashee.gotHit = true
 					}
 					bot.pivShape.alreadyHit[slasheeid] = true
-					bot.hitsToSend = append(bot.hitsToSend,slasheeid)
+					bot.hitsToSend = append(bot.hitsToSend, slasheeid)
 				}
 			}
 			if blocked ||
@@ -130,9 +130,13 @@ type deathable struct {
 	gotHit         bool
 	deathableShape *rectangle
 	redScale       int
-	currentHP      int
-	maxHP          int
+	hp             Hitpoints
 	remote         bool
+}
+
+type Hitpoints struct {
+	CurrentHP int
+	MaxHP     int
 }
 
 var deathables = make(map[*entityid]*deathable)
@@ -157,9 +161,9 @@ func deathSystemwork() {
 		if mDeathable.gotHit {
 			mDeathable.redScale = 10
 			mDeathable.gotHit = false
-			mDeathable.currentHP--
+			mDeathable.hp.CurrentHP--
 		}
-		if mDeathable.currentHP < 1 {
+		if mDeathable.hp.CurrentHP < 1 {
 			eliminate(dID)
 		}
 	}

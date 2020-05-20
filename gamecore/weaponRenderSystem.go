@@ -179,7 +179,7 @@ func renderEntSprites(s *ebiten.Image) {
 
 	for _, hBarSprite := range healthbars {
 		healthbarlocation := location{hBarSprite.ownerDeathable.deathableShape.location.x, hBarSprite.ownerDeathable.deathableShape.location.y - 10}
-		healthbardimenswidth := hBarSprite.ownerDeathable.currentHP * hBarSprite.ownerDeathable.deathableShape.dimens.width / hBarSprite.ownerDeathable.maxHP
+		healthbardimenswidth := hBarSprite.ownerDeathable.hp.CurrentHP * hBarSprite.ownerDeathable.deathableShape.dimens.width / hBarSprite.ownerDeathable.hp.MaxHP
 		drawOps.GeoM.Reset()
 		scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage)
 		cameraShift(healthbarlocation, center)

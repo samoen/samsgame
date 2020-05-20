@@ -58,16 +58,14 @@ func main() {
 			var locs []gamecore.LocWithPNum
 			for subcon, loc := range connections {
 				if subcon != conno && loc.Myloc.X != 0 {
-					//for _,innerguy := range connections{
-
-					//}
 					locWithP := gamecore.LocWithPNum{}
 					locWithP.Loc = loc.Myloc
 					locWithP.PNum = fmt.Sprintf("%p", subcon)
-					locWithP.HisMom = loc.Mymom
-					locWithP.HisDir = loc.Mydir
-					locWithP.HisAxe = loc.Myaxe
-					locWithP.HisAxe.IHit = nil
+					locWithP.ServMessage = loc
+					//locWithP.HisMom = loc.Mymom
+					//locWithP.HisDir = loc.Mydir
+					//locWithP.HisAxe = loc.Myaxe
+					locWithP.ServMessage.Myaxe.IHit = nil
 					for _, hitid := range loc.Myaxe.IHit {
 						if hitid == fmt.Sprintf("%p", conno) {
 							locWithP.YouCopped = true
