@@ -274,7 +274,11 @@ func socketReceive() {
 				remoteMovers[res].accelEnt.moment = l.ServMessage.Mymom
 				slashers[res].startangle = l.ServMessage.Myaxe.Startangle
 				slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
-				deathables[res].hp = l.ServMessage.Myhealth
+				if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP{
+					deathables[res].gotHit = true
+				}else{
+					deathables[res].hp = l.ServMessage.Myhealth
+				}
 				if l.YouCopped{
 					myDeathable.gotHit = true
 				}

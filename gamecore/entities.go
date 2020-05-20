@@ -15,7 +15,6 @@ import (
 
 const worldWidth = 5000
 
-// SamGame hi
 type SamGame struct{}
 
 var pingFrames = 10
@@ -24,7 +23,6 @@ var receiveCount = pingFrames
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
-// RemoteMover hi
 type RemoteMover struct {
 	destination location
 	baseloc     location
@@ -32,9 +30,6 @@ type RemoteMover struct {
 	accelEnt    *acceleratingEnt
 }
 
-var netbusy = false
-
-// Update game
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		closeConn()
@@ -51,7 +46,6 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	return nil
 }
 
-// Draw Samgame
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
 	renderEntSprites(screen)
@@ -68,7 +62,6 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 	)
 }
 
-// Layout hi
 func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 	//ScreenWidth = outsideWidth
 	//ScreenHeight = outsideHeight
@@ -89,7 +82,6 @@ func closeConn() {
 	}
 }
 
-//ServerMessage message to server
 type ServerMessage struct {
 	Myloc    ServerLocation
 	Mymom    Momentum
@@ -99,32 +91,25 @@ type ServerMessage struct {
 }
 
 type Weapon struct {
-	Swinging   bool     `json:"swinging"`
-	Startangle float64  `json:"startang"`
-	IHit       []string `json:"ihit"`
+	Swinging   bool
+	Startangle float64
+	IHit       []string
 }
 
-//LocationList message from server
 type LocationList struct {
-	Locs []LocWithPNum `json:"locs"`
-	//YourPnum string `json:"yourpnum"`
+	Locs []LocWithPNum
 }
 
-//LocWithPNum represents remote player
 type LocWithPNum struct {
-	Loc       ServerLocation `json:"locus"`
-	PNum      string         `json:"pnum"`
+	Loc       ServerLocation
+	PNum      string
 	ServMessage ServerMessage
-	//HisMom    Momentum       `json:"itmom"`
-	//HisDir    Directions     `json:"itdir"`
-	//HisAxe    Weapon         `json:"hisaxe"`
-	YouCopped bool           `json:"youcopped"`
+	YouCopped bool
 }
 
-//ServerLocation location
 type ServerLocation struct {
-	X int `json:"x"`
-	Y int `json:"y"`
+	X int
+	Y int
 }
 
 func connectToServer() {
@@ -157,9 +142,7 @@ var myAccelEnt *acceleratingEnt
 var mySlasher *slasher
 var myDeathable *deathable
 
-//ClientInit inits client
 func ClientInit() {
-
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)

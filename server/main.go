@@ -57,23 +57,27 @@ func main() {
 			timer1 := time.NewTimer(166 * time.Millisecond)
 			var locs []gamecore.LocWithPNum
 			for subcon, loc := range connections {
-				if subcon != conno && loc.Myloc.X != 0 {
-					locWithP := gamecore.LocWithPNum{}
-					locWithP.Loc = loc.Myloc
-					locWithP.PNum = fmt.Sprintf("%p", subcon)
-					locWithP.ServMessage = loc
-					//locWithP.HisMom = loc.Mymom
-					//locWithP.HisDir = loc.Mydir
-					//locWithP.HisAxe = loc.Myaxe
-					locWithP.ServMessage.Myaxe.IHit = nil
-					for _, hitid := range loc.Myaxe.IHit {
-						if hitid == fmt.Sprintf("%p", conno) {
-							locWithP.YouCopped = true
-						}
-					}
-
-					locs = append(locs, locWithP)
+				if subcon == conno {
+					continue
 				}
+				if loc.Myloc.X == 0 {
+					continue
+				}
+				if loc.Myhealth.CurrentHP == 0 {
+					continue
+				}
+				locWithP := gamecore.LocWithPNum{}
+				locWithP.Loc = loc.Myloc
+				locWithP.PNum = fmt.Sprintf("%p", subcon)
+				locWithP.ServMessage = loc
+				locWithP.ServMessage.Myaxe.IHit = nil
+				for _, hitid := range loc.Myaxe.IHit {
+					if hitid == fmt.Sprintf("%p", conno) {
+						locWithP.YouCopped = true
+					}
+				}
+
+				locs = append(locs, locWithP)
 			}
 			toSend := gamecore.LocationList{}
 			toSend.Locs = locs
