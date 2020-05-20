@@ -40,7 +40,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		closeConn()
 		return errors.New("SamGame ended by player")
 	}
-
+	socketReceive()
 	remoteMoversWork()
 	updatePlayerControl()
 	enemyControlWork()
@@ -98,8 +98,9 @@ type ServerMessage struct {
 }
 
 type Weapon struct {
-	Swinging   bool    `json:"swinging"`
-	Startangle float64 `json:"startang"`
+	Swinging   bool     `json:"swinging"`
+	Startangle float64  `json:"startang"`
+	IHit       []string `json:"ihit"`
 }
 
 //LocationList message from server

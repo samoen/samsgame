@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"math"
-
 	"nhooyr.io/websocket/wsjson"
 )
 
@@ -221,24 +220,14 @@ func collisionSystemWork() {
 	}
 }
 
-func remoteMoversWork() {
-	// if socketConnection != nil && !netbusy {
-	// 	if sendCount > 0 {
-	// 		sendCount--
-	// 	} else {
-	// 		sendCount = SENDRATE
-	// 		netbusy = true
-
-	// 	}
-	// }
-
+func socketReceive() {
 	if socketConnection == nil {
 		return
 	}
 
 	select {
 	case msg := <-receiveChan:
-		log.Println("received message", msg)
+		log.Printf("receiveChan: %+v", msg)
 		pingFrames = receiveCount
 		receiveCount = 1
 	found:
@@ -268,7 +257,13 @@ func remoteMoversWork() {
 				addRemoteMover(otherPlay, newOtherPlayer)
 				remoteSlasher := newSlasher(accelEnt)
 				remoteSlasher.remote = true
-				addSlasher(newOtherPlayer,remoteSlasher)
+				addSlasher(newOtherPlayer, remoteSlasher)
+				pDeathable := deathable{}
+				pDeathable.currentHP = 6
+				pDeathable.maxHP = 6
+				pDeathable.deathableShape = accelEnt.rect
+				pDeathable.remote = true
+				addDeathable(newOtherPlayer, &pDeathable)
 			} else {
 				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
 				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y
@@ -281,12 +276,25 @@ func remoteMoversWork() {
 				slashers[res].ent.atkButton = l.HisAxe.Swinging
 			}
 		}
-		message := ServerMessage{
-			Myloc: ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y},
-			Mymom: myAccelEnt.moment,
-			Mydir: myAccelEnt.directions,
+		message := ServerMessage{}
+		message.Myloc = ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y}
+		message.Mymom = myAccelEnt.moment
+		message.Mydir = myAccelEnt.directions
+		messageWep := Weapon{}
+		messageWep.Swinging = mySlasher.swangin
+		messageWep.Startangle = mySlasher.pivShape.startCount
+		var hitlist []string
+		for serverid,localid := range otherPlayers{
+			for _,hitlocal := range mySlasher.hitsToSend {
+				if localid == hitlocal{
+					hitlist = append(hitlist,serverid)
+				}
+			}
 		}
-		message.Myaxe = Weapon{mySlasher.swangin,mySlasher.pivShape.startCount}
+		messageWep.IHit = hitlist
+		//mySlasher.pivShape.alreadyHit = make(map[*entityid]bool)
+		mySlasher.hitsToSend = nil
+		message.Myaxe = messageWep
 		go func() {
 			writeErr := wsjson.Write(context.Background(), socketConnection, message)
 			if writeErr != nil {
@@ -304,6 +312,9 @@ func remoteMoversWork() {
 		// }
 	}
 	receiveCount++
+}
+
+func remoteMoversWork() {
 	for id, p := range remoteMovers {
 		if receiveCount > pingFrames+1 {
 			p.accelEnt.directions.Down = false

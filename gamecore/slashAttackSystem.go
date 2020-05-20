@@ -9,8 +9,9 @@ type slasher struct {
 	startangle    float64
 	cooldownCount int
 	swangin       bool
-	pivShape *pivotingShape
-	remote bool
+	pivShape      *pivotingShape
+	remote        bool
+	hitsToSend []*entityid
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
@@ -31,7 +32,7 @@ func addSlasher(id *entityid, b *slasher) {
 func slashersWork() {
 	for slasherid, bot := range slashers {
 		bot := bot
-		if !bot.remote{
+		if !bot.remote {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
 				bot.ent.directions.Right ||
@@ -51,6 +52,8 @@ func slashersWork() {
 				}
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 			}
+		} else {
+
 		}
 
 		if bot.cooldownCount > 0 {
@@ -60,17 +63,19 @@ func slashersWork() {
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
 			wepid := &entityid{}
 			p := &pivotingShape{}
+			p.alreadyHit = make(map[*entityid]bool)
 			p.wepid = wepid
 			p.pivotPoint = bot.ent.rect
-
 			if bot.remote {
 				p.animationCount = bot.startangle
-
 			}
+			if !bot.remote {
+				p.animationCount = bot.startangle + 1.2
+			}
+
 			p.pivoterShape = newShape()
 			p.pivoterShape.lines = makeAxe(p.animationCount, *bot.ent.rect)
-			if !bot.remote{
-				p.animationCount = bot.startangle + 1.2
+			if !bot.remote {
 				for i := 1; i < 20; i++ {
 					if !checkBlocker(*p.pivoterShape) {
 						break
@@ -81,12 +86,9 @@ func slashersWork() {
 				}
 			}
 
-
-			p.alreadyHit = make(map[*entityid]bool)
+			addHitbox(p.pivoterShape, wepid)
 			bot.swangin = true
 			ws := weaponSprite{&p.animationCount, bot, swordImage}
-
-			addHitbox(p.pivoterShape, wepid)
 
 			p.startCount = p.animationCount
 
@@ -98,34 +100,39 @@ func slashersWork() {
 
 			bot.cooldownCount = 60
 		}
-		if bot.swangin{
+		if bot.swangin {
 
 			bot.pivShape.animationCount -= 0.12
 			bot.pivShape.pivoterShape.lines = makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
 
-			if ok, slashee, slasheeid := checkSlashee(bot.pivShape,slasherid); ok {
-				slashee.gotHit = true
-				bot.pivShape.alreadyHit[slasheeid] = true
+			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
+				if !bot.remote {
+					if !slashee.remote {
+						slashee.gotHit = true
+					}
+					bot.pivShape.alreadyHit[slasheeid] = true
+					bot.hitsToSend = append(bot.hitsToSend,slasheeid)
+				}
 			}
-			if blocked {
+			if blocked ||
+				math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
 				bot.swangin = false
-				eliminate(bot.pivShape.wepid)
-				continue
-			} else if math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
-				bot.swangin = false
+				//bot.pivShape.alreadyHit = make(map[*entityid]bool)
 				eliminate(bot.pivShape.wepid)
 				continue
 			}
 		}
 	}
 }
+
 type deathable struct {
 	gotHit         bool
 	deathableShape *rectangle
 	redScale       int
 	currentHP      int
 	maxHP          int
+	remote         bool
 }
 
 var deathables = make(map[*entityid]*deathable)
