@@ -109,9 +109,10 @@ func slashersWork() {
 
 			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
 				if !bot.remote {
-					if !slashee.remote {
-						slashee.gotHit = true
-					}
+					//if !slashee.remote {
+					slashee.gotHit = true
+					slashee.skipHpUpdate = 2
+					//}
 					bot.pivShape.alreadyHit[slasheeid] = true
 					bot.hitsToSend = append(bot.hitsToSend, slasheeid)
 				}
@@ -132,6 +133,7 @@ type deathable struct {
 	redScale       int
 	hp             Hitpoints
 	remote         bool
+	skipHpUpdate   int
 }
 
 type Hitpoints struct {
@@ -173,7 +175,7 @@ func deathSystemwork() {
 			mDeathable.gotHit = false
 			mDeathable.hp.CurrentHP--
 		}
-		if mDeathable.hp.CurrentHP < 1 {
+		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
 		}
 	}
