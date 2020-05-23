@@ -2,13 +2,14 @@ package gamecore
 
 import (
 	"context"
+	"github.com/hajimehoshi/ebiten"
 	"log"
 	"math"
 	"nhooyr.io/websocket/wsjson"
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
-var remoteMovers = make(map[*entityid]*RemoteMover)
+//var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
@@ -23,6 +24,12 @@ type acceleratingEnt struct {
 	moveSpeed  float64
 	directions Directions
 	atkButton  bool
+	lastflip   bool
+	ignoreflip bool
+	destination location
+	baseloc     location
+	endpoint    location
+	remote bool
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -41,10 +48,10 @@ func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }
-func addRemoteMover(p *RemoteMover, id *entityid) {
-	remoteMovers[id] = p
-	id.systems = append(id.systems, remoteMover)
-}
+//func addRemoteMover(p *RemoteMover, id *entityid) {
+//	remoteMovers[id] = p
+//	id.systems = append(id.systems, remoteMover)
+//}
 
 func addSolid(s *shape, id *entityid) {
 	solids[id] = s
@@ -213,9 +220,60 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 }
 
 func collisionSystemWork() {
+
 	for moverid, p := range movers {
-		p.moment = calcMomentum(*p)
-		moveCollide(p, moverid)
+		interpolating := false
+		if p.remote{
+			if receiveCount > pingFrames+1 {
+				p.directions.Down = false
+				p.directions.Left = false
+				p.directions.Right = false
+				p.directions.Up = false
+			}
+
+			if receiveCount <= (pingFrames/2)+1 {
+				interpolating = true
+				newplace := p.baseloc
+				newplace.x += p.destination.x * receiveCount
+				newplace.y += p.destination.y * receiveCount
+				if receiveCount == (pingFrames/2)+1 {
+					newplace = p.endpoint
+				}
+				checkrect := *p.rect
+				checkrect.refreshShape(newplace)
+				if !normalcollides(*checkrect.shape, solids, moverid) {
+					p.rect.refreshShape(newplace)
+				}
+			}
+		}
+
+		if !interpolating{
+			p.moment = calcMomentum(*p)
+			moveCollide(p, moverid)
+		}
+	}
+	offset:=renderOffset()
+	for moverid, p := range movers {
+		if bs, ok := basicSprites[moverid]; ok {
+
+			if !p.ignoreflip {
+				if p.directions.Left && !p.directions.Right {
+					p.lastflip = true
+				}
+				if p.directions.Right && !p.directions.Left {
+					p.lastflip = false}
+			}
+
+			if p.lastflip {
+				invertGeom := ebiten.GeoM{}
+				invertGeom.Scale(-1, 1)
+				invertGeom.Translate(float64(p.rect.dimens.width), 0)
+				bs.bOps.GeoM.Add(invertGeom)
+			}
+
+			scaleToDimension(p.rect.dimens, bs.sprite, bs.bOps)
+			cameraShift(p.rect.location, offset, bs.bOps)
+		}
 	}
 }
 
@@ -246,14 +304,13 @@ func socketReceive() {
 				newOtherPlayer := &entityid{}
 				otherPlayers[l.PNum] = newOtherPlayer
 				accelEnt := newControlledEntity()
+				accelEnt.remote = true
 				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
 				addHitbox(accelEnt.rect.shape, newOtherPlayer)
 				addSolid(accelEnt.rect.shape, newOtherPlayer)
-				otherPlay := &RemoteMover{}
-				otherPlay.baseloc = accelEnt.rect.location
-				otherPlay.endpoint = accelEnt.rect.location
-				otherPlay.accelEnt = accelEnt
-				addRemoteMover(otherPlay, newOtherPlayer)
+				accelEnt.baseloc = accelEnt.rect.location
+				accelEnt.endpoint = accelEnt.rect.location
+				addMoveCollider(accelEnt, newOtherPlayer)
 				remoteSlasher := newSlasher(accelEnt)
 				remoteSlasher.remote = true
 				addSlasher(newOtherPlayer, remoteSlasher)
@@ -263,34 +320,32 @@ func socketReceive() {
 				pDeathable.remote = true
 				addDeathable(newOtherPlayer, &pDeathable)
 				ps := &baseSprite{}
-				ps.redScale = &pDeathable.redScale
-				ps.swinging = &remoteSlasher.swangin
+				ps.bOps = &ebiten.DrawImageOptions{}
 				ps.sprite = playerStandImage
-				ps.owner = accelEnt
 				addBasicSprite(ps, newOtherPlayer)
 
 			} else {
-				diffx := l.Loc.X - remoteMovers[res].accelEnt.rect.location.x
-				diffy := l.Loc.Y - remoteMovers[res].accelEnt.rect.location.y
-				remoteMovers[res].baseloc = remoteMovers[res].accelEnt.rect.location
-				remoteMovers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
-				remoteMovers[res].endpoint = location{l.Loc.X, l.Loc.Y}
-				remoteMovers[res].accelEnt.directions = l.ServMessage.Mydir
-				remoteMovers[res].accelEnt.moment = l.ServMessage.Mymom
+				diffx := l.Loc.X - movers[res].rect.location.x
+				diffy := l.Loc.Y - movers[res].rect.location.y
+				movers[res].baseloc = movers[res].rect.location
+				movers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
+				movers[res].endpoint = location{l.Loc.X, l.Loc.Y}
+				movers[res].directions = l.ServMessage.Mydir
+				movers[res].moment = l.ServMessage.Mymom
 				slashers[res].startangle = l.ServMessage.Myaxe.Startangle
 				slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
-				if deathables[res].skipHpUpdate>0{
-					deathables[res].skipHpUpdate --
-				}else{
-					if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP{
+				if deathables[res].skipHpUpdate > 0 {
+					deathables[res].skipHpUpdate--
+				} else {
+					if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP {
 						deathables[res].gotHit = true
 					}
 					deathables[res].hp = l.ServMessage.Myhealth
 				}
 
-				if l.YouCopped{
+				if l.YouCopped {
 					myDeathable.gotHit = true
-					myDeathable.hp.CurrentHP --
+					myDeathable.hp.CurrentHP--
 				}
 			}
 		}
@@ -302,10 +357,10 @@ func socketReceive() {
 		messageWep.Swinging = mySlasher.swangSinceSend
 		messageWep.Startangle = mySlasher.pivShape.startCount
 		var hitlist []string
-		for serverid,localid := range otherPlayers{
-			for _,hitlocal := range mySlasher.hitsToSend {
-				if localid == hitlocal{
-					hitlist = append(hitlist,serverid)
+		for serverid, localid := range otherPlayers {
+			for _, hitlocal := range mySlasher.hitsToSend {
+				if localid == hitlocal {
+					hitlist = append(hitlist, serverid)
 				}
 			}
 		}
@@ -326,40 +381,7 @@ func socketReceive() {
 			}
 			log.Printf("sent my pos %+v", message)
 		}()
-		// netbusy = false
 	default:
-		// if receiveCount < SENDRATE+1 {
-		// receiveCount++
-		// }
 	}
 	receiveCount++
-}
-
-func remoteMoversWork() {
-	for id, p := range remoteMovers {
-		if receiveCount > pingFrames+1 {
-			p.accelEnt.directions.Down = false
-			p.accelEnt.directions.Left = false
-			p.accelEnt.directions.Right = false
-			p.accelEnt.directions.Up = false
-		}
-
-		if receiveCount <= (pingFrames/2)+1 {
-			newplace := p.baseloc
-			newplace.x += p.destination.x * receiveCount
-			newplace.y += p.destination.y * receiveCount
-			if receiveCount == (pingFrames/2)+1 {
-				newplace = p.endpoint
-			}
-			checkrect := *p.accelEnt.rect
-			checkrect.refreshShape(newplace)
-			if !normalcollides(*checkrect.shape, solids, id) {
-				p.accelEnt.rect.refreshShape(newplace)
-			}
-			continue
-		}
-
-		p.accelEnt.moment = calcMomentum(*p.accelEnt)
-		moveCollide(p.accelEnt, id)
-	}
 }

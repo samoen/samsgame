@@ -122,9 +122,9 @@ func slashersWork() {
 				math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
 				bot.swangin = false
 				eliminate(bot.pivShape.wepid)
-				continue
 			}
 		}
+		bot.ent.ignoreflip = bot.swangin
 	}
 }
 
@@ -167,7 +167,6 @@ func respawnsWork() {
 
 func deathSystemwork() {
 	for dID, mDeathable := range deathables {
-
 		if mDeathable.redScale > 0 {
 			mDeathable.redScale--
 		}
@@ -176,9 +175,15 @@ func deathSystemwork() {
 			mDeathable.gotHit = false
 			//mDeathable.hp.CurrentHP--
 		}
+
+		if bs,ok:=basicSprites[dID];ok{
+			bs.bOps.ColorM.Reset()
+			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
+		}
 		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
 		}
+
 	}
 }
 
@@ -214,8 +219,8 @@ func eliminate(id *entityid) {
 			delete(playerControllables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
-		case remoteMover:
-			delete(remoteMovers, id)
+		//case remoteMover:
+		//	delete(remoteMovers, id)
 		}
 	}
 }

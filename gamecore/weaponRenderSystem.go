@@ -16,21 +16,16 @@ type weaponSprite struct {
 }
 
 type baseSprite struct {
-	owner    *acceleratingEnt
-	swinging *bool
 	sprite   *ebiten.Image
-	redScale *int
-	lastflip bool
+	bOps     *ebiten.DrawImageOptions
 }
 
 type healthBarSprite struct {
 	ownerDeathable *deathable
 }
 
-//ScreenWidth hi
 var ScreenWidth = 700
 
-//ScreenHeight hi
 var ScreenHeight = 500
 var bgTileWidth = 2500
 
@@ -119,17 +114,17 @@ func drawBackground(screen *ebiten.Image) {
 	}
 }
 
-func scaleToDimension(dims dimens, img *ebiten.Image) {
+func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions) {
 	imW, imH := img.Size()
 	wRatio := float64(dims.width) / float64(imW)
 	hRatio := float64(dims.height) / float64(imH)
-	drawOps.GeoM.Scale(wRatio, hRatio)
+	ops.GeoM.Scale(wRatio, hRatio)
 }
 
-func cameraShift(loc location, pSpriteOffset location) {
+func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOptions) {
 	pSpriteOffset.x += loc.x
 	pSpriteOffset.y += loc.y
-	drawOps.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
+	ops.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 }
 
 var drawOps = &ebiten.DrawImageOptions{}
@@ -137,28 +132,15 @@ var drawOps = &ebiten.DrawImageOptions{}
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
-		if !*ps.swinging {
-			if ps.owner.directions.Left && !ps.owner.directions.Right {
-				ps.lastflip = true
-			}
-			if ps.owner.directions.Right && !ps.owner.directions.Left {
-				ps.lastflip = false
-			}
-		}
-		drawOps.GeoM.Reset()
-		scaleToDimension(ps.owner.rect.dimens, ps.sprite)
-		if ps.lastflip {
-			drawOps.GeoM.Scale(-1, 1)
-			drawOps.GeoM.Translate(float64(ps.owner.rect.dimens.width), 0)
-		}
-		cameraShift(ps.owner.rect.location, center)
-
-		drawOps.ColorM.Translate(float64(*ps.redScale), 0, 0, 0)
-
-		if err := s.DrawImage(ps.sprite, drawOps); err != nil {
+		//scaleToDimension(myAccelEnt.rect.dimens, bs.sprite, ps.bOps)
+		//cameraShift(p.rect.location, renderOffset(), ps.bOps)
+		if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
 			log.Fatal(err)
 		}
-		drawOps.ColorM.Reset()
+	}
+	for _, ps := range basicSprites {
+		ps.bOps.ColorM.Reset()
+		ps.bOps.GeoM.Reset()
 	}
 	for _, wep := range weapons {
 		_, imH := wep.sprite.Size()
@@ -170,7 +152,7 @@ func renderEntSprites(s *ebiten.Image) {
 		drawOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
 
 		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
-		cameraShift(ownerCenter, center)
+		cameraShift(ownerCenter, center,drawOps)
 
 		if err := s.DrawImage(wep.sprite, drawOps); err != nil {
 			log.Fatal(err)
@@ -181,8 +163,8 @@ func renderEntSprites(s *ebiten.Image) {
 		healthbarlocation := location{hBarSprite.ownerDeathable.deathableShape.location.x, hBarSprite.ownerDeathable.deathableShape.location.y - 10}
 		healthbardimenswidth := hBarSprite.ownerDeathable.hp.CurrentHP * hBarSprite.ownerDeathable.deathableShape.dimens.width / hBarSprite.ownerDeathable.hp.MaxHP
 		drawOps.GeoM.Reset()
-		scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage)
-		cameraShift(healthbarlocation, center)
+		scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,drawOps)
+		cameraShift(healthbarlocation, center,drawOps)
 		if err := s.DrawImage(emptyImage, drawOps); err != nil {
 			log.Fatal(err)
 		}

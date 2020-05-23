@@ -23,12 +23,12 @@ var receiveCount = pingFrames
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
-type RemoteMover struct {
-	destination location
-	baseloc     location
-	endpoint    location
-	accelEnt    *acceleratingEnt
-}
+//type RemoteMover struct {
+//	destination location
+//	baseloc     location
+//	endpoint    location
+//	accelEnt    *acceleratingEnt
+//}
 
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -36,7 +36,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		return errors.New("SamGame ended by player")
 	}
 	socketReceive()
-	remoteMoversWork()
+	//remoteMoversWork()
 	updatePlayerControl()
 	enemyControlWork()
 	collisionSystemWork()
@@ -172,10 +172,11 @@ func addLocalPlayer(){
 	myDeathable = pDeathable
 
 	ps := &baseSprite{}
-	ps.redScale = &pDeathable.redScale
-	ps.swinging = &playerSlasher.swangin
+	ps.bOps = &ebiten.DrawImageOptions{}
+	//ps.redScale = &pDeathable.redScale
+	//ps.swinging = &playerSlasher.swangin
 	ps.sprite = playerStandImage
-	ps.owner = accelplayer
+	//ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
 }
 
