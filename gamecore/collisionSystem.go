@@ -281,13 +281,16 @@ func socketReceive() {
 				slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
 				if deathables[res].skipHpUpdate>0{
 					deathables[res].skipHpUpdate --
-				}else if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP{
-					deathables[res].gotHit = true
 				}else{
+					if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP{
+						deathables[res].gotHit = true
+					}
 					deathables[res].hp = l.ServMessage.Myhealth
 				}
+
 				if l.YouCopped{
 					myDeathable.gotHit = true
+					myDeathable.hp.CurrentHP --
 				}
 			}
 		}

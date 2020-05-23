@@ -111,6 +111,7 @@ func slashersWork() {
 				if !bot.remote {
 					//if !slashee.remote {
 					slashee.gotHit = true
+					slashee.hp.CurrentHP --
 					slashee.skipHpUpdate = 2
 					//}
 					bot.pivShape.alreadyHit[slasheeid] = true
@@ -173,7 +174,7 @@ func deathSystemwork() {
 		if mDeathable.gotHit {
 			mDeathable.redScale = 10
 			mDeathable.gotHit = false
-			mDeathable.hp.CurrentHP--
+			//mDeathable.hp.CurrentHP--
 		}
 		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
