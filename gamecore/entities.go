@@ -35,6 +35,11 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		closeConn()
 		return errors.New("SamGame ended by player")
 	}
+	for _, ps := range basicSprites {
+		ps.bOps.ColorM.Reset()
+		ps.bOps.GeoM.Reset()
+	}
+	respawnsWork()
 	socketReceive()
 	//remoteMoversWork()
 	updatePlayerControl()
@@ -43,7 +48,6 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	slashersWork()
 	//pivotSystemWork()
 	deathSystemwork()
-	respawnsWork()
 	return nil
 }
 
@@ -76,7 +80,7 @@ var socketConnection *websocket.Conn
 
 func closeConn() {
 	if socketConnection != nil {
-		err := socketConnection.Close(websocket.StatusInternalError, "closed from client defer")
+		err := socketConnection.Close(websocket.StatusNormalClosure, "closed from client defer")
 		if err != nil {
 			log.Println(err)
 		}
@@ -167,6 +171,16 @@ func addLocalPlayer(){
 	pDeathable.deathableShape = accelplayer.rect
 	addDeathable(playerid, pDeathable)
 
+	hBarEnt := &entityid{}
+	hBarSprite := &baseSprite{}
+	hBarSprite.bOps = &ebiten.DrawImageOptions{}
+	hBarSprite.sprite = emptyImage
+	//hBarSprite.updateAsHealthbar(*pDeathable)
+	pDeathable.hBarid = hBarEnt
+	//playerid.linked = append(playerid.linked, hBarEnt)
+	addBasicSprite(hBarSprite,hBarEnt)
+
+
 	mySlasher = playerSlasher
 	myAccelEnt = accelplayer
 	myDeathable = pDeathable
@@ -183,7 +197,7 @@ func addLocalPlayer(){
 func ClientInit() {
 	addLocalPlayer()
 
-	//for i := 1; i < 30; i++ {
+	//for i := 1; i < 1; i++ {
 	//	enemyid := &entityid{}
 	//	moveEnemy := newControlledEntity()
 	//	moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
@@ -196,16 +210,24 @@ func ClientInit() {
 	//	eController.aEnt = moveEnemy
 	//	addEnemyController(eController, enemyid)
 	//
-	//	botDeathable := deathable{}
-	//	botDeathable.CurrentHP = 3
-	//	botDeathable.MaxHP = 3
+	//	botDeathable := &deathable{}
+	//	botDeathable.hp.CurrentHP = 3
+	//	botDeathable.hp.MaxHP = 3
 	//	botDeathable.deathableShape = moveEnemy.rect
-	//	addDeathable(enemyid, &botDeathable)
+	//	addDeathable(enemyid, botDeathable)
+	//
+	//	hBarEnt := &entityid{}
+	//	hBarSprite := &baseSprite{}
+	//	hBarSprite.bOps = &ebiten.DrawImageOptions{}
+	//	hBarSprite.sprite = emptyImage
+	//	//hBarSprite.updateAsHealthbar(*botDeathable)
+	//	botDeathable.hBarid = hBarEnt
+	//	enemyid.linked = append(enemyid.linked, hBarEnt)
+	//	addBasicSprite(hBarSprite,hBarEnt)
+	//
 	//	es := &baseSprite{}
-	//	es.swinging = &enemySlasher.swangin
-	//	es.redScale = &botDeathable.redScale
+	//	es.bOps = &ebiten.DrawImageOptions{}
 	//	es.sprite = playerStandImage
-	//	es.owner = moveEnemy
 	//	addBasicSprite(es, enemyid)
 	//}
 

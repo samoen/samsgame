@@ -20,6 +20,13 @@ type baseSprite struct {
 	bOps     *ebiten.DrawImageOptions
 }
 
+func (bs *baseSprite)updateAsHealthbar(mDeathable deathable, center location){
+	healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+	healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
+	scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,bs.bOps)
+	cameraShift(healthbarlocation, center,bs.bOps)
+}
+
 type healthBarSprite struct {
 	ownerDeathable *deathable
 }
@@ -45,12 +52,12 @@ var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.Filt
 var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
 
 // var bgImage *ebiten.Image
-var healthbars = make(map[*entityid]*healthBarSprite)
+//var healthbars = make(map[*entityid]*healthBarSprite)
 
-func addHealthBarSprite(h *healthBarSprite, id *entityid) {
-	healthbars[id] = h
-	id.systems = append(id.systems, healthBarRenderable)
-}
+//func addHealthBarSprite(h *healthBarSprite, id *entityid) {
+//	healthbars[id] = h
+//	id.systems = append(id.systems, healthBarRenderable)
+//}
 
 var basicSprites = make(map[*entityid]*baseSprite)
 
@@ -132,16 +139,14 @@ var drawOps = &ebiten.DrawImageOptions{}
 func renderEntSprites(s *ebiten.Image) {
 	center := renderOffset()
 	for _, ps := range basicSprites {
-		//scaleToDimension(myAccelEnt.rect.dimens, bs.sprite, ps.bOps)
-		//cameraShift(p.rect.location, renderOffset(), ps.bOps)
 		if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
 			log.Fatal(err)
 		}
 	}
-	for _, ps := range basicSprites {
-		ps.bOps.ColorM.Reset()
-		ps.bOps.GeoM.Reset()
-	}
+	//for _, ps := range basicSprites {
+	//	ps.bOps.ColorM.Reset()
+	//	ps.bOps.GeoM.Reset()
+	//}
 	for _, wep := range weapons {
 		_, imH := wep.sprite.Size()
 		hRatio := float64(swordLength+swordLength/4) / float64(imH)
@@ -155,17 +160,6 @@ func renderEntSprites(s *ebiten.Image) {
 		cameraShift(ownerCenter, center,drawOps)
 
 		if err := s.DrawImage(wep.sprite, drawOps); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	for _, hBarSprite := range healthbars {
-		healthbarlocation := location{hBarSprite.ownerDeathable.deathableShape.location.x, hBarSprite.ownerDeathable.deathableShape.location.y - 10}
-		healthbardimenswidth := hBarSprite.ownerDeathable.hp.CurrentHP * hBarSprite.ownerDeathable.deathableShape.dimens.width / hBarSprite.ownerDeathable.hp.MaxHP
-		drawOps.GeoM.Reset()
-		scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,drawOps)
-		cameraShift(healthbarlocation, center,drawOps)
-		if err := s.DrawImage(emptyImage, drawOps); err != nil {
 			log.Fatal(err)
 		}
 	}

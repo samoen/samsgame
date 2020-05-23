@@ -294,6 +294,9 @@ func socketReceive() {
 					continue found
 				}
 			}
+			if d,ok:=deathables[rm];ok{
+				eliminate(d.hBarid)
+			}
 			eliminate(rm)
 			delete(otherPlayers, pnum)
 		}
@@ -314,11 +317,21 @@ func socketReceive() {
 				remoteSlasher := newSlasher(accelEnt)
 				remoteSlasher.remote = true
 				addSlasher(newOtherPlayer, remoteSlasher)
-				pDeathable := deathable{}
+				pDeathable := &deathable{}
 				pDeathable.hp = l.ServMessage.Myhealth
 				pDeathable.deathableShape = accelEnt.rect
 				pDeathable.remote = true
-				addDeathable(newOtherPlayer, &pDeathable)
+				addDeathable(newOtherPlayer, pDeathable)
+
+				hBarEnt := &entityid{}
+				hBarSprite := &baseSprite{}
+				hBarSprite.bOps = &ebiten.DrawImageOptions{}
+				hBarSprite.sprite = emptyImage
+				//hBarSprite.updateAsHealthbar(*pDeathable)
+				pDeathable.hBarid = hBarEnt
+				//newOtherPlayer.linked = append(newOtherPlayer.linked, hBarEnt)
+				addBasicSprite(hBarSprite,hBarEnt)
+
 				ps := &baseSprite{}
 				ps.bOps = &ebiten.DrawImageOptions{}
 				ps.sprite = playerStandImage

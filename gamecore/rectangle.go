@@ -36,9 +36,7 @@ type sysIndex int
 const (
 	hitBoxRenderable sysIndex = iota
 	spriteRenderable
-	healthBarRenderable
 	moveCollider
-	remoteMover
 	solidCollider
 	enemyControlled
 	playerControlled
@@ -46,7 +44,6 @@ const (
 	hurtable
 	rotatingSprite
 	weaponBlocker
-	//pivotingHitbox
 )
 
 type shape struct {

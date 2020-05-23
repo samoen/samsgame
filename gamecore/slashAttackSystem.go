@@ -97,12 +97,12 @@ func slashersWork() {
 
 			addWeaponSprite(&ws, wepid)
 
-			slasherid.linked = append(slasherid.linked, wepid)
+			//slasherid.linked = append(slasherid.linked, wepid)
 
 			bot.cooldownCount = 60
 		}
+		bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
-
 			bot.pivShape.animationCount -= 0.12
 			bot.pivShape.pivoterShape.lines = makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
@@ -124,7 +124,7 @@ func slashersWork() {
 				eliminate(bot.pivShape.wepid)
 			}
 		}
-		bot.ent.ignoreflip = bot.swangin
+
 	}
 }
 
@@ -135,6 +135,7 @@ type deathable struct {
 	hp             Hitpoints
 	remote         bool
 	skipHpUpdate   int
+	hBarid *entityid
 }
 
 type Hitpoints struct {
@@ -147,12 +148,6 @@ var deathables = make(map[*entityid]*deathable)
 func addDeathable(id *entityid, d *deathable) {
 	id.systems = append(id.systems, hurtable)
 	deathables[id] = d
-
-	hBarEnt := &entityid{}
-	healthBarSprite := &healthBarSprite{}
-	healthBarSprite.ownerDeathable = d
-	id.linked = append(id.linked, hBarEnt)
-	addHealthBarSprite(healthBarSprite, hBarEnt)
 }
 
 func respawnsWork() {
@@ -166,7 +161,8 @@ func respawnsWork() {
 }
 
 func deathSystemwork() {
-	for dID, mDeathable := range deathables {
+	center := renderOffset()
+	for _, mDeathable := range deathables {
 		if mDeathable.redScale > 0 {
 			mDeathable.redScale--
 		}
@@ -176,12 +172,24 @@ func deathSystemwork() {
 			//mDeathable.hp.CurrentHP--
 		}
 
+	}
+
+	for dID, mDeathable := range deathables {
 		if bs,ok:=basicSprites[dID];ok{
-			bs.bOps.ColorM.Reset()
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 		}
+		if bs,ok:=basicSprites[mDeathable.hBarid];ok{
+			bs.updateAsHealthbar(*mDeathable,center)
+			//bs = bs
+			//healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+			//healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
+			//scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,bs.bOps)
+			//cameraShift(healthbarlocation, center,bs.bOps)
+		}
+
 		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
+			eliminate(mDeathable.hBarid)
 		}
 
 	}
@@ -189,16 +197,16 @@ func deathSystemwork() {
 
 func eliminate(id *entityid) {
 
-	for _, asc := range id.linked {
-		eliminate(asc)
-	}
+	//for _, asc := range id.linked {
+	//	eliminate(asc)
+	//}
 
 	for _, sys := range id.systems {
 		switch sys {
 		case spriteRenderable:
 			delete(basicSprites, id)
-		case healthBarRenderable:
-			delete(healthbars, id)
+		//case healthBarRenderable:
+		//	delete(healthbars, id)
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
 		case moveCollider:
