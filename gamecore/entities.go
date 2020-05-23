@@ -106,10 +106,10 @@ type LocationList struct {
 }
 
 type LocWithPNum struct {
-	Loc       ServerLocation
-	PNum      string
+	Loc         ServerLocation
+	PNum        string
 	ServMessage ServerMessage
-	YouCopped bool
+	YouCopped   bool
 }
 
 type ServerLocation struct {
@@ -140,12 +140,12 @@ func connectToServer() {
 			}
 
 			//go func(){
-				//select {
-				//case
-				receiveChan <- v
-				//:
-				//default:
-				//}
+			//select {
+			//case
+			receiveChan <- v
+			//:
+			//default:
+			//}
 			//}()
 		}
 	}()
@@ -155,7 +155,7 @@ var myAccelEnt *acceleratingEnt
 var mySlasher *slasher
 var myDeathable *deathable
 
-func addLocalPlayer(){
+func addLocalPlayer() {
 	playerid := &entityid{}
 	accelplayer := newControlledEntity()
 	addPlayerControlled(accelplayer, playerid)
@@ -178,8 +178,7 @@ func addLocalPlayer(){
 	//hBarSprite.updateAsHealthbar(*pDeathable)
 	pDeathable.hBarid = hBarEnt
 	//playerid.linked = append(playerid.linked, hBarEnt)
-	addBasicSprite(hBarSprite,hBarEnt)
-
+	addBasicSprite(hBarSprite, hBarEnt)
 
 	mySlasher = playerSlasher
 	myAccelEnt = accelplayer

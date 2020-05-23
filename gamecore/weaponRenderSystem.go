@@ -16,15 +16,15 @@ type weaponSprite struct {
 }
 
 type baseSprite struct {
-	sprite   *ebiten.Image
-	bOps     *ebiten.DrawImageOptions
+	sprite *ebiten.Image
+	bOps   *ebiten.DrawImageOptions
 }
 
-func (bs *baseSprite)updateAsHealthbar(mDeathable deathable, center location){
+func (bs *baseSprite) updateAsHealthbar(mDeathable deathable, center location) {
 	healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
 	healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-	scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,bs.bOps)
-	cameraShift(healthbarlocation, center,bs.bOps)
+	scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
+	cameraShift(healthbarlocation, center, bs.bOps)
 }
 
 type healthBarSprite struct {
@@ -157,7 +157,7 @@ func renderEntSprites(s *ebiten.Image) {
 		drawOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
 
 		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
-		cameraShift(ownerCenter, center,drawOps)
+		cameraShift(ownerCenter, center, drawOps)
 
 		if err := s.DrawImage(wep.sprite, drawOps); err != nil {
 			log.Fatal(err)

@@ -111,7 +111,7 @@ func slashersWork() {
 				if !bot.remote {
 					//if !slashee.remote {
 					slashee.gotHit = true
-					slashee.hp.CurrentHP --
+					slashee.hp.CurrentHP--
 					slashee.skipHpUpdate = 2
 					//}
 					bot.pivShape.alreadyHit[slasheeid] = true
@@ -135,7 +135,7 @@ type deathable struct {
 	hp             Hitpoints
 	remote         bool
 	skipHpUpdate   int
-	hBarid *entityid
+	hBarid         *entityid
 }
 
 type Hitpoints struct {
@@ -175,11 +175,11 @@ func deathSystemwork() {
 	}
 
 	for dID, mDeathable := range deathables {
-		if bs,ok:=basicSprites[dID];ok{
+		if bs, ok := basicSprites[dID]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 		}
-		if bs,ok:=basicSprites[mDeathable.hBarid];ok{
-			bs.updateAsHealthbar(*mDeathable,center)
+		if bs, ok := basicSprites[mDeathable.hBarid]; ok {
+			bs.updateAsHealthbar(*mDeathable, center)
 			//bs = bs
 			//healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
 			//healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
@@ -187,7 +187,7 @@ func deathSystemwork() {
 			//cameraShift(healthbarlocation, center,bs.bOps)
 		}
 
-		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
+		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote {
 			eliminate(dID)
 			eliminate(mDeathable.hBarid)
 		}
@@ -227,8 +227,8 @@ func eliminate(id *entityid) {
 			delete(playerControllables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
-		//case remoteMover:
-		//	delete(remoteMovers, id)
+			//case remoteMover:
+			//	delete(remoteMovers, id)
 		}
 	}
 }

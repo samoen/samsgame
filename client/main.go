@@ -5,7 +5,6 @@ import (
 	"mahgame/gamecore"
 )
 
-
 func main() {
 
 	//emptyImage.Fill(color.White)
@@ -26,5 +25,3 @@ func main() {
 	//}
 	//log.Println("exited main")
 }
-
-

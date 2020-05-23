@@ -9,6 +9,7 @@ import (
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
+
 //var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
@@ -17,19 +18,19 @@ type Momentum struct {
 	Yaxis int `json:"Yaxis"`
 }
 type acceleratingEnt struct {
-	rect       *rectangle
-	moment     Momentum
-	tracktion  float64
-	agility    float64
-	moveSpeed  float64
-	directions Directions
-	atkButton  bool
-	lastflip   bool
-	ignoreflip bool
+	rect        *rectangle
+	moment      Momentum
+	tracktion   float64
+	agility     float64
+	moveSpeed   float64
+	directions  Directions
+	atkButton   bool
+	lastflip    bool
+	ignoreflip  bool
 	destination location
 	baseloc     location
 	endpoint    location
-	remote bool
+	remote      bool
 }
 
 func newControlledEntity() *acceleratingEnt {
@@ -48,6 +49,7 @@ func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }
+
 //func addRemoteMover(p *RemoteMover, id *entityid) {
 //	remoteMovers[id] = p
 //	id.systems = append(id.systems, remoteMover)
@@ -223,7 +225,7 @@ func collisionSystemWork() {
 
 	for moverid, p := range movers {
 		interpolating := false
-		if p.remote{
+		if p.remote {
 			if receiveCount > pingFrames+1 {
 				p.directions.Down = false
 				p.directions.Left = false
@@ -247,12 +249,12 @@ func collisionSystemWork() {
 			}
 		}
 
-		if !interpolating{
+		if !interpolating {
 			p.moment = calcMomentum(*p)
 			moveCollide(p, moverid)
 		}
 	}
-	offset:=renderOffset()
+	offset := renderOffset()
 	for moverid, p := range movers {
 		if bs, ok := basicSprites[moverid]; ok {
 
@@ -261,7 +263,8 @@ func collisionSystemWork() {
 					p.lastflip = true
 				}
 				if p.directions.Right && !p.directions.Left {
-					p.lastflip = false}
+					p.lastflip = false
+				}
 			}
 
 			if p.lastflip {
@@ -294,7 +297,7 @@ func socketReceive() {
 					continue found
 				}
 			}
-			if d,ok:=deathables[rm];ok{
+			if d, ok := deathables[rm]; ok {
 				eliminate(d.hBarid)
 			}
 			eliminate(rm)
@@ -330,7 +333,7 @@ func socketReceive() {
 				//hBarSprite.updateAsHealthbar(*pDeathable)
 				pDeathable.hBarid = hBarEnt
 				//newOtherPlayer.linked = append(newOtherPlayer.linked, hBarEnt)
-				addBasicSprite(hBarSprite,hBarEnt)
+				addBasicSprite(hBarSprite, hBarEnt)
 
 				ps := &baseSprite{}
 				ps.bOps = &ebiten.DrawImageOptions{}

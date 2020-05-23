@@ -6,7 +6,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-
 var hitBoxes = make(map[*entityid]*shape)
 
 func addHitbox(s *shape, id *entityid) {
