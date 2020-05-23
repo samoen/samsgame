@@ -42,7 +42,7 @@ func main() {
 		//conMutex.Lock()
 		log.Println("accepted connection")
 		//connections[conno] = gamecore.ServerMessage{}
-		defer func() {
+		closeit := func() {
 			log.Println("removeConn called")
 			conMutex.Lock()
 			delete(connections, conno)
@@ -51,7 +51,7 @@ func main() {
 			if err != nil {
 				log.Println(err)
 			}
-		}()
+		}
 
 		for {
 			timer1 := time.NewTimer(166 * time.Millisecond)
@@ -85,6 +85,7 @@ func main() {
 			err = wsjson.Write(context.Background(), conno, toSend)
 			if err != nil {
 				log.Println(err)
+				closeit()
 				return
 			}
 			log.Println("sent message: ", toSend)
@@ -93,6 +94,7 @@ func main() {
 			err := wsjson.Read(context.Background(), conno, &v)
 			if err != nil {
 				log.Println(err)
+				closeit()
 				return
 			}
 			log.Println("received: ", v)

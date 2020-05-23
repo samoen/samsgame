@@ -134,7 +134,15 @@ func connectToServer() {
 				socketConnection = nil
 				return
 			}
-			receiveChan <- v
+
+			//go func(){
+				//select {
+				//case
+				receiveChan <- v
+				//:
+				//default:
+				//}
+			//}()
 		}
 	}()
 }
@@ -237,4 +245,18 @@ func ClientInit() {
 	addSolid(anotherRoom.shape, anotherRoomID)
 
 	go connectToServer()
+	ebiten.SetRunnableOnUnfocused(true)
+	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
+	ebiten.SetWindowTitle("sams cool game")
+	ebiten.SetWindowResizable(true)
+
+	samgame := &SamGame{}
+
+	if err := ebiten.RunGame(samgame); err != nil {
+		closeConn()
+		log.Fatal(err)
+		return
+	}
+	closeConn()
+	log.Println("exited main")
 }

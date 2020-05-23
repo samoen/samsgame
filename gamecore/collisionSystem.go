@@ -294,7 +294,7 @@ func socketReceive() {
 		message.Mymom = myAccelEnt.moment
 		message.Mydir = myAccelEnt.directions
 		messageWep := Weapon{}
-		messageWep.Swinging = mySlasher.swangin
+		messageWep.Swinging = mySlasher.swangSinceSend
 		messageWep.Startangle = mySlasher.pivShape.startCount
 		var hitlist []string
 		for serverid,localid := range otherPlayers{
@@ -305,9 +305,12 @@ func socketReceive() {
 			}
 		}
 		messageWep.IHit = hitlist
-		mySlasher.hitsToSend = nil
 		message.Myaxe = messageWep
 		message.Myhealth = myDeathable.hp
+
+		mySlasher.hitsToSend = nil
+		mySlasher.swangSinceSend = false
+
 		go func() {
 			writeErr := wsjson.Write(context.Background(), socketConnection, message)
 			if writeErr != nil {

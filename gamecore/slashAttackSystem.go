@@ -6,13 +6,14 @@ import (
 )
 
 type slasher struct {
-	ent           *acceleratingEnt
-	startangle    float64
-	cooldownCount int
-	swangin       bool
-	pivShape      *pivotingShape
-	remote        bool
-	hitsToSend    []*entityid
+	ent            *acceleratingEnt
+	startangle     float64
+	cooldownCount  int
+	swangin        bool
+	swangSinceSend bool
+	pivShape       *pivotingShape
+	remote         bool
+	hitsToSend     []*entityid
 }
 
 func newSlasher(p *acceleratingEnt) *slasher {
@@ -53,8 +54,6 @@ func slashersWork() {
 				}
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 			}
-		} else {
-
 		}
 
 		if bot.cooldownCount > 0 {
@@ -89,6 +88,7 @@ func slashersWork() {
 
 			addHitbox(p.pivoterShape, wepid)
 			bot.swangin = true
+			bot.swangSinceSend = true
 			ws := weaponSprite{&p.animationCount, bot, swordImage}
 
 			p.startCount = p.animationCount
@@ -119,7 +119,6 @@ func slashersWork() {
 			if blocked ||
 				math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
 				bot.swangin = false
-				//bot.pivShape.alreadyHit = make(map[*entityid]bool)
 				eliminate(bot.pivShape.wepid)
 				continue
 			}
@@ -153,11 +152,11 @@ func addDeathable(id *entityid, d *deathable) {
 	addHealthBarSprite(healthBarSprite, hBarEnt)
 }
 
-func respawnsWork(){
-	if myDeathable.hp.CurrentHP>0{
+func respawnsWork() {
+	if myDeathable.hp.CurrentHP > 0 {
 		return
 	}
-	if !ebiten.IsKeyPressed(ebiten.KeyX){
+	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
 	addLocalPlayer()
