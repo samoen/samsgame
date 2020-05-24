@@ -11,6 +11,7 @@ import (
 type baseSprite struct {
 	sprite *ebiten.Image
 	bOps   *ebiten.DrawImageOptions
+	layer  int
 }
 
 var ScreenWidth = 700
@@ -98,28 +99,36 @@ func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOpti
 }
 
 func renderEntSprites(s *ebiten.Image) {
-	for _, ps := range basicSprites {
-		if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
+	for _, bs := range toRender {
+		if err := s.DrawImage(bs.sprite, bs.bOps); err != nil {
 			log.Fatal(err)
 		}
 	}
+	//for _, ps := range basicSprites {
+	//	if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}
 }
 
-func updateSprites(){
-	offset:=renderOffset()
+var toRender []baseSprite
+
+func updateSprites() {
+	offset := renderOffset()
 	for _, bs := range basicSprites {
 		bs.bOps.ColorM.Reset()
 		bs.bOps.GeoM.Reset()
 	}
 	for pid, bs := range basicSprites {
 
-		if p,ok:=movers[pid];ok{
+		if p, ok := movers[pid]; ok {
 			if !p.ignoreflip {
 				if p.directions.Left && !p.directions.Right {
 					p.lastflip = true
 				}
 				if p.directions.Right && !p.directions.Left {
-					p.lastflip = false}
+					p.lastflip = false
+				}
 			}
 
 			if p.lastflip {
@@ -141,10 +150,10 @@ func updateSprites(){
 				cameraShift(healthbarlocation, offset, subbs.bOps)
 			}
 		}
-		if bot,ok:=slashers[pid];ok{
-			if bot.swangin{
+		if bot, ok := slashers[pid]; ok {
+			if bot.swangin {
 				bs.sprite = playerSwingImage
-			}else{
+			} else {
 				bs.sprite = playerStandImage
 			}
 			if bs, ok := basicSprites[bot.wepid]; ok {
@@ -160,4 +169,13 @@ func updateSprites(){
 			}
 		}
 	}
+	toRender = nil
+	for i := 0; i < 4; i++ {
+		for _, bs := range basicSprites {
+			if bs.layer == i {
+				toRender = append(toRender, *bs)
+			}
+		}
+	}
+
 }

@@ -166,6 +166,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 
 	hBarEnt := &entityid{}
 	hBarSprite := &baseSprite{}
+	hBarSprite.layer = 3
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = emptyImage
 	pDeathable.hBarid = hBarEnt
@@ -180,6 +181,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	}
 
 	ps := &baseSprite{}
+	ps.layer = 2
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = playerStandImage
 	addBasicSprite(ps, playerid)

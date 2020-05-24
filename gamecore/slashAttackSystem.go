@@ -81,6 +81,7 @@ func slashersWork() {
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
 			bs := &baseSprite{}
+			bs.layer = 1
 			bs.bOps = &ebiten.DrawImageOptions{}
 			bs.sprite = swordImage
 			addBasicSprite(bs, bot.wepid)
