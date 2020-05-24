@@ -11,6 +11,7 @@ type slasher struct {
 	cooldownCount  int
 	swangin        bool
 	swangSinceSend bool
+	wepid          *entityid
 	pivShape       *pivotingShape
 	remote         bool
 	hitsToSend     []*entityid
@@ -21,6 +22,7 @@ func newSlasher(p *acceleratingEnt) *slasher {
 	s.ent = p
 	s.cooldownCount = 0
 	s.pivShape = &pivotingShape{}
+	s.wepid = &entityid{}
 	return s
 }
 
@@ -61,10 +63,8 @@ func slashersWork() {
 		}
 
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
-			wepid := &entityid{}
 			p := &pivotingShape{}
 			p.alreadyHit = make(map[*entityid]bool)
-			p.wepid = wepid
 			p.pivotPoint = bot.ent.rect
 			if bot.remote {
 				p.animationCount = bot.startangle
@@ -86,19 +86,13 @@ func slashersWork() {
 				}
 			}
 
-			addHitbox(p.pivoterShape, wepid)
+			addHitbox(p.pivoterShape, bot.wepid)
 			bot.swangin = true
 			bot.swangSinceSend = true
 			ws := weaponSprite{&p.animationCount, bot, swordImage}
-
 			p.startCount = p.animationCount
-
 			bot.pivShape = p
-
-			addWeaponSprite(&ws, wepid)
-
-			//slasherid.linked = append(slasherid.linked, wepid)
-
+			addWeaponSprite(&ws, bot.wepid)
 			bot.cooldownCount = 60
 		}
 		bot.ent.ignoreflip = bot.swangin
@@ -121,7 +115,7 @@ func slashersWork() {
 			if blocked ||
 				math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
 				bot.swangin = false
-				eliminate(bot.pivShape.wepid)
+				eliminate(bot.wepid)
 			}
 		}
 
@@ -189,7 +183,7 @@ func deathSystemwork() {
 
 		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
-			eliminate(mDeathable.hBarid)
+			//eliminate(mDeathable.hBarid)
 		}
 
 	}
@@ -197,16 +191,10 @@ func deathSystemwork() {
 
 func eliminate(id *entityid) {
 
-	//for _, asc := range id.linked {
-	//	eliminate(asc)
-	//}
-
 	for _, sys := range id.systems {
 		switch sys {
 		case spriteRenderable:
 			delete(basicSprites, id)
-		//case healthBarRenderable:
-		//	delete(healthbars, id)
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
 		case moveCollider:
@@ -216,19 +204,21 @@ func eliminate(id *entityid) {
 		case enemyControlled:
 			delete(enemyControllers, id)
 		case abilityActivator:
+			if d, ok := slashers[id];ok{
+				eliminate(d.wepid)
+			}
 			delete(slashers, id)
 		case hurtable:
+			if d, ok := deathables[id];ok{
+				eliminate(d.hBarid)
+			}
 			delete(deathables, id)
-		//case pivotingHitbox:
-		//	delete(pivoters, id)
 		case rotatingSprite:
 			delete(weapons, id)
 		case playerControlled:
 			delete(playerControllables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
-		//case remoteMover:
-		//	delete(remoteMovers, id)
 		}
 	}
 }

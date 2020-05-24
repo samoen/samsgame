@@ -175,11 +175,8 @@ func addLocalPlayer(){
 	hBarSprite := &baseSprite{}
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = emptyImage
-	//hBarSprite.updateAsHealthbar(*pDeathable)
 	pDeathable.hBarid = hBarEnt
-	//playerid.linked = append(playerid.linked, hBarEnt)
 	addBasicSprite(hBarSprite,hBarEnt)
-
 
 	mySlasher = playerSlasher
 	myAccelEnt = accelplayer
@@ -187,49 +184,44 @@ func addLocalPlayer(){
 
 	ps := &baseSprite{}
 	ps.bOps = &ebiten.DrawImageOptions{}
-	//ps.redScale = &pDeathable.redScale
-	//ps.swinging = &playerSlasher.swangin
 	ps.sprite = playerStandImage
-	//ps.owner = accelplayer
 	addBasicSprite(ps, playerid)
 }
 
 func ClientInit() {
 	addLocalPlayer()
 
-	//for i := 1; i < 1; i++ {
-	//	enemyid := &entityid{}
-	//	moveEnemy := newControlledEntity()
-	//	moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
-	//	enemySlasher := newSlasher(moveEnemy)
-	//	addSlasher(enemyid, enemySlasher)
-	//	addHitbox(moveEnemy.rect.shape, enemyid)
-	//	addMoveCollider(moveEnemy, enemyid)
-	//	addSolid(moveEnemy.rect.shape, enemyid)
-	//	eController := &enemyController{}
-	//	eController.aEnt = moveEnemy
-	//	addEnemyController(eController, enemyid)
-	//
-	//	botDeathable := &deathable{}
-	//	botDeathable.hp.CurrentHP = 3
-	//	botDeathable.hp.MaxHP = 3
-	//	botDeathable.deathableShape = moveEnemy.rect
-	//	addDeathable(enemyid, botDeathable)
-	//
-	//	hBarEnt := &entityid{}
-	//	hBarSprite := &baseSprite{}
-	//	hBarSprite.bOps = &ebiten.DrawImageOptions{}
-	//	hBarSprite.sprite = emptyImage
-	//	//hBarSprite.updateAsHealthbar(*botDeathable)
-	//	botDeathable.hBarid = hBarEnt
-	//	enemyid.linked = append(enemyid.linked, hBarEnt)
-	//	addBasicSprite(hBarSprite,hBarEnt)
-	//
-	//	es := &baseSprite{}
-	//	es.bOps = &ebiten.DrawImageOptions{}
-	//	es.sprite = playerStandImage
-	//	addBasicSprite(es, enemyid)
-	//}
+	for i := 1; i < 10; i++ {
+		enemyid := &entityid{}
+		moveEnemy := newControlledEntity()
+		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
+		enemySlasher := newSlasher(moveEnemy)
+		addSlasher(enemyid, enemySlasher)
+		addHitbox(moveEnemy.rect.shape, enemyid)
+		addMoveCollider(moveEnemy, enemyid)
+		addSolid(moveEnemy.rect.shape, enemyid)
+		eController := &enemyController{}
+		eController.aEnt = moveEnemy
+		addEnemyController(eController, enemyid)
+
+		botDeathable := &deathable{}
+		botDeathable.hp.CurrentHP = 3
+		botDeathable.hp.MaxHP = 3
+		botDeathable.deathableShape = moveEnemy.rect
+		addDeathable(enemyid, botDeathable)
+
+		hBarEnt := &entityid{}
+		hBarSprite := &baseSprite{}
+		hBarSprite.bOps = &ebiten.DrawImageOptions{}
+		hBarSprite.sprite = emptyImage
+		botDeathable.hBarid = hBarEnt
+		addBasicSprite(hBarSprite,hBarEnt)
+
+		es := &baseSprite{}
+		es.bOps = &ebiten.DrawImageOptions{}
+		es.sprite = playerStandImage
+		addBasicSprite(es, enemyid)
+	}
 
 	worldBoundaryID := &entityid{}
 	worldBoundRect := newRectangle(

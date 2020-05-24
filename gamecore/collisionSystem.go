@@ -294,9 +294,9 @@ func socketReceive() {
 					continue found
 				}
 			}
-			if d,ok:=deathables[rm];ok{
-				eliminate(d.hBarid)
-			}
+			//if d,ok:=deathables[rm];ok{
+			//	eliminate(d.hBarid)
+			//}
 			eliminate(rm)
 			delete(otherPlayers, pnum)
 		}

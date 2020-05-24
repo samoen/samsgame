@@ -6,11 +6,9 @@ import (
 
 type entityid struct {
 	systems []sysIndex
-	linked  []*entityid
 }
 
 type pivotingShape struct {
-	wepid          *entityid
 	pivoterShape   *shape
 	pivotPoint     *rectangle
 	animationCount float64
