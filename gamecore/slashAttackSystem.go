@@ -21,7 +21,7 @@ func newSlasher(p *acceleratingEnt) *slasher {
 	s.ent = p
 	s.cooldownCount = 0
 	s.pivShape = &pivotingShape{}
-	s.pivShape.bladeLength = 45
+	//s.pivShape.bladeLength = maxAxeLength
 	s.wepid = &entityid{}
 	return s
 }
@@ -64,14 +64,15 @@ func slashersWork() {
 		}
 
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
-			bot.pivShape.bladeLength = 10
+			bot.pivShape.bladeLength = 5
+			bot.cooldownCount = 60
 			bot.pivShape.alreadyHit = make(map[*entityid]bool)
 			bot.pivShape.pivotPoint = bot.ent.rect
 			if slasherid.remote {
 				bot.pivShape.animationCount = bot.startangle
 			}
 			if !slasherid.remote {
-				bot.pivShape.animationCount = bot.startangle + 1.2
+				bot.pivShape.animationCount = bot.startangle + 2.1
 			}
 
 			bot.pivShape.pivoterShape = newShape()
@@ -79,22 +80,18 @@ func slashersWork() {
 			bot.swangin = true
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
-			//bot.pivShape = p
 			bs := &baseSprite{}
 			bs.bOps = &ebiten.DrawImageOptions{}
 			bs.sprite = swordImage
 			addBasicSprite(bs, bot.wepid)
-			bot.cooldownCount = 60
 		}
 		bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
-			if bot.pivShape.bladeLength < 45 {
-				bot.pivShape.bladeLength += 5
-			}
-			bot.pivShape.animationCount -= 0.12
+
+			bot.pivShape.animationCount -= axeRotateSpeed
 			bot.pivShape.makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
-			if !blocked{
+			if !blocked {
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
 					if !slasherid.remote {
 						//if !slashee.remote {
@@ -107,10 +104,17 @@ func slashersWork() {
 					}
 				}
 			}
+			arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
 
-			if math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
+			if arcProgress > axeArc {
 				bot.swangin = false
 				eliminate(bot.wepid)
+			} else if arcProgress < axeArc/4 {
+				bot.pivShape.bladeLength += 5
+			} else if arcProgress > axeArc*0.8 {
+				bot.pivShape.bladeLength -= 3
+			}else{
+				bot.pivShape.bladeLength = maxAxeLength
 			}
 		}
 		if bs, ok := basicSprites[bot.wepid]; ok {
@@ -126,6 +130,12 @@ func slashersWork() {
 		}
 	}
 }
+
+const (
+	maxAxeLength   = 45
+	axeRotateSpeed = 0.12
+	axeArc         = 3.5
+)
 
 type deathable struct {
 	gotHit         bool
@@ -155,7 +165,7 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	addPlayerEntity(&entityid{},location{50,50},Hitpoints{6,6},true)
+	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
 }
 
 func deathSystemwork() {

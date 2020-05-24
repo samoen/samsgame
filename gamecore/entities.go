@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image/color"
 	"log"
 
 	"github.com/hajimehoshi/ebiten"
@@ -187,6 +188,12 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 }
 
 func ClientInit() {
+
+	if err := emptyImage.Fill(color.White); err != nil{
+		log.Fatal(err)
+	}
+	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
+
 	addPlayerEntity(&entityid{},location{50,50},Hitpoints{6,6},true)
 
 	for i := 1; i < 10; i++ {

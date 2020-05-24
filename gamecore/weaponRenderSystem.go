@@ -59,10 +59,6 @@ func rectCenterPoint(r rectangle) location {
 
 var bgOps = &ebiten.DrawImageOptions{}
 
-func init() {
-	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
-}
-
 func drawBackground(screen *ebiten.Image) {
 	myBgOps := *bgOps
 	myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
