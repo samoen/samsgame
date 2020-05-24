@@ -21,6 +21,8 @@ func newSlasher(p *acceleratingEnt) *slasher {
 	s.ent = p
 	s.cooldownCount = 0
 	s.pivShape = &pivotingShape{}
+	s.pivShape.pivoterShape = newShape()
+	s.pivShape.pivotPoint = s.ent.rect
 	//s.pivShape.bladeLength = maxAxeLength
 	s.wepid = &entityid{}
 	return s
@@ -67,7 +69,7 @@ func slashersWork() {
 			bot.pivShape.bladeLength = 5
 			bot.cooldownCount = 60
 			bot.pivShape.alreadyHit = make(map[*entityid]bool)
-			bot.pivShape.pivotPoint = bot.ent.rect
+
 			if slasherid.remote {
 				bot.pivShape.animationCount = bot.startangle
 			}
@@ -75,8 +77,6 @@ func slashersWork() {
 				bot.pivShape.animationCount = bot.startangle + 2.1
 			}
 
-			bot.pivShape.pivoterShape = newShape()
-			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 			bot.swangin = true
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
@@ -84,6 +84,7 @@ func slashersWork() {
 			bs.bOps = &ebiten.DrawImageOptions{}
 			bs.sprite = swordImage
 			addBasicSprite(bs, bot.wepid)
+			addHitbox(bot.pivShape.pivoterShape,bot.wepid)
 		}
 		bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
@@ -109,8 +110,8 @@ func slashersWork() {
 			if arcProgress > axeArc {
 				bot.swangin = false
 				eliminate(bot.wepid)
-			} else if arcProgress < axeArc/4 {
-				bot.pivShape.bladeLength += 5
+			} else if arcProgress < axeArc * 0.3 {
+				bot.pivShape.bladeLength += 4
 			} else if arcProgress > axeArc*0.8 {
 				bot.pivShape.bladeLength -= 3
 			}else{
@@ -124,7 +125,7 @@ func slashersWork() {
 const (
 	maxAxeLength   = 45
 	axeRotateSpeed = 0.12
-	axeArc         = 3.5
+	axeArc         = 3.9
 )
 
 type deathable struct {
