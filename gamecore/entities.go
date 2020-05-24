@@ -29,10 +29,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		closeConn()
 		return errors.New("SamGame ended by player")
 	}
-	for _, ps := range basicSprites {
-		ps.bOps.ColorM.Reset()
-		ps.bOps.GeoM.Reset()
-	}
+
 	respawnsWork()
 	socketReceive()
 	updatePlayerControl()
@@ -40,6 +37,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	collisionSystemWork()
 	slashersWork()
 	deathSystemwork()
+	updateSprites()
 	return nil
 }
 

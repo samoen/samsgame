@@ -92,38 +92,12 @@ func calcMomentum(p acceleratingEnt) Momentum {
 		if int(math.Abs(float64(p.moment.Xaxis)/10)) < 1 {
 			p.moment.Xaxis = 0
 		}
-		//p.moment.Xaxis += int(float64(-unitmovex)*(p.tracktion))
-		//if math.Abs(float64(p.moment.Xaxis))<2{
-		//	p.moment.Xaxis = 0
-		//}
-		//if unitmovex>0{
-		//	if p.moment.Xaxis<0{
-		//		p.moment.Xaxis = 0
-		//	}
-		//}else{
-		//	if p.moment.Xaxis>0{
-		//		p.moment.Xaxis = 0
-		//	}
-		//}
 	}
 	if !movedy {
 		p.moment.Yaxis = int(float64(p.moment.Yaxis) * 0.9)
 		if int(math.Abs(float64(p.moment.Yaxis)/10)) < 1 {
 			p.moment.Yaxis = 0
 		}
-		//p.moment.Yaxis += int(float64(-unitmovey)*(p.tracktion))
-		//if math.Abs(float64(p.moment.Yaxis))<2{
-		//	p.moment.Yaxis = 0
-		//}
-		//if unitmovey>0{
-		//	if p.moment.Yaxis<0{
-		//		p.moment.Yaxis = 0
-		//	}
-		//}else{
-		//	if p.moment.Yaxis>0{
-		//		p.moment.Yaxis = 0
-		//	}
-		//}
 	}
 	if p.moment.Xaxis < 0 {
 		unitmovex = -1
@@ -234,6 +208,14 @@ func collisionSystemWork() {
 			moveCollide(p, moverid)
 		}
 	}
+
+}
+
+func updateSprites(){
+	for _, ps := range basicSprites {
+		ps.bOps.ColorM.Reset()
+		ps.bOps.GeoM.Reset()
+	}
 	offset:=renderOffset()
 	for moverid, p := range movers {
 		if bs, ok := basicSprites[moverid]; ok {
@@ -256,6 +238,32 @@ func collisionSystemWork() {
 			scaleToDimension(p.rect.dimens, bs.sprite, bs.bOps)
 			cameraShift(p.rect.location, offset, bs.bOps)
 		}
+	}
+
+	for _,bot:=range slashers{
+		if bs, ok := basicSprites[bot.wepid]; ok {
+			_, imH := bs.sprite.Size()
+			ownerCenter := rectCenterPoint(*bot.ent.rect)
+			cameraShift(ownerCenter, offset, bs.bOps)
+			addOp := ebiten.GeoM{}
+			hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
+			addOp.Scale(hRatio, hRatio)
+			addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
+			addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
+			bs.bOps.GeoM.Add(addOp)
+		}
+	}
+	for dID, mDeathable := range deathables {
+		if bs, ok := basicSprites[dID]; ok {
+			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
+		}
+		if bs, ok := basicSprites[mDeathable.hBarid]; ok {
+			healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+			healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
+			scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
+			cameraShift(healthbarlocation, offset, bs.bOps)
+		}
+
 	}
 }
 
@@ -287,36 +295,6 @@ func socketReceive() {
 				newOtherPlayer.remote = true
 				otherPlayers[l.PNum] = newOtherPlayer
 				addPlayerEntity(newOtherPlayer,location{l.Loc.X, l.Loc.Y},l.ServMessage.Myhealth,false)
-
-				//newOtherPlayer.remote = true
-				//accelEnt := newControlledEntity()
-				//accelEnt.remote = true
-				//accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				//addHitbox(accelEnt.rect.shape, newOtherPlayer)
-				//addSolid(accelEnt.rect.shape, newOtherPlayer)
-				//accelEnt.baseloc = accelEnt.rect.location
-				//accelEnt.endpoint = accelEnt.rect.location
-				//addMoveCollider(accelEnt, newOtherPlayer)
-				//remoteSlasher := newSlasher(accelEnt)
-				//addSlasher(newOtherPlayer, remoteSlasher)
-				//pDeathable := &deathable{}
-				//pDeathable.hp = l.ServMessage.Myhealth
-				//pDeathable.deathableShape = accelEnt.rect
-				//addDeathable(newOtherPlayer, pDeathable)
-				//
-				//hBarEnt := &entityid{}
-				//hBarSprite := &baseSprite{}
-				//hBarSprite.bOps = &ebiten.DrawImageOptions{}
-				//hBarSprite.sprite = emptyImage
-				////hBarSprite.updateAsHealthbar(*pDeathable)
-				//pDeathable.hBarid = hBarEnt
-				////newOtherPlayer.linked = append(newOtherPlayer.linked, hBarEnt)
-				//addBasicSprite(hBarSprite,hBarEnt)
-				//
-				//ps := &baseSprite{}
-				//ps.bOps = &ebiten.DrawImageOptions{}
-				//ps.sprite = playerStandImage
-				//addBasicSprite(ps, newOtherPlayer)
 
 			} else {
 				diffx := l.Loc.X - movers[res].rect.location.x

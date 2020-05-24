@@ -34,7 +34,7 @@ func addSlasher(id *entityid, b *slasher) {
 }
 
 func slashersWork() {
-	center := renderOffset()
+
 	for slasherid, bot := range slashers {
 		bot := bot
 		if !slasherid.remote {
@@ -117,17 +117,7 @@ func slashersWork() {
 				bot.pivShape.bladeLength = maxAxeLength
 			}
 		}
-		if bs, ok := basicSprites[bot.wepid]; ok {
-			_, imH := bs.sprite.Size()
-			ownerCenter := rectCenterPoint(*bot.ent.rect)
-			cameraShift(ownerCenter, center, bs.bOps)
-			addOp := ebiten.GeoM{}
-			hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
-			addOp.Scale(hRatio, hRatio)
-			addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
-			addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
-			bs.bOps.GeoM.Add(addOp)
-		}
+
 	}
 }
 
@@ -169,7 +159,6 @@ func respawnsWork() {
 }
 
 func deathSystemwork() {
-	center := renderOffset()
 	for _, mDeathable := range deathables {
 		if mDeathable.redScale > 0 {
 			mDeathable.redScale--
@@ -183,16 +172,6 @@ func deathSystemwork() {
 	}
 
 	for dID, mDeathable := range deathables {
-		if bs, ok := basicSprites[dID]; ok {
-			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
-		}
-		if bs, ok := basicSprites[mDeathable.hBarid]; ok {
-			healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
-			healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-			scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
-			cameraShift(healthbarlocation, center, bs.bOps)
-		}
-
 		if mDeathable.hp.CurrentHP < 1 && !dID.remote {
 			eliminate(dID)
 		}
