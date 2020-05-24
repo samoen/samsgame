@@ -9,7 +9,6 @@ import (
 )
 
 var movers = make(map[*entityid]*acceleratingEnt)
-//var remoteMovers = make(map[*entityid]*RemoteMover)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
@@ -48,10 +47,6 @@ func addMoveCollider(p *acceleratingEnt, id *entityid) {
 	movers[id] = p
 	id.systems = append(id.systems, moveCollider)
 }
-//func addRemoteMover(p *RemoteMover, id *entityid) {
-//	remoteMovers[id] = p
-//	id.systems = append(id.systems, remoteMover)
-//}
 
 func addSolid(s *shape, id *entityid) {
 	solids[id] = s
@@ -302,6 +297,7 @@ func socketReceive() {
 			if res, ok := otherPlayers[l.PNum]; !ok {
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
+				newOtherPlayer.remote = true
 				otherPlayers[l.PNum] = newOtherPlayer
 				accelEnt := newControlledEntity()
 				accelEnt.remote = true
@@ -312,12 +308,10 @@ func socketReceive() {
 				accelEnt.endpoint = accelEnt.rect.location
 				addMoveCollider(accelEnt, newOtherPlayer)
 				remoteSlasher := newSlasher(accelEnt)
-				remoteSlasher.remote = true
 				addSlasher(newOtherPlayer, remoteSlasher)
 				pDeathable := &deathable{}
 				pDeathable.hp = l.ServMessage.Myhealth
 				pDeathable.deathableShape = accelEnt.rect
-				pDeathable.remote = true
 				addDeathable(newOtherPlayer, pDeathable)
 
 				hBarEnt := &entityid{}

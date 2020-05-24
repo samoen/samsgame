@@ -6,6 +6,7 @@ import (
 
 type entityid struct {
 	systems []sysIndex
+	remote  bool
 }
 
 type pivotingShape struct {

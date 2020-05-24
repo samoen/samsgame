@@ -13,7 +13,6 @@ type slasher struct {
 	swangSinceSend bool
 	wepid          *entityid
 	pivShape       *pivotingShape
-	remote         bool
 	hitsToSend     []*entityid
 }
 
@@ -38,7 +37,7 @@ func slashersWork() {
 	center := renderOffset()
 	for slasherid, bot := range slashers {
 		bot := bot
-		if !bot.remote {
+		if !slasherid.remote {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
 				bot.ent.directions.Right ||
@@ -68,10 +67,10 @@ func slashersWork() {
 			bot.pivShape.bladeLength = 10
 			bot.pivShape.alreadyHit = make(map[*entityid]bool)
 			bot.pivShape.pivotPoint = bot.ent.rect
-			if bot.remote {
+			if slasherid.remote {
 				bot.pivShape.animationCount = bot.startangle
 			}
-			if !bot.remote {
+			if !slasherid.remote {
 				bot.pivShape.animationCount = bot.startangle + 1.2
 			}
 
@@ -97,7 +96,7 @@ func slashersWork() {
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
 			if !blocked{
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
-					if !bot.remote {
+					if !slasherid.remote {
 						//if !slashee.remote {
 						slashee.gotHit = true
 						slashee.hp.CurrentHP--
@@ -133,7 +132,6 @@ type deathable struct {
 	deathableShape *rectangle
 	redScale       int
 	hp             Hitpoints
-	remote         bool
 	skipHpUpdate   int
 	hBarid         *entityid
 }
@@ -185,7 +183,7 @@ func deathSystemwork() {
 			cameraShift(healthbarlocation, center, bs.bOps)
 		}
 
-		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote {
+		if mDeathable.hp.CurrentHP < 1 && !dID.remote {
 			eliminate(dID)
 		}
 

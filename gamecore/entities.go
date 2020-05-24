@@ -23,13 +23,6 @@ var receiveCount = pingFrames
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
-//type RemoteMover struct {
-//	destination location
-//	baseloc     location
-//	endpoint    location
-//	accelEnt    *acceleratingEnt
-//}
-
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		closeConn()
@@ -41,12 +34,10 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	}
 	respawnsWork()
 	socketReceive()
-	//remoteMoversWork()
 	updatePlayerControl()
 	enemyControlWork()
 	collisionSystemWork()
 	slashersWork()
-	//pivotSystemWork()
 	deathSystemwork()
 	return nil
 }
@@ -191,7 +182,7 @@ func addLocalPlayer(){
 func ClientInit() {
 	addLocalPlayer()
 
-	for i := 1; i < 2; i++ {
+	for i := 1; i < 1; i++ {
 		enemyid := &entityid{}
 		moveEnemy := newControlledEntity()
 		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})
