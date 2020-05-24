@@ -1,11 +1,11 @@
 package gamecore
 
 import (
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
 )
-
 
 var hitBoxes = make(map[*entityid]*shape)
 
@@ -39,7 +39,9 @@ func drawHitboxes(s *ebiten.Image) {
 		)
 		op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
 		op.GeoM.Translate(x1, y1)
-		s.DrawImage(&imgToDraw, &op)
+		if err := s.DrawImage(&imgToDraw, &op); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	for _, shape := range hitBoxes {

@@ -22,23 +22,11 @@ var playerStandImage, _, _ = ebitenutil.NewImageFromFile(
 	ebiten.FilterDefault,
 )
 
-// var playerStandImage *ebiten.Image
-
 var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
 
 var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.FilterDefault)
 
-// var swordImage *ebiten.Image
-
 var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
-
-// var bgImage *ebiten.Image
-//var healthbars = make(map[*entityid]*healthBarSprite)
-
-//func addHealthBarSprite(h *healthBarSprite, id *entityid) {
-//	healthbars[id] = h
-//	id.systems = append(id.systems, healthBarRenderable)
-//}
 
 var basicSprites = make(map[*entityid]*baseSprite)
 
@@ -106,39 +94,12 @@ func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOpti
 	addOp := ebiten.GeoM{}
 	addOp.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 	ops.GeoM.Add(addOp)
-	//ops.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 }
 
-var drawOps = &ebiten.DrawImageOptions{}
-
 func renderEntSprites(s *ebiten.Image) {
-	//center := renderOffset()
 	for _, ps := range basicSprites {
 		if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
 			log.Fatal(err)
 		}
 	}
-	//for _, ps := range basicSprites {
-	//	ps.bOps.ColorM.Reset()
-	//	ps.bOps.GeoM.Reset()
-	//}
-	//for _, wep := range weapons {
-	//	_, imH := wep.sprite.Size()
-	//	drawOps.GeoM.Reset()
-	//
-	//
-	//	ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
-	//	cameraShift(ownerCenter, center,drawOps)
-	//	addOp:= ebiten.GeoM{}
-	//	hRatio := float64(swordLength+swordLength/4) / float64(imH)
-	//	addOp.Scale(hRatio, hRatio)
-	//	addOp.Translate(-float64(wep.owner.ent.rect.dimens.width)/2, 0)
-	//	addOp.Rotate(*wep.angle - (math.Pi / 2))
-	//	drawOps.GeoM.Add(addOp)
-	//
-	//
-	//	if err := s.DrawImage(wep.sprite, drawOps); err != nil {
-	//		log.Fatal(err)
-	//	}
-	//}
 }
