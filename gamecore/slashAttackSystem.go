@@ -21,9 +21,9 @@ func newSlasher(p *acceleratingEnt) *slasher {
 	s.ent = p
 	s.cooldownCount = 0
 	s.pivShape = &pivotingShape{}
+	s.pivShape.damage = 2
 	s.pivShape.pivoterShape = newShape()
 	s.pivShape.pivotPoint = s.ent.rect
-	//s.pivShape.bladeLength = maxAxeLength
 	s.wepid = &entityid{}
 	return s
 }
@@ -98,7 +98,8 @@ func slashersWork() {
 					if !slasherid.remote {
 						//if !slashee.remote {
 						slashee.gotHit = true
-						slashee.hp.CurrentHP--
+						//slashee.hp.CurrentHP--
+						slashee.hp.CurrentHP -= bot.pivShape.damage
 						slashee.skipHpUpdate = 2
 						//}
 						bot.pivShape.alreadyHit[slasheeid] = true

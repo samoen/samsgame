@@ -258,7 +258,8 @@ func socketReceive() {
 
 				if l.YouCopped {
 					myDeathable.gotHit = true
-					myDeathable.hp.CurrentHP--
+					myDeathable.hp.CurrentHP -= l.ServMessage.Myaxe.Dmg
+					//myDeathable.hp.CurrentHP--
 				}
 			}
 		}
@@ -267,6 +268,7 @@ func socketReceive() {
 		message.Mymom = myAccelEnt.moment
 		message.Mydir = myAccelEnt.directions
 		messageWep := Weapon{}
+		messageWep.Dmg = mySlasher.pivShape.damage
 		messageWep.Swinging = mySlasher.swangSinceSend
 		messageWep.Startangle = mySlasher.pivShape.startCount
 		var hitlist []string

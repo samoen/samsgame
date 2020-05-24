@@ -89,6 +89,7 @@ type Weapon struct {
 	Swinging   bool
 	Startangle float64
 	IHit       []string
+	Dmg        int
 }
 
 type LocationList struct {
@@ -96,10 +97,10 @@ type LocationList struct {
 }
 
 type LocWithPNum struct {
-	Loc       ServerLocation
-	PNum      string
+	Loc         ServerLocation
+	PNum        string
 	ServMessage ServerMessage
-	YouCopped bool
+	YouCopped   bool
 }
 
 type ServerLocation struct {
@@ -130,12 +131,12 @@ func connectToServer() {
 			}
 
 			//go func(){
-				//select {
-				//case
-				receiveChan <- v
-				//:
-				//default:
-				//}
+			//select {
+			//case
+			receiveChan <- v
+			//:
+			//default:
+			//}
 			//}()
 		}
 	}()
@@ -145,7 +146,7 @@ var myAccelEnt *acceleratingEnt
 var mySlasher *slasher
 var myDeathable *deathable
 
-func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool){
+func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool) {
 	accelplayer := &acceleratingEnt{}
 	accelplayer.rect = newRectangle(
 		startloc,
@@ -170,7 +171,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = emptyImage
 	pDeathable.hBarid = hBarEnt
-	addBasicSprite(hBarSprite,hBarEnt)
+	addBasicSprite(hBarSprite, hBarEnt)
 
 	if isMe {
 		addPlayerControlled(accelplayer, playerid)
@@ -189,17 +190,17 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 
 func ClientInit() {
 
-	if err := emptyImage.Fill(color.White); err != nil{
+	if err := emptyImage.Fill(color.White); err != nil {
 		log.Fatal(err)
 	}
 	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 
-	addPlayerEntity(&entityid{},location{50,50},Hitpoints{6,6},true)
+	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
 
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
-		addPlayerEntity(enemyid,location{i*50 + 50, i * 30},Hitpoints{3,3},false)
-		if a,ok:=movers[enemyid];ok{
+		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
+		if a, ok := movers[enemyid]; ok {
 			eController := &enemyController{}
 			eController.aEnt = a
 			addEnemyController(eController, enemyid)

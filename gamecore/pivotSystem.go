@@ -16,6 +16,7 @@ type pivotingShape struct {
 	alreadyHit     map[*entityid]bool
 	startCount     float64
 	bladeLength    int
+	damage         int
 }
 
 func (p *pivotingShape) makeAxe(heading float64, centerRect rectangle) {
