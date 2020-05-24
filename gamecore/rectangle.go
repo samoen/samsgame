@@ -42,7 +42,6 @@ const (
 	playerControlled
 	abilityActivator
 	hurtable
-	rotatingSprite
 	weaponBlocker
 )
 

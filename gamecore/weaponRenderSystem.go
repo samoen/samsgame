@@ -1,34 +1,15 @@
 package gamecore
 
 import (
-	"log"
-	"math"
-
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"log"
 
 	"github.com/hajimehoshi/ebiten"
 )
 
-type weaponSprite struct {
-	angle  *float64
-	owner  *slasher
-	sprite *ebiten.Image
-}
-
 type baseSprite struct {
-	sprite   *ebiten.Image
-	bOps     *ebiten.DrawImageOptions
-}
-
-func (bs *baseSprite)updateAsHealthbar(mDeathable deathable, center location){
-	healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
-	healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-	scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,bs.bOps)
-	cameraShift(healthbarlocation, center,bs.bOps)
-}
-
-type healthBarSprite struct {
-	ownerDeathable *deathable
+	sprite *ebiten.Image
+	bOps   *ebiten.DrawImageOptions
 }
 
 var ScreenWidth = 700
@@ -64,15 +45,6 @@ var basicSprites = make(map[*entityid]*baseSprite)
 func addBasicSprite(ws *baseSprite, id *entityid) {
 	basicSprites[id] = ws
 	id.systems = append(id.systems, spriteRenderable)
-}
-
-var weapons = make(map[*entityid]*weaponSprite)
-
-// var playerSpriteHitboxExceed = 10
-
-func addWeaponSprite(s *weaponSprite, id *entityid) {
-	weapons[id] = s
-	id.systems = append(id.systems, rotatingSprite)
 }
 
 var centerOn *rectangle
@@ -131,13 +103,16 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOptions) {
 	pSpriteOffset.x += loc.x
 	pSpriteOffset.y += loc.y
-	ops.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
+	addOp := ebiten.GeoM{}
+	addOp.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
+	ops.GeoM.Add(addOp)
+	//ops.GeoM.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
 }
 
 var drawOps = &ebiten.DrawImageOptions{}
 
 func renderEntSprites(s *ebiten.Image) {
-	center := renderOffset()
+	//center := renderOffset()
 	for _, ps := range basicSprites {
 		if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
 			log.Fatal(err)
@@ -147,20 +122,23 @@ func renderEntSprites(s *ebiten.Image) {
 	//	ps.bOps.ColorM.Reset()
 	//	ps.bOps.GeoM.Reset()
 	//}
-	for _, wep := range weapons {
-		_, imH := wep.sprite.Size()
-		hRatio := float64(swordLength+swordLength/4) / float64(imH)
-
-		drawOps.GeoM.Reset()
-		drawOps.GeoM.Scale(hRatio, hRatio)
-		drawOps.GeoM.Translate(-float64(wep.owner.ent.rect.dimens.width)/2, 0)
-		drawOps.GeoM.Rotate(*wep.angle - (math.Pi / 2))
-
-		ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
-		cameraShift(ownerCenter, center,drawOps)
-
-		if err := s.DrawImage(wep.sprite, drawOps); err != nil {
-			log.Fatal(err)
-		}
-	}
+	//for _, wep := range weapons {
+	//	_, imH := wep.sprite.Size()
+	//	drawOps.GeoM.Reset()
+	//
+	//
+	//	ownerCenter := rectCenterPoint(*wep.owner.ent.rect)
+	//	cameraShift(ownerCenter, center,drawOps)
+	//	addOp:= ebiten.GeoM{}
+	//	hRatio := float64(swordLength+swordLength/4) / float64(imH)
+	//	addOp.Scale(hRatio, hRatio)
+	//	addOp.Translate(-float64(wep.owner.ent.rect.dimens.width)/2, 0)
+	//	addOp.Rotate(*wep.angle - (math.Pi / 2))
+	//	drawOps.GeoM.Add(addOp)
+	//
+	//
+	//	if err := s.DrawImage(wep.sprite, drawOps); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}
 }

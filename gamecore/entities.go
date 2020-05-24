@@ -191,7 +191,7 @@ func addLocalPlayer(){
 func ClientInit() {
 	addLocalPlayer()
 
-	for i := 1; i < 10; i++ {
+	for i := 1; i < 2; i++ {
 		enemyid := &entityid{}
 		moveEnemy := newControlledEntity()
 		moveEnemy.rect.refreshShape(location{i*50 + 50, i * 30})

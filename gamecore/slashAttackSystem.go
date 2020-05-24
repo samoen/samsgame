@@ -34,6 +34,7 @@ func addSlasher(id *entityid, b *slasher) {
 }
 
 func slashersWork() {
+	center := renderOffset()
 	for slasherid, bot := range slashers {
 		bot := bot
 		if !bot.remote {
@@ -89,10 +90,12 @@ func slashersWork() {
 			addHitbox(p.pivoterShape, bot.wepid)
 			bot.swangin = true
 			bot.swangSinceSend = true
-			ws := weaponSprite{&p.animationCount, bot, swordImage}
 			p.startCount = p.animationCount
 			bot.pivShape = p
-			addWeaponSprite(&ws, bot.wepid)
+			bs := &baseSprite{}
+			bs.bOps = &ebiten.DrawImageOptions{}
+			bs.sprite = swordImage
+			addBasicSprite(bs,bot.wepid)
 			bot.cooldownCount = 60
 		}
 		bot.ent.ignoreflip = bot.swangin
@@ -118,7 +121,17 @@ func slashersWork() {
 				eliminate(bot.wepid)
 			}
 		}
-
+		if bs,ok:=basicSprites[bot.wepid];ok{
+			_, imH := bs.sprite.Size()
+			ownerCenter := rectCenterPoint(*bot.ent.rect)
+			cameraShift(ownerCenter, center,bs.bOps)
+			addOp:= ebiten.GeoM{}
+			hRatio := float64(swordLength+swordLength/4) / float64(imH)
+			addOp.Scale(hRatio, hRatio)
+			addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
+			addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
+			bs.bOps.GeoM.Add(addOp)
+		}
 	}
 }
 
@@ -173,17 +186,14 @@ func deathSystemwork() {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 		}
 		if bs,ok:=basicSprites[mDeathable.hBarid];ok{
-			bs.updateAsHealthbar(*mDeathable,center)
-			//bs = bs
-			//healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
-			//healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-			//scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage,bs.bOps)
-			//cameraShift(healthbarlocation, center,bs.bOps)
+			healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+			healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
+			scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
+			cameraShift(healthbarlocation, center, bs.bOps)
 		}
 
 		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
 			eliminate(dID)
-			//eliminate(mDeathable.hBarid)
 		}
 
 	}
@@ -213,8 +223,6 @@ func eliminate(id *entityid) {
 				eliminate(d.hBarid)
 			}
 			delete(deathables, id)
-		case rotatingSprite:
-			delete(weapons, id)
 		case playerControlled:
 			delete(playerControllables, id)
 		case weaponBlocker:

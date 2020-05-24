@@ -28,25 +28,7 @@ func makeAxe(heading float64, centerRect rectangle) []line {
 
 var swordLength = 45
 
-//var pivoters = make(map[*entityid]*pivotingShape)
 var wepBlockers = make(map[*entityid]*shape)
-
-//func addPivoter(eid *entityid, s *pivotingShape) {
-//	pivoters[eid] = s
-//	eid.systems = append(eid.systems, pivotingHitbox)
-//
-//	//if ok, _, _ := checkSlashee(s); !ok {
-//		for i := 1; i < 20; i++ {
-//			if !checkBlocker(*s.pivoterShape) {
-//				break
-//			} else {
-//				s.animationCount -= 0.2
-//				s.pivoterShape.lines = makeAxe(s.animationCount, *s.pivotPoint)
-//			}
-//		}
-//	//}
-//	s.startCount = s.animationCount
-//}
 
 func addBlocker(b *shape, id *entityid) {
 	wepBlockers[id] = b
@@ -79,29 +61,6 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	result.y = int(rotatedY)
 // 	return result
 // }
-
-//func pivotSystemWork() {
-//	for id, bot := range pivoters {
-//
-//		bot.animationCount -= 0.12
-//		bot.pivoterShape.lines = makeAxe(bot.animationCount, *bot.pivotPoint)
-//		blocked := checkBlocker(*bot.pivoterShape)
-//
-//		if ok, slashee, slasheeid := checkSlashee(bot); ok {
-//			slashee.gotHit = true
-//			bot.alreadyHit[slasheeid] = true
-//		}
-//		if blocked {
-//			*bot.swangin = false
-//			eliminate(id)
-//			continue
-//		} else if math.Abs(bot.startCount-bot.animationCount) > 2 {
-//			*bot.swangin = false
-//			eliminate(id)
-//			continue
-//		}
-//	}
-//}
 
 func checkSlashee(bot *pivotingShape, ownerid *entityid) (bool, *deathable, *entityid) {
 	for slasheeid, slashee := range deathables {
