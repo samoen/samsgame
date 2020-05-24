@@ -121,7 +121,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite := &baseSprite{}
 	hBarSprite.layer = 3
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
-	hBarSprite.sprite = emptyImage
+	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
 	addBasicSprite(hBarSprite, hBarEnt)
 	
@@ -137,13 +137,18 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	ps := &baseSprite{}
 	ps.layer = 2
 	ps.bOps = &ebiten.DrawImageOptions{}
-	ps.sprite = playerStandImage
+	ps.sprite = images.playerStand
 	addBasicSprite(ps, playerid)
 }
 
 func ClientInit() {
+	i, err := newImages("assets")
+	if err != nil {
+		log.Fatal(err)
+	}
+	images = i
 
-	if err := emptyImage.Fill(color.White); err != nil {
+	if err := images.empty.Fill(color.White); err != nil {
 		log.Fatal(err)
 	}
 	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))

@@ -19,20 +19,55 @@ var ScreenWidth = 700
 var ScreenHeight = 500
 var bgTileWidth = 2500
 
-var playerStandImage, _, _ = ebitenutil.NewImageFromFile(
-	"assets/playerstand.png",
-	ebiten.FilterDefault,
-)
-var playerSwingImage, _, _ = ebitenutil.NewImageFromFile(
-	"assets/playerswing1.png",
-	ebiten.FilterDefault,
-)
+var images imagesStruct
 
-var emptyImage, _, _ = ebitenutil.NewImageFromFile("assets/floor.png", ebiten.FilterDefault)
+type imagesStruct struct {
+	playerStand *ebiten.Image
+	playerSwing *ebiten.Image
+	empty       *ebiten.Image
+	sword       *ebiten.Image
+	bg          *ebiten.Image
+}
 
-var swordImage, _, _ = ebitenutil.NewImageFromFile("assets/axe.png", ebiten.FilterDefault)
+func newImages(assetsDir string) (imagesStruct, error) {
+	playerStandImage, _, err := ebitenutil.NewImageFromFile(
+		assetsDir+"/playerstand.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
 
-var bgImage, _, _ = ebitenutil.NewImageFromFile("assets/8000paint.png", ebiten.FilterDefault)
+	playerSwing, _, err := ebitenutil.NewImageFromFile(
+		"assets/playerswing1.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+
+	emptyImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/floor.png", ebiten.FilterDefault)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+	swordImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/axe.png", ebiten.FilterDefault)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+
+	bgImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+
+	return imagesStruct{
+		playerStand: playerStandImage,
+		playerSwing: playerSwing,
+		empty:       emptyImage,
+		sword:       swordImage,
+		bg:          bgImage,
+	}, nil
+}
 
 var basicSprites = make(map[*entityid]*baseSprite)
 
@@ -76,7 +111,7 @@ func drawBackground(screen *ebiten.Image) {
 		for j := 0; j < tilesAcross; j++ {
 			tileOps := myBgOps
 			tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-			if err := screen.DrawImage(bgImage, &tileOps); err != nil {
+			if err := screen.DrawImage(images.bg, &tileOps); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -141,15 +176,15 @@ func updateSprites() {
 			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
 				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
 				healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-				scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, subbs.bOps)
+				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
 				cameraShift(healthbarlocation, offset, subbs.bOps)
 			}
 		}
 		if bot, ok := slashers[pid]; ok {
 			if bot.swangin {
-				bs.sprite = playerSwingImage
+				bs.sprite = images.playerSwing
 			} else {
-				bs.sprite = playerStandImage
+				bs.sprite = images.playerStand
 			}
 			if bs, ok := basicSprites[bot.wepid]; ok {
 				_, imH := bs.sprite.Size()

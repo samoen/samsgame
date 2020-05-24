@@ -83,7 +83,7 @@ func slashersWork() {
 			bs := &baseSprite{}
 			bs.layer = 1
 			bs.bOps = &ebiten.DrawImageOptions{}
-			bs.sprite = swordImage
+			bs.sprite = images.sword
 			addBasicSprite(bs, bot.wepid)
 			addHitbox(bot.pivShape.pivoterShape,bot.wepid)
 		}
