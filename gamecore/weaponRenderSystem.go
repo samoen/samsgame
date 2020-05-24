@@ -104,11 +104,6 @@ func renderEntSprites(s *ebiten.Image) {
 			log.Fatal(err)
 		}
 	}
-	//for _, ps := range basicSprites {
-	//	if err := s.DrawImage(ps.sprite, ps.bOps); err != nil {
-	//		log.Fatal(err)
-	//	}
-	//}
 }
 
 var toRender []baseSprite

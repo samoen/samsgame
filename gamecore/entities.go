@@ -1,7 +1,6 @@
 package gamecore
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"image/color"
@@ -10,8 +9,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 const worldWidth = 5000
@@ -66,17 +63,6 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
 	//return outsideWidth, outsideHeight
 }
 
-var socketConnection *websocket.Conn
-
-func closeConn() {
-	if socketConnection != nil {
-		err := socketConnection.Close(websocket.StatusNormalClosure, "closed from client defer")
-		if err != nil {
-			log.Println(err)
-		}
-	}
-}
-
 type ServerMessage struct {
 	Myloc    ServerLocation
 	Mymom    Momentum
@@ -106,40 +92,6 @@ type LocWithPNum struct {
 type ServerLocation struct {
 	X int
 	Y int
-}
-
-func connectToServer() {
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	//defer cancel()
-
-	var err error
-	socketConnection, _, err = websocket.Dial(context.Background(), "ws://localhost:8080/ws", nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	go func() {
-		for {
-			var v LocationList
-			err1 := wsjson.Read(context.Background(), socketConnection, &v)
-			if err1 != nil {
-				log.Println(err1)
-				closeConn()
-				socketConnection = nil
-				return
-			}
-
-			//go func(){
-			//select {
-			//case
-			receiveChan <- v
-			//:
-			//default:
-			//}
-			//}()
-		}
-	}()
 }
 
 var myAccelEnt *acceleratingEnt
@@ -172,6 +124,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite.sprite = emptyImage
 	pDeathable.hBarid = hBarEnt
 	addBasicSprite(hBarSprite, hBarEnt)
+	
 
 	if isMe {
 		addPlayerControlled(accelplayer, playerid)
