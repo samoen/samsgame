@@ -155,7 +155,7 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	addLocalPlayer()
+	addPlayerEntity(&entityid{},location{50,50},Hitpoints{6,6},true)
 }
 
 func deathSystemwork() {

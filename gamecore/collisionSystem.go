@@ -28,19 +28,6 @@ type acceleratingEnt struct {
 	destination location
 	baseloc     location
 	endpoint    location
-	remote bool
-}
-
-func newControlledEntity() *acceleratingEnt {
-	c := &acceleratingEnt{}
-	c.rect = newRectangle(
-		location{50, 50},
-		dimens{20, 40},
-	)
-	c.tracktion = 3
-	c.agility = 4
-	c.moveSpeed = 100
-	return c
 }
 
 func addMoveCollider(p *acceleratingEnt, id *entityid) {
@@ -218,7 +205,7 @@ func collisionSystemWork() {
 
 	for moverid, p := range movers {
 		interpolating := false
-		if p.remote{
+		if moverid.remote{
 			if receiveCount > pingFrames+1 {
 				p.directions.Down = false
 				p.directions.Left = false
@@ -299,34 +286,37 @@ func socketReceive() {
 				newOtherPlayer := &entityid{}
 				newOtherPlayer.remote = true
 				otherPlayers[l.PNum] = newOtherPlayer
-				accelEnt := newControlledEntity()
-				accelEnt.remote = true
-				accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
-				addHitbox(accelEnt.rect.shape, newOtherPlayer)
-				addSolid(accelEnt.rect.shape, newOtherPlayer)
-				accelEnt.baseloc = accelEnt.rect.location
-				accelEnt.endpoint = accelEnt.rect.location
-				addMoveCollider(accelEnt, newOtherPlayer)
-				remoteSlasher := newSlasher(accelEnt)
-				addSlasher(newOtherPlayer, remoteSlasher)
-				pDeathable := &deathable{}
-				pDeathable.hp = l.ServMessage.Myhealth
-				pDeathable.deathableShape = accelEnt.rect
-				addDeathable(newOtherPlayer, pDeathable)
+				addPlayerEntity(newOtherPlayer,location{l.Loc.X, l.Loc.Y},l.ServMessage.Myhealth,false)
 
-				hBarEnt := &entityid{}
-				hBarSprite := &baseSprite{}
-				hBarSprite.bOps = &ebiten.DrawImageOptions{}
-				hBarSprite.sprite = emptyImage
-				//hBarSprite.updateAsHealthbar(*pDeathable)
-				pDeathable.hBarid = hBarEnt
-				//newOtherPlayer.linked = append(newOtherPlayer.linked, hBarEnt)
-				addBasicSprite(hBarSprite,hBarEnt)
-
-				ps := &baseSprite{}
-				ps.bOps = &ebiten.DrawImageOptions{}
-				ps.sprite = playerStandImage
-				addBasicSprite(ps, newOtherPlayer)
+				//newOtherPlayer.remote = true
+				//accelEnt := newControlledEntity()
+				//accelEnt.remote = true
+				//accelEnt.rect.refreshShape(location{l.Loc.X, l.Loc.Y})
+				//addHitbox(accelEnt.rect.shape, newOtherPlayer)
+				//addSolid(accelEnt.rect.shape, newOtherPlayer)
+				//accelEnt.baseloc = accelEnt.rect.location
+				//accelEnt.endpoint = accelEnt.rect.location
+				//addMoveCollider(accelEnt, newOtherPlayer)
+				//remoteSlasher := newSlasher(accelEnt)
+				//addSlasher(newOtherPlayer, remoteSlasher)
+				//pDeathable := &deathable{}
+				//pDeathable.hp = l.ServMessage.Myhealth
+				//pDeathable.deathableShape = accelEnt.rect
+				//addDeathable(newOtherPlayer, pDeathable)
+				//
+				//hBarEnt := &entityid{}
+				//hBarSprite := &baseSprite{}
+				//hBarSprite.bOps = &ebiten.DrawImageOptions{}
+				//hBarSprite.sprite = emptyImage
+				////hBarSprite.updateAsHealthbar(*pDeathable)
+				//pDeathable.hBarid = hBarEnt
+				////newOtherPlayer.linked = append(newOtherPlayer.linked, hBarEnt)
+				//addBasicSprite(hBarSprite,hBarEnt)
+				//
+				//ps := &baseSprite{}
+				//ps.bOps = &ebiten.DrawImageOptions{}
+				//ps.sprite = playerStandImage
+				//addBasicSprite(ps, newOtherPlayer)
 
 			} else {
 				diffx := l.Loc.X - movers[res].rect.location.x
