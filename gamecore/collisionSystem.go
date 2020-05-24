@@ -212,14 +212,14 @@ func collisionSystemWork() {
 }
 
 func updateSprites(){
-	for _, ps := range basicSprites {
-		ps.bOps.ColorM.Reset()
-		ps.bOps.GeoM.Reset()
-	}
 	offset:=renderOffset()
-	for moverid, p := range movers {
-		if bs, ok := basicSprites[moverid]; ok {
+	for _, bs := range basicSprites {
+		bs.bOps.ColorM.Reset()
+		bs.bOps.GeoM.Reset()
+	}
+	for pid, bs := range basicSprites {
 
+		if p,ok:=movers[pid];ok{
 			if !p.ignoreflip {
 				if p.directions.Left && !p.directions.Right {
 					p.lastflip = true
@@ -238,32 +238,28 @@ func updateSprites(){
 			scaleToDimension(p.rect.dimens, bs.sprite, bs.bOps)
 			cameraShift(p.rect.location, offset, bs.bOps)
 		}
-	}
-
-	for _,bot:=range slashers{
-		if bs, ok := basicSprites[bot.wepid]; ok {
-			_, imH := bs.sprite.Size()
-			ownerCenter := rectCenterPoint(*bot.ent.rect)
-			cameraShift(ownerCenter, offset, bs.bOps)
-			addOp := ebiten.GeoM{}
-			hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
-			addOp.Scale(hRatio, hRatio)
-			addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
-			addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
-			bs.bOps.GeoM.Add(addOp)
-		}
-	}
-	for dID, mDeathable := range deathables {
-		if bs, ok := basicSprites[dID]; ok {
+		if mDeathable, ok := deathables[pid]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
+			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
+				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+				healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
+				scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, subbs.bOps)
+				cameraShift(healthbarlocation, offset, subbs.bOps)
+			}
 		}
-		if bs, ok := basicSprites[mDeathable.hBarid]; ok {
-			healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
-			healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-			scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
-			cameraShift(healthbarlocation, offset, bs.bOps)
+		if bot,ok:=slashers[pid];ok{
+			if bs, ok := basicSprites[bot.wepid]; ok {
+				_, imH := bs.sprite.Size()
+				ownerCenter := rectCenterPoint(*bot.ent.rect)
+				cameraShift(ownerCenter, offset, bs.bOps)
+				addOp := ebiten.GeoM{}
+				hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
+				addOp.Scale(hRatio, hRatio)
+				addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
+				addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
+				bs.bOps.GeoM.Add(addOp)
+			}
 		}
-
 	}
 }
 
