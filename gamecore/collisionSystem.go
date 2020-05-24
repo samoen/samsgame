@@ -195,14 +195,12 @@ func collisionSystemWork() {
 				if receiveCount == (pingFrames/2)+1 {
 					newplace = p.endpoint
 				}
-				checkrect := *p.rect
-				checkrect.refreshShape(newplace)
+				checkrect := newRectangle(newplace,p.rect.dimens)
 				if !normalcollides(*checkrect.shape, solids, moverid) {
 					p.rect.refreshShape(newplace)
 				}
 			}
 		}
-
 		if !interpolating{
 			p.moment = calcMomentum(*p)
 			moveCollide(p, moverid)
