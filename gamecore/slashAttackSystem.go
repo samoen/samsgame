@@ -22,6 +22,7 @@ func newSlasher(p *acceleratingEnt) *slasher {
 	s.ent = p
 	s.cooldownCount = 0
 	s.pivShape = &pivotingShape{}
+	s.pivShape.bladeLength = 45
 	s.wepid = &entityid{}
 	return s
 }
@@ -64,69 +65,61 @@ func slashersWork() {
 		}
 
 		if bot.ent.atkButton && bot.cooldownCount < 1 {
-			p := &pivotingShape{}
-			p.alreadyHit = make(map[*entityid]bool)
-			p.pivotPoint = bot.ent.rect
+			bot.pivShape.bladeLength = 10
+			bot.pivShape.alreadyHit = make(map[*entityid]bool)
+			bot.pivShape.pivotPoint = bot.ent.rect
 			if bot.remote {
-				p.animationCount = bot.startangle
+				bot.pivShape.animationCount = bot.startangle
 			}
 			if !bot.remote {
-				p.animationCount = bot.startangle + 1.2
+				bot.pivShape.animationCount = bot.startangle + 1.2
 			}
 
-			p.pivoterShape = newShape()
-			p.pivoterShape.lines = makeAxe(p.animationCount, *bot.ent.rect)
-			if !bot.remote {
-				for i := 1; i < 20; i++ {
-					if !checkBlocker(*p.pivoterShape) {
-						break
-					} else {
-						p.animationCount -= 0.2
-						p.pivoterShape.lines = makeAxe(p.animationCount, *p.pivotPoint)
-					}
-				}
-			}
-
-			addHitbox(p.pivoterShape, bot.wepid)
+			bot.pivShape.pivoterShape = newShape()
+			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 			bot.swangin = true
 			bot.swangSinceSend = true
-			p.startCount = p.animationCount
-			bot.pivShape = p
+			bot.pivShape.startCount = bot.pivShape.animationCount
+			//bot.pivShape = p
 			bs := &baseSprite{}
 			bs.bOps = &ebiten.DrawImageOptions{}
 			bs.sprite = swordImage
-			addBasicSprite(bs,bot.wepid)
+			addBasicSprite(bs, bot.wepid)
 			bot.cooldownCount = 60
 		}
 		bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
+			if bot.pivShape.bladeLength < 45 {
+				bot.pivShape.bladeLength += 5
+			}
 			bot.pivShape.animationCount -= 0.12
-			bot.pivShape.pivoterShape.lines = makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
+			bot.pivShape.makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
-
-			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
-				if !bot.remote {
-					//if !slashee.remote {
-					slashee.gotHit = true
-					slashee.hp.CurrentHP --
-					slashee.skipHpUpdate = 2
-					//}
-					bot.pivShape.alreadyHit[slasheeid] = true
-					bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+			if !blocked{
+				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
+					if !bot.remote {
+						//if !slashee.remote {
+						slashee.gotHit = true
+						slashee.hp.CurrentHP--
+						slashee.skipHpUpdate = 2
+						//}
+						bot.pivShape.alreadyHit[slasheeid] = true
+						bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+					}
 				}
 			}
-			if blocked ||
-				math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
+
+			if math.Abs(bot.pivShape.startCount-bot.pivShape.animationCount) > 2 {
 				bot.swangin = false
 				eliminate(bot.wepid)
 			}
 		}
-		if bs,ok:=basicSprites[bot.wepid];ok{
+		if bs, ok := basicSprites[bot.wepid]; ok {
 			_, imH := bs.sprite.Size()
 			ownerCenter := rectCenterPoint(*bot.ent.rect)
-			cameraShift(ownerCenter, center,bs.bOps)
-			addOp:= ebiten.GeoM{}
-			hRatio := float64(swordLength+swordLength/4) / float64(imH)
+			cameraShift(ownerCenter, center, bs.bOps)
+			addOp := ebiten.GeoM{}
+			hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
 			addOp.Scale(hRatio, hRatio)
 			addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
 			addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
@@ -142,7 +135,7 @@ type deathable struct {
 	hp             Hitpoints
 	remote         bool
 	skipHpUpdate   int
-	hBarid *entityid
+	hBarid         *entityid
 }
 
 type Hitpoints struct {
@@ -182,17 +175,17 @@ func deathSystemwork() {
 	}
 
 	for dID, mDeathable := range deathables {
-		if bs,ok:=basicSprites[dID];ok{
+		if bs, ok := basicSprites[dID]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 		}
-		if bs,ok:=basicSprites[mDeathable.hBarid];ok{
+		if bs, ok := basicSprites[mDeathable.hBarid]; ok {
 			healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
 			healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
 			scaleToDimension(dimens{healthbardimenswidth, 5}, emptyImage, bs.bOps)
 			cameraShift(healthbarlocation, center, bs.bOps)
 		}
 
-		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote{
+		if mDeathable.hp.CurrentHP < 1 && !mDeathable.remote {
 			eliminate(dID)
 		}
 
@@ -214,12 +207,12 @@ func eliminate(id *entityid) {
 		case enemyControlled:
 			delete(enemyControllers, id)
 		case abilityActivator:
-			if d, ok := slashers[id];ok{
+			if d, ok := slashers[id]; ok {
 				eliminate(d.wepid)
 			}
 			delete(slashers, id)
 		case hurtable:
-			if d, ok := deathables[id];ok{
+			if d, ok := deathables[id]; ok {
 				eliminate(d.hBarid)
 			}
 			delete(deathables, id)

@@ -14,19 +14,18 @@ type pivotingShape struct {
 	animationCount float64
 	alreadyHit     map[*entityid]bool
 	startCount     float64
+	bladeLength    int
 }
 
-func makeAxe(heading float64, centerRect rectangle) []line {
+func (p *pivotingShape) makeAxe(heading float64, centerRect rectangle) {
 	midPlayer := centerRect.location
 	midPlayer.x += centerRect.dimens.width / 2
 	midPlayer.y += centerRect.dimens.height / 2
-	rotLine := newLinePolar(midPlayer, swordLength, heading)
-	crossLine := newLinePolar(rotLine.p2, swordLength/3, heading+math.Pi/2)
-	frontCrossLine := newLinePolar(rotLine.p2, swordLength/3, heading-math.Pi/2)
-	return []line{rotLine, crossLine, frontCrossLine}
+	rotLine := newLinePolar(midPlayer, p.bladeLength, heading)
+	crossLine := newLinePolar(rotLine.p2, p.bladeLength/3, heading+math.Pi/2)
+	frontCrossLine := newLinePolar(rotLine.p2, p.bladeLength/3, heading-math.Pi/2)
+	p.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
 }
-
-var swordLength = 45
 
 var wepBlockers = make(map[*entityid]*shape)
 
