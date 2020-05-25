@@ -1,4 +1,5 @@
-# samsgame
-sam's cool game
+# Knights and Bandits!
 
-top down, big world pvp is the goal
+A cool top down 2D pixel art game with adventures and pvp in a big persistent world.
+
+Join the fight! Be a contributor :)
