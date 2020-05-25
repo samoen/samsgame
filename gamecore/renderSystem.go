@@ -29,7 +29,7 @@ func drawHitboxes(s *ebiten.Image) {
 		y1 := float64(l.p1.y)
 		y2 := float64(l.p2.y)
 
-		imgToDraw := *emptyImage
+		imgToDraw := *images.empty
 		ew, eh := imgToDraw.Size()
 		length := math.Hypot(x2-x1, y2-y1)
 
