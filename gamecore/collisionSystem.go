@@ -170,40 +170,55 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 		}
 	}
 }
+type remoteMoveState int
+const (
+	interpolating remoteMoveState = iota
+	deadreckoning
+	momentumOnly
 
+)
+const interpTime = 4
+const deathreckTime = 4
 func collisionSystemWork() {
-
+	rms := interpolating
+	if receiveCount > interpTime+2 {
+		rms = deadreckoning
+	}
+	if receiveCount > interpTime+2 + deathreckTime{
+		rms = momentumOnly
+	}
 	for moverid, p := range movers {
 		if moverid.remote {
-			//if receiveCount > pingFrames {
-			//	p.directions.Down = false
-			//	p.directions.Left = false
-			//	p.directions.Right = false
-			//	p.directions.Up = false
-			//}
-
-			if receiveCount <= int(float64(pingFrames) * 0.5) {
-
-				diffx := p.endpoint.x - p.rect.location.x
-				diffy := p.endpoint.y - p.rect.location.y
-				newplace := p.rect.location
-				newplace.x += diffx/2
-				newplace.y += diffy/2
-
-				//newplace := p.baseloc
-				//newplace.x += p.destination.x * receiveCount
-				//newplace.y += p.destination.y * receiveCount
-				//if receiveCount == (pingFrames/2) {
-				//	newplace = p.endpoint
-				//}
+			switch rms {
+			case interpolating:
+				var newplace location
+				if receiveCount == interpTime+2 {
+					newplace = p.endpoint
+				}else{
+					diffx := (p.endpoint.x - p.baseloc.x)/interpTime
+					diffy := (p.endpoint.y - p.baseloc.y)/interpTime
+					newplace = p.rect.location
+					newplace.x += diffx
+					newplace.y += diffy
+				}
 				checkrect := newRectangle(newplace, p.rect.dimens)
 				if !normalcollides(*checkrect.shape, solids, moverid) {
 					p.rect.refreshShape(newplace)
 				}
-			}else{
+			case deadreckoning:
+				p.moment = calcMomentum(*p)
+				moveCollide(p, moverid)
+			case momentumOnly:
+				//if receiveCount > pingFrames {
+					p.directions.Down = false
+					p.directions.Left = false
+					p.directions.Right = false
+					p.directions.Up = false
+				//}
 				p.moment = calcMomentum(*p)
 				moveCollide(p, moverid)
 			}
+
 		}
 		if !moverid.remote{
 			p.moment = calcMomentum(*p)
