@@ -4,6 +4,7 @@ import (
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 	"math"
+	"sort"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -12,6 +13,7 @@ type baseSprite struct {
 	sprite *ebiten.Image
 	bOps   *ebiten.DrawImageOptions
 	layer  int
+	yaxis int
 }
 
 var ScreenWidth = 700
@@ -144,17 +146,19 @@ func renderEntSprites(s *ebiten.Image) {
 	}
 }
 
-var toRender []baseSprite
+var toRender []*baseSprite
 
 func updateSprites() {
 	offset := renderOffset()
+	toRender = nil
 	for _, bs := range basicSprites {
 		bs.bOps.ColorM.Reset()
 		bs.bOps.GeoM.Reset()
+		toRender = append(toRender,bs)
 	}
 	for pid, bs := range basicSprites {
-
 		if p, ok := movers[pid]; ok {
+			bs.yaxis = rectCenterPoint(*p.rect).y
 			if !p.ignoreflip {
 				if p.directions.Left && !p.directions.Right {
 					p.lastflip = true
@@ -197,7 +201,8 @@ func updateSprites() {
 		if mDeathable, ok := deathables[pid]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
-				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - 10}
+				subbs.yaxis= rectCenterPoint(*mDeathable.deathableShape).y +10
+				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y-(mDeathable.deathableShape.dimens.height/2) - 10}
 				healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
 				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
 				cameraShift(healthbarlocation, offset, subbs.bOps)
@@ -211,6 +216,7 @@ func updateSprites() {
 			}
 			if bs, ok := basicSprites[bot.wepid]; ok {
 				_, imH := bs.sprite.Size()
+				bs.yaxis = bot.pivShape.pivoterShape.lines[0].p2.y
 				ownerCenter := rectCenterPoint(*bot.ent.rect)
 				cameraShift(ownerCenter, offset, bs.bOps)
 				addOp := ebiten.GeoM{}
@@ -222,13 +228,16 @@ func updateSprites() {
 			}
 		}
 	}
-	toRender = nil
-	for i := 0; i < 4; i++ {
-		for _, bs := range basicSprites {
-			if bs.layer == i {
-				toRender = append(toRender, *bs)
-			}
-		}
-	}
+	//toRender = nil
+	//for i := 0; i < 4; i++ {
+	//	for _, bs := range basicSprites {
+	//		if bs.layer == i {
+	//			toRender = append(toRender, *bs)
+	//		}
+	//	}
+	//}
+	sort.Slice(toRender,func(i,j int)bool{
+		return toRender[i].yaxis < toRender[j].yaxis
+	})
 
 }
