@@ -174,30 +174,38 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 func collisionSystemWork() {
 
 	for moverid, p := range movers {
-		interpolating := false
 		if moverid.remote {
-			if receiveCount > pingFrames+1 {
-				p.directions.Down = false
-				p.directions.Left = false
-				p.directions.Right = false
-				p.directions.Up = false
-			}
+			//if receiveCount > pingFrames {
+			//	p.directions.Down = false
+			//	p.directions.Left = false
+			//	p.directions.Right = false
+			//	p.directions.Up = false
+			//}
 
-			if receiveCount <= (pingFrames/2)+1 {
-				interpolating = true
-				newplace := p.baseloc
-				newplace.x += p.destination.x * receiveCount
-				newplace.y += p.destination.y * receiveCount
-				if receiveCount == (pingFrames/2)+1 {
-					newplace = p.endpoint
-				}
+			if receiveCount <= int(float64(pingFrames) * 0.5) {
+
+				diffx := p.endpoint.x - p.rect.location.x
+				diffy := p.endpoint.y - p.rect.location.y
+				newplace := p.rect.location
+				newplace.x += diffx/2
+				newplace.y += diffy/2
+
+				//newplace := p.baseloc
+				//newplace.x += p.destination.x * receiveCount
+				//newplace.y += p.destination.y * receiveCount
+				//if receiveCount == (pingFrames/2) {
+				//	newplace = p.endpoint
+				//}
 				checkrect := newRectangle(newplace, p.rect.dimens)
 				if !normalcollides(*checkrect.shape, solids, moverid) {
 					p.rect.refreshShape(newplace)
 				}
+			}else{
+				p.moment = calcMomentum(*p)
+				moveCollide(p, moverid)
 			}
 		}
-		if !interpolating {
+		if !moverid.remote{
 			p.moment = calcMomentum(*p)
 			moveCollide(p, moverid)
 		}
