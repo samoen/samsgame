@@ -2,5 +2,5 @@ client.exe
 server.exe
 multibuild.exe
 .idea
-wasgame.wasm
+website/wasgame.wasm
 

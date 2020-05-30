@@ -22,36 +22,13 @@ func main() {
 	conMutex := sync.Mutex{}
 	log.Println("server go brr")
 
-	//http.HandleFunc("/assets", func(w http.ResponseWriter, r *http.Request) {
-	//	http.FileServer(http.Dir("/")).ServeHTTP(w,r)
-	//})
-	//http.HandleFunc("/play", func(w http.ResponseWriter, r *http.Request) {
-	//	http.ServeFile(w, r, "index.html")
-	//})
-
 	m := http.NewServeMux()
-	m.Handle("/", http.FileServer(http.Dir(".")))
 
-	//fs:= http.FileServer(http.Dir("./assets"))
-	//m.Handle("/assets/", http.StripPrefix("/assets/",fs))
+	fs:= http.FileServer(http.Dir("./assets"))
+	m.Handle("/assets/", http.StripPrefix("/assets/",fs))
 
-	//wfs:= http.FileServer(http.Dir("."))
-	//m.Handle("/website/", http.StripPrefix("/website/",wfs))
-
-	//wfs2:= http.FileServer(http.Dir("./website"))
-	//m.Handle("/", wfs2)
-
-	//m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
-	//	http.ServeFile(w, r, "./index.html")
-	//})
-	//m.Handle("/", http.FileServer(http.Dir("./website")))
-
-	//m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request){
-	//	http.ServeFile(w, r, "./index.html")
-	//})
-	//m.HandleFunc("/w", func(w http.ResponseWriter, r *http.Request){
-	//	http.ServeFile(w, r, "./website/wasgame.wasm")
-	//})
+	wfs2:= http.FileServer(http.Dir("./website/."))
+	m.Handle("/", wfs2)
 
 	servah := http.Server{Addr: ":8080", Handler: m}
 
