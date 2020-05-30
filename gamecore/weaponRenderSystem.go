@@ -122,7 +122,10 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 	imW, imH := img.Size()
 	wRatio := float64(dims.width) / float64(imW)
 	hRatio := float64(dims.height) / float64(imH)
-	ops.GeoM.Scale(wRatio, hRatio)
+	toAdd := ebiten.GeoM{}
+	toAdd.Scale(wRatio, hRatio)
+	ops.GeoM.Add(toAdd)
+	//ops.GeoM.Scale(wRatio, hRatio)
 }
 
 func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOptions) {
@@ -160,16 +163,36 @@ func updateSprites() {
 					p.lastflip = false
 				}
 			}
-
+			intverted := 1
 			if p.lastflip {
-				invertGeom := ebiten.GeoM{}
-				invertGeom.Scale(-1, 1)
-				invertGeom.Translate(float64(p.rect.dimens.width), 0)
-				bs.bOps.GeoM.Add(invertGeom)
+				intverted = -1
+				//invertGeom := ebiten.GeoM{}
+				//invertGeom.Scale(-1, 1)
+
+				flipTrans := ebiten.GeoM{}
+				flipTrans.Translate(float64(-p.rect.dimens.width - (p.rect.dimens.width/2)), 0)
+				bs.bOps.GeoM.Add(flipTrans)
+
+				//bs.bOps.GeoM.Add(invertGeom)
+				bs.bOps.GeoM.Scale(-1,1)
 			}
 
-			scaleToDimension(p.rect.dimens, bs.sprite, bs.bOps)
-			cameraShift(p.rect.location, offset, bs.bOps)
+			scaleto := dimens{}
+
+			scaleto.width = p.rect.dimens.width
+			scaleto.width += (p.rect.dimens.width/2) * intverted
+
+			scaleto.height = p.rect.dimens.height
+			scaleto.height += (p.rect.dimens.height/2)
+
+			shiftto:=location{}
+			shiftto.x = p.rect.location.x
+			shiftto.x -=  (p.rect.dimens.width/4)
+			shiftto.y = p.rect.location.y
+			shiftto.y -= (p.rect.dimens.height/2)
+
+			scaleToDimension(scaleto, bs.sprite, bs.bOps)
+			cameraShift(shiftto, offset, bs.bOps)
 		}
 		if mDeathable, ok := deathables[pid]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
