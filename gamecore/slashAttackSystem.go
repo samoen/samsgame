@@ -39,7 +39,7 @@ func slashersWork() {
 
 	for slasherid, bot := range slashers {
 		bot := bot
-		if !slasherid.remote {
+		if !slasherid.remote && !bot.swangin {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
 				bot.ent.directions.Right ||
@@ -70,12 +70,12 @@ func slashersWork() {
 			bot.cooldownCount = 60
 			bot.pivShape.alreadyHit = make(map[*entityid]bool)
 
-			if slasherid.remote {
-				bot.pivShape.animationCount = bot.startangle
-			}
-			if !slasherid.remote {
+			//if slasherid.remote {
+			//	bot.pivShape.animationCount = bot.startangle
+			//}
+			//if !slasherid.remote {
 				bot.pivShape.animationCount = bot.startangle + 2.1
-			}
+			//}
 
 			bot.swangin = true
 			bot.swangSinceSend = true
@@ -87,7 +87,7 @@ func slashersWork() {
 			addBasicSprite(bs, bot.wepid)
 			addHitbox(bot.pivShape.pivoterShape,bot.wepid)
 		}
-		bot.ent.ignoreflip = bot.swangin
+		//bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
 
 			bot.pivShape.animationCount -= axeRotateSpeed

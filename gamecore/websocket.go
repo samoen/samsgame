@@ -120,7 +120,7 @@ func socketReceive() {
 		messageWep := Weapon{}
 		messageWep.Dmg = mySlasher.pivShape.damage
 		messageWep.Swinging = mySlasher.swangSinceSend
-		messageWep.Startangle = mySlasher.pivShape.startCount
+		messageWep.Startangle = mySlasher.startangle
 		var hitlist []string
 		for serverid, localid := range otherPlayers {
 			for _, hitlocal := range mySlasher.hitsToSend {

@@ -13,7 +13,7 @@ type baseSprite struct {
 	sprite *ebiten.Image
 	bOps   *ebiten.DrawImageOptions
 	layer  int
-	yaxis int
+	yaxis  int
 }
 
 var ScreenWidth = 700
@@ -24,16 +24,49 @@ var bgTileWidth = 2500
 var images imagesStruct
 
 type imagesStruct struct {
-	playerStand *ebiten.Image
-	playerSwing *ebiten.Image
-	empty       *ebiten.Image
-	sword       *ebiten.Image
-	bg          *ebiten.Image
+	playerStand         *ebiten.Image
+	playerWalkUp        *ebiten.Image
+	playerWalkDown      *ebiten.Image
+	playerWalkDownAngle *ebiten.Image
+	playerWalkUpAngle   *ebiten.Image
+	playerSwing         *ebiten.Image
+	empty               *ebiten.Image
+	sword               *ebiten.Image
+	bg                  *ebiten.Image
 }
 
 func newImages(assetsDir string) (imagesStruct, error) {
 	playerStandImage, _, err := ebitenutil.NewImageFromFile(
 		assetsDir+"/playerstand.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+
+	playerWup, _, err := ebitenutil.NewImageFromFile(
+		assetsDir+"/playerwalkup.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+	playerWdown, _, err := ebitenutil.NewImageFromFile(
+		assetsDir+"/playerwalkdown.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+	playerDang, _, err := ebitenutil.NewImageFromFile(
+		assetsDir+"/playerwalkdownangle.png",
+		ebiten.FilterDefault,
+	)
+	if err != nil {
+		return imagesStruct{}, err
+	}
+	playerUang, _, err := ebitenutil.NewImageFromFile(
+		assetsDir+"/playerwalkupangle.png",
 		ebiten.FilterDefault,
 	)
 	if err != nil {
@@ -62,13 +95,17 @@ func newImages(assetsDir string) (imagesStruct, error) {
 		return imagesStruct{}, err
 	}
 
-	return imagesStruct{
-		playerStand: playerStandImage,
-		playerSwing: playerSwing,
-		empty:       emptyImage,
-		sword:       swordImage,
-		bg:          bgImage,
-	}, nil
+	is := imagesStruct{}
+	is.playerStand = playerStandImage
+	is.playerWalkUp = playerWup
+	is.playerWalkDown = playerWdown
+	is.playerWalkDownAngle = playerDang
+	is.playerWalkUpAngle = playerUang
+	is.playerSwing = playerSwing
+	is.empty = emptyImage
+	is.sword = swordImage
+	is.bg = bgImage
+	return is, nil
 }
 
 var basicSprites = make(map[*entityid]*baseSprite)
@@ -154,79 +191,115 @@ func updateSprites() {
 	for _, bs := range basicSprites {
 		bs.bOps.ColorM.Reset()
 		bs.bOps.GeoM.Reset()
-		toRender = append(toRender,bs)
+		toRender = append(toRender, bs)
 	}
+
 	for pid, bs := range basicSprites {
-		if p, ok := movers[pid]; ok {
-			bs.yaxis = rectCenterPoint(*p.rect).y
-			if !p.ignoreflip {
-				if p.directions.Left && !p.directions.Right {
-					p.lastflip = true
-				}
-				if p.directions.Right && !p.directions.Left {
-					p.lastflip = false
-				}
+
+		if slasher, ok := slashers[pid]; ok {
+			bs.yaxis = rectCenterPoint(*slasher.ent.rect).y
+
+
+			flipped := false
+			if math.Abs(slasher.startangle) > math.Pi/2 {
+				flipped = true
 			}
+
+			spriteSelect := images.empty
+			tolerance := math.Pi / 9
+
+			if slasher.swangin {
+				spriteSelect = images.playerSwing
+			}else if math.Abs(slasher.startangle) < tolerance {
+				spriteSelect = images.playerStand
+			} else if math.Abs(slasher.startangle-(math.Pi/4)) < tolerance {
+				spriteSelect = images.playerWalkDownAngle
+			} else if math.Abs(slasher.startangle-(math.Pi/2)) < tolerance {
+				spriteSelect = images.playerWalkDown
+			} else if math.Abs(slasher.startangle-(3*math.Pi/4)) < tolerance {
+				spriteSelect = images.playerWalkDownAngle
+			} else if math.Abs(slasher.startangle-(-3*math.Pi/4)) < tolerance {
+				spriteSelect = images.playerWalkUpAngle
+			}else if math.Abs(slasher.startangle-(-math.Pi/2)) < tolerance {
+				spriteSelect = images.playerWalkUp
+			}else if math.Abs(slasher.startangle-(-math.Pi/4)) < tolerance {
+				spriteSelect = images.playerWalkUpAngle
+			}else if math.Abs(slasher.startangle)-math.Pi < tolerance {
+				spriteSelect = images.playerStand
+			}
+
+			bs.sprite = spriteSelect
+
+			//if !slasher.ent.ignoreflip {
+			//	if slasher.ent.directions.Left && !slasher.ent.directions.Right {
+			//		slasher.ent.lastflip = true
+			//	}
+			//	if slasher.ent.directions.Right && !slasher.ent.directions.Left {
+			//		slasher.ent.lastflip = false
+			//	}
+			//}
 			intverted := 1
-			if p.lastflip {
+			if flipped {
 				intverted = -1
 				//invertGeom := ebiten.GeoM{}
 				//invertGeom.Scale(-1, 1)
 
 				flipTrans := ebiten.GeoM{}
-				flipTrans.Translate(float64(-p.rect.dimens.width - (p.rect.dimens.width/2)), 0)
+				flipTrans.Translate(float64(-slasher.ent.rect.dimens.width-(slasher.ent.rect.dimens.width/2)), 0)
 				bs.bOps.GeoM.Add(flipTrans)
 
 				//bs.bOps.GeoM.Add(invertGeom)
-				bs.bOps.GeoM.Scale(-1,1)
+				bs.bOps.GeoM.Scale(-1, 1)
 			}
-
 			scaleto := dimens{}
 
-			scaleto.width = p.rect.dimens.width
-			scaleto.width += (p.rect.dimens.width/2) * intverted
+			scaleto.width = slasher.ent.rect.dimens.width
+			scaleto.width += (slasher.ent.rect.dimens.width / 2) * intverted
 
-			scaleto.height = p.rect.dimens.height
-			scaleto.height += (p.rect.dimens.height/2)
+			scaleto.height = slasher.ent.rect.dimens.height
+			scaleto.height += (slasher.ent.rect.dimens.height / 2)
 
-			shiftto:=location{}
-			shiftto.x = p.rect.location.x
-			shiftto.x -=  (p.rect.dimens.width/4)
-			shiftto.y = p.rect.location.y
-			shiftto.y -= (p.rect.dimens.height/2)
+			shiftto := location{}
+			shiftto.x = slasher.ent.rect.location.x
+			shiftto.x -= (slasher.ent.rect.dimens.width / 4)
+			shiftto.y = slasher.ent.rect.location.y
+			shiftto.y -= (slasher.ent.rect.dimens.height / 2)
 
 			scaleToDimension(scaleto, bs.sprite, bs.bOps)
 			cameraShift(shiftto, offset, bs.bOps)
+
+			if bs, ok := basicSprites[slasher.wepid]; ok {
+				_, imH := bs.sprite.Size()
+				bs.yaxis = slasher.pivShape.pivoterShape.lines[0].p2.y
+				ownerCenter := rectCenterPoint(*slasher.ent.rect)
+				cameraShift(ownerCenter, offset, bs.bOps)
+				addOp := ebiten.GeoM{}
+				hRatio := float64(slasher.pivShape.bladeLength+slasher.pivShape.bladeLength/4) / float64(imH)
+				addOp.Scale(hRatio, hRatio)
+				addOp.Translate(-float64(slasher.ent.rect.dimens.width)/2, 0)
+				addOp.Rotate(slasher.pivShape.animationCount - (math.Pi / 2))
+				bs.bOps.GeoM.Add(addOp)
+			}
 		}
+
+		//if p, ok := movers[pid]; ok {
+		//
+		//
+		//
+		//}
 		if mDeathable, ok := deathables[pid]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
-				subbs.yaxis= rectCenterPoint(*mDeathable.deathableShape).y +10
-				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y-(mDeathable.deathableShape.dimens.height/2) - 10}
+				subbs.yaxis = rectCenterPoint(*mDeathable.deathableShape).y + 10
+				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - (mDeathable.deathableShape.dimens.height / 2) - 10}
 				healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
 				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
 				cameraShift(healthbarlocation, offset, subbs.bOps)
 			}
 		}
-		if bot, ok := slashers[pid]; ok {
-			if bot.swangin {
-				bs.sprite = images.playerSwing
-			} else {
-				bs.sprite = images.playerStand
-			}
-			if bs, ok := basicSprites[bot.wepid]; ok {
-				_, imH := bs.sprite.Size()
-				bs.yaxis = bot.pivShape.pivoterShape.lines[0].p2.y
-				ownerCenter := rectCenterPoint(*bot.ent.rect)
-				cameraShift(ownerCenter, offset, bs.bOps)
-				addOp := ebiten.GeoM{}
-				hRatio := float64(bot.pivShape.bladeLength+bot.pivShape.bladeLength/4) / float64(imH)
-				addOp.Scale(hRatio, hRatio)
-				addOp.Translate(-float64(bot.ent.rect.dimens.width)/2, 0)
-				addOp.Rotate(bot.pivShape.animationCount - (math.Pi / 2))
-				bs.bOps.GeoM.Add(addOp)
-			}
-		}
+		//if bot, ok := slashers[pid]; ok {
+		//	
+		//}
 	}
 	//toRender = nil
 	//for i := 0; i < 4; i++ {
@@ -236,7 +309,7 @@ func updateSprites() {
 	//		}
 	//	}
 	//}
-	sort.Slice(toRender,func(i,j int)bool{
+	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})
 
