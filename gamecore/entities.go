@@ -104,6 +104,16 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 		startloc,
 		dimens{20, 40},
 	)
+	for {
+		if normalcollides(*accelplayer.rect.shape, solids, playerid) {
+			accelplayer.rect = newRectangle(
+				location{startloc.x, accelplayer.rect.location.y + 20},
+				dimens{20, 40},
+			)
+		} else {
+			break
+		}
+	}
 	accelplayer.tracktion = 3
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
@@ -124,7 +134,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
 	addBasicSprite(hBarSprite, hBarEnt)
-	
 
 	if isMe {
 		addPlayerControlled(accelplayer, playerid)
@@ -155,16 +164,36 @@ func ClientInit() {
 
 	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
 
-	for i := 1; i < 10; i++ {
-		enemyid := &entityid{}
-		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
-		if a, ok := movers[enemyid]; ok {
-			eController := &enemyController{}
-			eController.aEnt = a
-			addEnemyController(eController, enemyid)
-		}
-	}
+	//for i := 1; i < 10; i++ {
+	//	enemyid := &entityid{}
+	//	addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
+	//	if a, ok := movers[enemyid]; ok {
+	//		eController := &enemyController{}
+	//		eController.aEnt = a
+	//		addEnemyController(eController, enemyid)
+	//	}
+	//}
 
+	placeMap()
+
+	go connectToServer()
+	ebiten.SetRunnableOnUnfocused(true)
+	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
+	ebiten.SetWindowTitle("sams cool game")
+	ebiten.SetWindowResizable(true)
+
+	samgame := &SamGame{}
+
+	if err := ebiten.RunGame(samgame); err != nil {
+		closeConn()
+		log.Fatal(err)
+		return
+	}
+	closeConn()
+	log.Println("exited main")
+}
+
+func placeMap() {
 	worldBoundaryID := &entityid{}
 	worldBoundRect := newRectangle(
 		location{0, 0},
@@ -200,20 +229,4 @@ func ClientInit() {
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
 	addHitbox(anotherRoom.shape, anotherRoomID)
 	addSolid(anotherRoom.shape, anotherRoomID)
-
-	go connectToServer()
-	ebiten.SetRunnableOnUnfocused(true)
-	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
-	ebiten.SetWindowTitle("sams cool game")
-	ebiten.SetWindowResizable(true)
-
-	samgame := &SamGame{}
-
-	if err := ebiten.RunGame(samgame); err != nil {
-		closeConn()
-		log.Fatal(err)
-		return
-	}
-	closeConn()
-	log.Println("exited main")
 }

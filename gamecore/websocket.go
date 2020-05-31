@@ -18,6 +18,8 @@ func closeConn() {
 	}
 }
 
+var resetChan = make(chan bool)
+
 func connectToServer() {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	//defer cancel()
@@ -39,20 +41,31 @@ func connectToServer() {
 				socketConnection = nil
 				return
 			}
-
-			//go func(){
-
-			//select {
-			//case
 			receiveChan <- v
-			//:
-			//default:
-			//}
-
-			//}()
 		}
 	}()
+	resetChan <- true
 }
+
+func clearEntities() {
+	select {
+	case _ = <-resetChan:
+		movers = make(map[*entityid]*acceleratingEnt)
+		solids = make(map[*entityid]*shape)
+		wepBlockers = make(map[*entityid]*shape)
+		slashers = make(map[*entityid]*slasher)
+		basicSprites = make(map[*entityid]*baseSprite)
+		deathables = make(map[*entityid]*deathable)
+		deathables = make(map[*entityid]*deathable)
+		playerControllables = make(map[*entityid]*acceleratingEnt)
+		enemyControllers = make(map[*entityid]*enemyController)
+		hitBoxes = make(map[*entityid]*shape)
+		myDeathable.hp.CurrentHP = -1
+		placeMap()
+	default:
+	}
+}
+
 func socketReceive() {
 
 	if socketConnection == nil {
@@ -61,6 +74,9 @@ func socketReceive() {
 	receiveCount += 1
 	select {
 	case msg := <-receiveChan:
+
+		clearEntities()
+
 		log.Printf("receiveChan: %+v", msg)
 		pingFrames = receiveCount
 		receiveCount = 2
