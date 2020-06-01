@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"nhooyr.io/websocket"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -186,8 +187,10 @@ func ClientInit() {
 	}
 
 	placeMap()
-
-	go connectToServer()
+	go func() {
+		time.Sleep(1500 * time.Millisecond)
+		connectToServer()
+	}()
 	ebiten.SetRunnableOnUnfocused(true)
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
 	ebiten.SetWindowTitle("sams cool game")

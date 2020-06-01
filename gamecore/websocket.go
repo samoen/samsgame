@@ -33,7 +33,7 @@ func connectToServer() {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	//defer cancel()
 
-	socketURL := fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
+	socketURL := "ws://localhost:8080/ws"
 	var err error
 	socketConnection, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
