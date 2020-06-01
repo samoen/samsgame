@@ -2,6 +2,7 @@ package gamecore
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -24,8 +25,9 @@ func connectToServer() {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	//defer cancel()
 
+	socketURL := fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
 	var err error
-	socketConnection, _, err = websocket.Dial(context.Background(), "ws://localhost:8080/ws", nil)
+	socketConnection, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
 		return
@@ -65,7 +67,7 @@ func clearEntities() {
 	default:
 	}
 }
-
+var myPNum string
 func socketReceive() {
 
 	if socketConnection == nil {
@@ -75,13 +77,13 @@ func socketReceive() {
 	receiveDebug = string(append([]byte(receiveDebug), '*'))
 	select {
 	case msg := <-receiveChan:
-
-		clearEntities()
-
 		log.Printf("receiveChan: %+v", msg)
+
+		myPNum = msg.YourPNum
+		clearEntities()
 		pingFrames = receiveCount
-		receiveCount = 2
-		receiveDebug = "**"
+		receiveCount = 0
+		receiveDebug = ""
 	found:
 		for pnum, rm := range otherPlayers {
 			for _, l := range msg.Locs {
@@ -132,6 +134,7 @@ func socketReceive() {
 			//}
 		}
 		message := ServerMessage{}
+		message.MyPNum = msg.YourPNum
 		message.Myloc = ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y}
 		message.Mymom = myAccelEnt.moment
 		message.Mydir = myAccelEnt.directions

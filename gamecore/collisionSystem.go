@@ -181,10 +181,10 @@ const interpTime = 4
 const deathreckTime = 4
 func collisionSystemWork() {
 	rms := interpolating
-	if receiveCount > interpTime+2 {
+	if receiveCount > interpTime {
 		rms = deadreckoning
 	}
-	if receiveCount > interpTime+2 + deathreckTime{
+	if receiveCount > interpTime + deathreckTime{
 		rms = momentumOnly
 	}
 	for moverid, p := range movers {
@@ -192,7 +192,7 @@ func collisionSystemWork() {
 			switch rms {
 			case interpolating:
 				var newplace location
-				if receiveCount == interpTime+2 {
+				if receiveCount == interpTime {
 					newplace = p.endpoint
 				}else{
 					diffx := (p.endpoint.x - p.baseloc.x)/interpTime

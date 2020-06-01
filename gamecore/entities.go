@@ -18,6 +18,7 @@ type SamGame struct{}
 var pingFrames = 10
 
 var receiveCount = pingFrames
+var receiveDebug = ""
 var receiveChan = make(chan LocationList)
 var otherPlayers = make(map[string]*entityid)
 
@@ -45,9 +46,10 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrintAt(
 		screen,
 		fmt.Sprintf(
-			"TPS: %0.2f FPS: %0.2f",
+			"TPS: %0.2f FPS: %0.2f socket: %s",
 			ebiten.CurrentTPS(),
 			ebiten.CurrentFPS(),
+			receiveDebug,
 		),
 		0,
 		0,
@@ -69,6 +71,7 @@ type ServerMessage struct {
 	Mydir    Directions
 	Myaxe    Weapon
 	Myhealth Hitpoints
+	MyPNum   string
 }
 
 type Weapon struct {
@@ -79,7 +82,8 @@ type Weapon struct {
 }
 
 type LocationList struct {
-	Locs []LocWithPNum
+	Locs     []LocWithPNum
+	YourPNum string
 }
 
 type LocWithPNum struct {
@@ -164,15 +168,15 @@ func ClientInit() {
 
 	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
 
-	//for i := 1; i < 10; i++ {
-	//	enemyid := &entityid{}
-	//	addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
-	//	if a, ok := movers[enemyid]; ok {
-	//		eController := &enemyController{}
-	//		eController.aEnt = a
-	//		addEnemyController(eController, enemyid)
-	//	}
-	//}
+	for i := 1; i < 10; i++ {
+		enemyid := &entityid{}
+		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
+		if a, ok := movers[enemyid]; ok {
+			eController := &enemyController{}
+			eController.aEnt = a
+			addEnemyController(eController, enemyid)
+		}
+	}
 
 	placeMap()
 

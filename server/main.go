@@ -18,9 +18,10 @@ import (
 var connections = make(map[*bool]*ServerEntity)
 
 type ServerEntity struct {
-	entconn *websocket.Conn
-	sm      gamecore.ServerMessage
-	busy    bool
+	entconn   *websocket.Conn
+	otherconn *websocket.Conn
+	sm        gamecore.ServerMessage
+	busy      bool
 }
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) {
@@ -34,7 +35,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) {
 			log.Println(err)
 		}
 	}
-	timer1 := time.NewTimer(500 * time.Millisecond)
+	timer1 := time.NewTimer(166 * time.Millisecond)
 	var locs []gamecore.LocWithPNum
 	for subcon, loc := range connections {
 		if subcon == mapid {
@@ -61,13 +62,14 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) {
 	}
 	toSend := gamecore.LocationList{}
 	toSend.Locs = locs
+	toSend.YourPNum = fmt.Sprintf("%p", mapid)
 	err := wsjson.Write(context.Background(), conno, toSend)
 	if err != nil {
 		log.Println(err)
 		closeit()
 		return
 	}
-	log.Println("sent message: ", toSend)
+	//log.Println("sent message: ", toSend)
 
 	var v gamecore.ServerMessage
 	err = wsjson.Read(context.Background(), conno, &v)
@@ -76,7 +78,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) {
 		closeit()
 		return
 	}
-	log.Println("received: ", v)
+	//log.Println("received: ", v)
 	conMutex.Lock()
 	connections[mapid].sm = v
 	conMutex.Unlock()
@@ -100,13 +102,26 @@ func main() {
 
 	hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conno, err := websocket.Accept(w, r, nil)
+		q := r.URL.Query()
+		param := q.Get("a")
+		log.Println(param)
 		if err != nil {
-			log.Println(err)
+			log.Fatal(err)
 			return
 		}
+		conMutex.Lock()
+		for id, serveEnt := range connections {
+			if fmt.Sprintf("%p", id) == param {
+				fmt.Println("found existing")
+				serveEnt.otherconn = conno
+				conMutex.Unlock()
+				return
+			}
+		}
+		conMutex.Unlock()
 		t := true
 		mapid := &t
-		log.Println("accepted connection")
+		//log.Println("accepted connection")
 		servEnt := &ServerEntity{}
 		servEnt.entconn = conno
 		servEnt.sm.Myhealth.CurrentHP = -2
@@ -135,6 +150,7 @@ func main() {
 					//conMutex.Unlock()
 					go func() {
 						updateServerEnt(id, serveEnt.entconn)
+						//updateServerEnt(id, serveEnt.otherconn)
 						//conMutex.Lock()
 						serveEnt.busy = false
 						//conMutex.Unlock()
