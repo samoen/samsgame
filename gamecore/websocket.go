@@ -6,6 +6,7 @@ import (
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
+	"time"
 )
 
 var socketConnection *websocket.Conn
@@ -43,10 +44,37 @@ func connectToServer() {
 				socketConnection = nil
 				return
 			}
-			receiveChan <- v
+			ss := sockSelecter{}
+			ss.sock = socketConnection
+			ss.ll = v
+			receiveChan <- ss
 		}
 	}()
 	resetChan <- true
+	time.Sleep(1000 * time.Millisecond)
+	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
+	//var err error
+	othersocket, _, err := websocket.Dial(context.Background(), socketURL, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	go func() {
+		for {
+			var v LocationList
+			err1 := wsjson.Read(context.Background(), othersocket, &v)
+			if err1 != nil {
+				log.Println(err1)
+				closeConn()
+				othersocket = nil
+				return
+			}
+			ss := sockSelecter{}
+			ss.sock = othersocket
+			ss.ll = v
+			receiveChan <- ss
+		}
+	}()
 }
 
 func clearEntities() {
@@ -79,14 +107,14 @@ func socketReceive() {
 	case msg := <-receiveChan:
 		log.Printf("receiveChan: %+v", msg)
 
-		myPNum = msg.YourPNum
+		myPNum = msg.ll.YourPNum
 		clearEntities()
 		pingFrames = receiveCount
 		receiveCount = 0
 		receiveDebug = ""
 	found:
 		for pnum, rm := range otherPlayers {
-			for _, l := range msg.Locs {
+			for _, l := range msg.ll.Locs {
 				if l.PNum == pnum {
 					continue found
 				}
@@ -95,7 +123,7 @@ func socketReceive() {
 			delete(otherPlayers, pnum)
 		}
 
-		for _, l := range msg.Locs {
+		for _, l := range msg.ll.Locs {
 			//var remoteent *entityid
 			if _, ok := otherPlayers[l.PNum]; !ok {
 
@@ -134,7 +162,7 @@ func socketReceive() {
 			//}
 		}
 		message := ServerMessage{}
-		message.MyPNum = msg.YourPNum
+		message.MyPNum = msg.ll.YourPNum
 		message.Myloc = ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y}
 		message.Mymom = myAccelEnt.moment
 		message.Mydir = myAccelEnt.directions
@@ -158,11 +186,11 @@ func socketReceive() {
 		mySlasher.swangSinceSend = false
 
 		go func() {
-			writeErr := wsjson.Write(context.Background(), socketConnection, message)
+			writeErr := wsjson.Write(context.Background(), msg.sock, message)
 			if writeErr != nil {
 				log.Println(writeErr)
 				closeConn()
-				socketConnection = nil
+				msg.sock = nil
 				return
 			}
 			log.Printf("sent my pos %+v", message)

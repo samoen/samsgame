@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"nhooyr.io/websocket"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -19,7 +20,13 @@ var pingFrames = 10
 
 var receiveCount = pingFrames
 var receiveDebug = ""
-var receiveChan = make(chan LocationList)
+
+type sockSelecter struct{
+	ll LocationList
+	sock *websocket.Conn
+}
+
+var receiveChan = make(chan sockSelecter)
 var otherPlayers = make(map[string]*entityid)
 
 func (g *SamGame) Update(screen *ebiten.Image) error {

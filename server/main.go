@@ -150,7 +150,9 @@ func main() {
 					//conMutex.Unlock()
 					go func() {
 						updateServerEnt(id, serveEnt.entconn)
-						//updateServerEnt(id, serveEnt.otherconn)
+						if serveEnt.otherconn != nil{
+							updateServerEnt(id, serveEnt.otherconn)
+						}
 						//conMutex.Lock()
 						serveEnt.busy = false
 						//conMutex.Unlock()
