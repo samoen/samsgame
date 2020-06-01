@@ -72,6 +72,7 @@ func socketReceive() {
 		return
 	}
 	receiveCount += 1
+	receiveDebug = string(append([]byte(receiveDebug), '*'))
 	select {
 	case msg := <-receiveChan:
 
@@ -80,6 +81,7 @@ func socketReceive() {
 		log.Printf("receiveChan: %+v", msg)
 		pingFrames = receiveCount
 		receiveCount = 2
+		receiveDebug = "**"
 	found:
 		for pnum, rm := range otherPlayers {
 			for _, l := range msg.Locs {
