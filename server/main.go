@@ -15,22 +15,88 @@ import (
 	"nhooyr.io/websocket/wsjson"
 )
 
-var connections = make(map[*websocket.Conn]gamecore.ServerMessage)
+var connections = make(map[*bool]*ServerEntity)
+
+type ServerEntity struct {
+	entconn *websocket.Conn
+	sm      gamecore.ServerMessage
+	busy    bool
+}
+
+func updateServerEnt(mapid *bool, conno *websocket.Conn) {
+	closeit := func() {
+		log.Println("removeConn called")
+		conMutex.Lock()
+		delete(connections, mapid)
+		conMutex.Unlock()
+		err := conno.Close(websocket.StatusInternalError, "sam closing")
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	timer1 := time.NewTimer(500 * time.Millisecond)
+	var locs []gamecore.LocWithPNum
+	for subcon, loc := range connections {
+		if subcon == mapid {
+			continue
+		}
+		if loc.sm.Myloc.X == 0 {
+			continue
+		}
+		if loc.sm.Myhealth.CurrentHP < 1 {
+			continue
+		}
+		locWithP := gamecore.LocWithPNum{}
+		locWithP.Loc = loc.sm.Myloc
+		locWithP.PNum = fmt.Sprintf("%p", subcon)
+		locWithP.ServMessage = loc.sm
+		locWithP.ServMessage.Myaxe.IHit = nil
+		for _, hitid := range loc.sm.Myaxe.IHit {
+			if hitid == fmt.Sprintf("%p", mapid) {
+				locWithP.YouCopped = true
+			}
+		}
+
+		locs = append(locs, locWithP)
+	}
+	toSend := gamecore.LocationList{}
+	toSend.Locs = locs
+	err := wsjson.Write(context.Background(), conno, toSend)
+	if err != nil {
+		log.Println(err)
+		closeit()
+		return
+	}
+	log.Println("sent message: ", toSend)
+
+	var v gamecore.ServerMessage
+	err = wsjson.Read(context.Background(), conno, &v)
+	if err != nil {
+		log.Println(err)
+		closeit()
+		return
+	}
+	log.Println("received: ", v)
+	conMutex.Lock()
+	connections[mapid].sm = v
+	conMutex.Unlock()
+	<-timer1.C
+}
+
+var conMutex = sync.Mutex{}
 
 func main() {
 	log.SetOutput(os.Stdout)
-	conMutex := sync.Mutex{}
+
 	log.Println("server go brr")
 
 	m := http.NewServeMux()
 
-	fs:= http.FileServer(http.Dir("./assets"))
-	m.Handle("/assets/", http.StripPrefix("/assets/",fs))
+	fs := http.FileServer(http.Dir("./assets"))
+	m.Handle("/assets/", http.StripPrefix("/assets/", fs))
 
-	wfs2:= http.FileServer(http.Dir("./website/."))
+	wfs2 := http.FileServer(http.Dir("./website/."))
 	m.Handle("/", wfs2)
-
-	servah := http.Server{Addr: ":8080", Handler: m}
 
 	hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conno, err := websocket.Accept(w, r, nil)
@@ -38,93 +104,63 @@ func main() {
 			log.Println(err)
 			return
 		}
-		//conMutex.Lock()
+		t := true
+		mapid := &t
 		log.Println("accepted connection")
-		//connections[conno] = gamecore.ServerMessage{}
-		closeit := func() {
-			log.Println("removeConn called")
-			conMutex.Lock()
-			delete(connections, conno)
-			conMutex.Unlock()
-			err = conno.Close(websocket.StatusInternalError, "sam closing")
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
-		for {
-			timer1 := time.NewTimer(166 * time.Millisecond)
-			var locs []gamecore.LocWithPNum
-			for subcon, loc := range connections {
-				if subcon == conno {
-					continue
-				}
-				if loc.Myloc.X == 0 {
-					continue
-				}
-				if loc.Myhealth.CurrentHP < 1 {
-					continue
-				}
-				locWithP := gamecore.LocWithPNum{}
-				locWithP.Loc = loc.Myloc
-				locWithP.PNum = fmt.Sprintf("%p", subcon)
-				locWithP.ServMessage = loc
-				locWithP.ServMessage.Myaxe.IHit = nil
-				for _, hitid := range loc.Myaxe.IHit {
-					if hitid == fmt.Sprintf("%p", conno) {
-						locWithP.YouCopped = true
-					}
-				}
-
-				locs = append(locs, locWithP)
-			}
-			toSend := gamecore.LocationList{}
-			toSend.Locs = locs
-			//toSend.YourPnum =
-			err = wsjson.Write(context.Background(), conno, toSend)
-			if err != nil {
-				log.Println(err)
-				closeit()
-				return
-			}
-			log.Println("sent message: ", toSend)
-
-			var v gamecore.ServerMessage
-			err := wsjson.Read(context.Background(), conno, &v)
-			if err != nil {
-				log.Println(err)
-				closeit()
-				return
-			}
-			log.Println("received: ", v)
-			conMutex.Lock()
-			connections[conno] = v
-			conMutex.Unlock()
-			<-timer1.C
-
-		}
+		servEnt := &ServerEntity{}
+		servEnt.entconn = conno
+		servEnt.sm.Myhealth.CurrentHP = -2
+		conMutex.Lock()
+		connections[mapid] = servEnt
+		conMutex.Unlock()
 	})
-	// http.Handle("/ws", hf)
 	m.Handle("/ws", hf)
-	// if err := http.ListenAndServe(":8080", nil); err != nil {
-	// 	log.Fatal("ListenAndServe: ", err)
-	// }
+	servah := http.Server{Addr: ":8080", Handler: m}
 	go func() {
 		if err := servah.ListenAndServe(); err != nil {
 			log.Fatal("ListenAndServe: ", err)
 		}
 	}()
+
+	go func() {
+		for {
+			conMutex.Lock()
+			for id, serveEnt := range connections {
+				conMutex.Unlock()
+				id := id
+				serveEnt := serveEnt
+				if !serveEnt.busy {
+					//conMutex.Lock()
+					serveEnt.busy = true
+					//conMutex.Unlock()
+					go func() {
+						updateServerEnt(id, serveEnt.entconn)
+						//conMutex.Lock()
+						serveEnt.busy = false
+						//conMutex.Unlock()
+					}()
+				}
+				conMutex.Lock()
+			}
+			conMutex.Unlock()
+			//time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		if scanner.Text() == "stop" {
-			servah.Shutdown(context.Background())
+			err := servah.Shutdown(context.Background())
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
 			log.Println("server stopped")
 			break
 		}
 	}
 
 	if scanner.Err() != nil {
-		// handle error.
-		log.Fatal("scannah error:")
+		log.Fatal("scannah error")
 	}
 }
