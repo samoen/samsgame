@@ -22,6 +22,7 @@ type ServerEntity struct {
 	otherconn *websocket.Conn
 	sm        gamecore.ServerMessage
 	busy      bool
+	ping      time.Duration
 }
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) {
@@ -123,6 +124,7 @@ func main() {
 		mapid := &t
 		//log.Println("accepted connection")
 		servEnt := &ServerEntity{}
+		servEnt.ping = 400
 		servEnt.entconn = conno
 		servEnt.sm.Myhealth.CurrentHP = -2
 		conMutex.Lock()
@@ -152,23 +154,21 @@ func main() {
 						wg := sync.WaitGroup{}
 						wg.Add(2)
 						go func() {
+							measure := time.Now()
 							updateServerEnt(id, serveEnt.entconn)
+							serveEnt.ping = time.Since(measure)
 							wg.Done()
-							//conMutex.Lock()
-							//serveEnt.busy = false
-							//conMutex.Unlock()
 						}()
-						time.Sleep(200*time.Millisecond)
+						halfping := (serveEnt.ping /2)+(100*time.Millisecond)
+						time.Sleep(halfping)
 						go func() {
-							if serveEnt.otherconn != nil{
+							if serveEnt.otherconn != nil {
 								updateServerEnt(id, serveEnt.otherconn)
 							}
 							wg.Done()
-							//conMutex.Lock()
-							//serveEnt.busy = false
-							//conMutex.Unlock()
 						}()
-						wg.Wait()
+						time.Sleep(halfping)
+						//wg.Wait()
 						serveEnt.busy = false
 					}()
 
