@@ -10,10 +10,17 @@ import (
 )
 
 var socketConnection *websocket.Conn
+var othersock *websocket.Conn
 
 func closeConn() {
 	if socketConnection != nil {
-		err := socketConnection.Close(websocket.StatusNormalClosure, "closed from client defer")
+		err := socketConnection.Close(websocket.StatusNormalClosure, "mainsock closeconn")
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	if othersock != nil {
+		err := othersock.Close(websocket.StatusNormalClosure, "othersock closeconn")
 		if err != nil {
 			log.Println(err)
 		}
@@ -54,7 +61,7 @@ func connectToServer() {
 	time.Sleep(1000 * time.Millisecond)
 	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
 	//var err error
-	othersocket, _, err := websocket.Dial(context.Background(), socketURL, nil)
+	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
 		return
@@ -62,15 +69,15 @@ func connectToServer() {
 	go func() {
 		for {
 			var v LocationList
-			err1 := wsjson.Read(context.Background(), othersocket, &v)
+			err1 := wsjson.Read(context.Background(), othersock, &v)
 			if err1 != nil {
 				log.Println(err1)
 				closeConn()
-				othersocket = nil
+				othersock = nil
 				return
 			}
 			ss := sockSelecter{}
-			ss.sock = othersocket
+			ss.sock = othersock
 			ss.ll = v
 			receiveChan <- ss
 		}

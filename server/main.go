@@ -147,16 +147,31 @@ func main() {
 				if !serveEnt.busy {
 					//conMutex.Lock()
 					serveEnt.busy = true
-					//conMutex.Unlock()
 					go func() {
-						updateServerEnt(id, serveEnt.entconn)
-						if serveEnt.otherconn != nil{
-							updateServerEnt(id, serveEnt.otherconn)
-						}
-						//conMutex.Lock()
-						serveEnt.busy = false
 						//conMutex.Unlock()
+						wg := sync.WaitGroup{}
+						wg.Add(2)
+						go func() {
+							updateServerEnt(id, serveEnt.entconn)
+							wg.Done()
+							//conMutex.Lock()
+							//serveEnt.busy = false
+							//conMutex.Unlock()
+						}()
+						time.Sleep(200*time.Millisecond)
+						go func() {
+							if serveEnt.otherconn != nil{
+								updateServerEnt(id, serveEnt.otherconn)
+							}
+							wg.Done()
+							//conMutex.Lock()
+							//serveEnt.busy = false
+							//conMutex.Unlock()
+						}()
+						wg.Wait()
+						serveEnt.busy = false
 					}()
+
 				}
 				conMutex.Lock()
 			}
