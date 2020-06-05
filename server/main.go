@@ -25,18 +25,8 @@ type ServerEntity struct {
 	ping      time.Duration
 }
 
-func updateServerEnt(mapid *bool, conno *websocket.Conn) {
-	closeit := func() {
-		log.Println("removeConn called")
-		conMutex.Lock()
-		delete(connections, mapid)
-		conMutex.Unlock()
-		err := conno.Close(websocket.StatusInternalError, "sam closing")
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	timer1 := time.NewTimer(166 * time.Millisecond)
+func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
+	timer1 := time.NewTimer(300 * time.Millisecond)
 	var locs []gamecore.LocWithPNum
 	for subcon, loc := range connections {
 		if subcon == mapid {
@@ -67,8 +57,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) {
 	err := wsjson.Write(context.Background(), conno, toSend)
 	if err != nil {
 		log.Println(err)
-		closeit()
-		return
+		return err
 	}
 	//log.Println("sent message: ", toSend)
 
@@ -76,14 +65,16 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) {
 	err = wsjson.Read(context.Background(), conno, &v)
 	if err != nil {
 		log.Println(err)
-		closeit()
-		return
+		return err
 	}
 	//log.Println("received: ", v)
 	conMutex.Lock()
-	connections[mapid].sm = v
+	if se, ok := connections[mapid]; ok {
+		se.sm = v
+	}
 	conMutex.Unlock()
 	<-timer1.C
+	return nil
 }
 
 var conMutex = sync.Mutex{}
@@ -110,73 +101,95 @@ func main() {
 			log.Fatal(err)
 			return
 		}
+		found := false
+		var otherconn *websocket.Conn
+		var myid *bool
 		conMutex.Lock()
 		for id, serveEnt := range connections {
 			if fmt.Sprintf("%p", id) == param {
 				fmt.Println("found existing")
+				found = true
 				serveEnt.otherconn = conno
-				conMutex.Unlock()
-				return
+				otherconn = serveEnt.entconn
+				myid = id
+				//conMutex.Unlock()
+				//return
 			}
 		}
 		conMutex.Unlock()
-		t := true
-		mapid := &t
-		//log.Println("accepted connection")
-		servEnt := &ServerEntity{}
-		servEnt.ping = 400
-		servEnt.entconn = conno
-		servEnt.sm.Myhealth.CurrentHP = -2
-		conMutex.Lock()
-		connections[mapid] = servEnt
-		conMutex.Unlock()
+
+		if !found {
+			t := true
+			mapid := &t
+			//log.Println("accepted connection")
+			servEnt := &ServerEntity{}
+			servEnt.ping = 400
+			servEnt.entconn = conno
+			servEnt.sm.Myhealth.CurrentHP = -2
+			conMutex.Lock()
+			connections[mapid] = servEnt
+			conMutex.Unlock()
+			err := updateServerEnt(mapid, conno)
+			if err != nil{
+				log.Println("failed initial connection")
+			}
+			return
+		}
+		pingmeasure := time.Duration(500 * time.Millisecond)
+		wg2 := sync.WaitGroup{}
+		exit1 := false
+		exit2 := false
+		for {
+			wg := sync.WaitGroup{}
+			wg.Add(1)
+			go func() {
+				measure := time.Now()
+				err := updateServerEnt(myid, conno)
+				if err != nil {
+					exit1 = true
+				}
+				pingmeasure = time.Since(measure)
+				wg.Done()
+			}()
+			halfping := pingmeasure / 2
+			time.Sleep(halfping)
+			wg2.Wait()
+			if exit2 == true {
+				break
+			}
+			wg2.Add(1)
+			go func() {
+				err := updateServerEnt(myid, otherconn)
+				if err != nil {
+					exit2 = true
+				}
+				wg2.Done()
+			}()
+			time.Sleep(halfping)
+			wg.Wait()
+			if exit1 == true || exit2 == true {
+				log.Println("exit called")
+				conMutex.Lock()
+				delete(connections, myid)
+				conMutex.Unlock()
+				err := conno.Close(websocket.StatusNormalClosure, "server closing a secondary")
+				if err != nil {
+					log.Println(err)
+				}
+				err = otherconn.Close(websocket.StatusNormalClosure, "server closing a primary")
+				if err != nil {
+					log.Println(err)
+				}
+				break
+			}
+		}
+
 	})
 	m.Handle("/ws", hf)
 	servah := http.Server{Addr: ":8080", Handler: m}
 	go func() {
 		if err := servah.ListenAndServe(); err != nil {
 			log.Fatal("ListenAndServe: ", err)
-		}
-	}()
-
-	go func() {
-		for {
-			conMutex.Lock()
-			for id, serveEnt := range connections {
-				conMutex.Unlock()
-				id := id
-				serveEnt := serveEnt
-				if !serveEnt.busy {
-					//conMutex.Lock()
-					serveEnt.busy = true
-					go func() {
-						//conMutex.Unlock()
-						wg := sync.WaitGroup{}
-						wg.Add(2)
-						go func() {
-							measure := time.Now()
-							updateServerEnt(id, serveEnt.entconn)
-							serveEnt.ping = time.Since(measure)
-							wg.Done()
-						}()
-						halfping := (serveEnt.ping /2)+(100*time.Millisecond)
-						time.Sleep(halfping)
-						go func() {
-							if serveEnt.otherconn != nil {
-								updateServerEnt(id, serveEnt.otherconn)
-							}
-							wg.Done()
-						}()
-						time.Sleep(halfping)
-						//wg.Wait()
-						serveEnt.busy = false
-					}()
-
-				}
-				conMutex.Lock()
-			}
-			conMutex.Unlock()
-			//time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
