@@ -114,8 +114,6 @@ func main() {
 				serveEnt.otherconn = conno
 				otherconn = serveEnt.entconn
 				myid = id
-				//conMutex.Unlock()
-				//return
 			}
 		}
 		conMutex.Unlock()
@@ -131,9 +129,12 @@ func main() {
 			conMutex.Lock()
 			connections[mapid] = servEnt
 			conMutex.Unlock()
-			err := updateServerEnt(mapid, conno)
-			if err != nil{
-				log.Println("failed initial connection")
+
+			toSend := gamecore.LocationList{}
+			toSend.YourPNum = fmt.Sprintf("%p", mapid)
+			err := wsjson.Write(context.Background(), conno, toSend)
+			if err != nil {
+				log.Println(err)
 			}
 			return
 		}

@@ -6,7 +6,6 @@ import (
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
-	"time"
 )
 
 var socketConnection *websocket.Conn
@@ -27,11 +26,7 @@ func closeConn() {
 	}
 }
 
-var resetChan = make(chan bool)
-
 func connectToServer() {
-	//ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	//defer cancel()
 
 	socketURL := "ws://localhost:8080/ws"
 	var err error
@@ -40,7 +35,24 @@ func connectToServer() {
 		log.Println(err)
 		return
 	}
+	var v LocationList
+	err1 := wsjson.Read(context.Background(), socketConnection, &v)
+	if err1 != nil {
+		log.Println(err1)
+		closeConn()
+		socketConnection = nil
+		return
+	}
+	myPNum = v.YourPNum
+	clearEntities()
 
+
+	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
+	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	go func() {
 		for {
 			var v LocationList
@@ -57,15 +69,6 @@ func connectToServer() {
 			receiveChan <- ss
 		}
 	}()
-	resetChan <- true
-	time.Sleep(1000 * time.Millisecond)
-	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
-	//var err error
-	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
 	go func() {
 		for {
 			var v LocationList
@@ -85,8 +88,8 @@ func connectToServer() {
 }
 
 func clearEntities() {
-	select {
-	case _ = <-resetChan:
+	//select {
+	//case _ = <-resetChan:
 		movers = make(map[*entityid]*acceleratingEnt)
 		solids = make(map[*entityid]*shape)
 		wepBlockers = make(map[*entityid]*shape)
@@ -99,8 +102,8 @@ func clearEntities() {
 		hitBoxes = make(map[*entityid]*shape)
 		myDeathable.hp.CurrentHP = -1
 		placeMap()
-	default:
-	}
+	//default:
+	//}
 }
 var myPNum string
 func socketReceive() {
@@ -114,8 +117,6 @@ func socketReceive() {
 	case msg := <-receiveChan:
 		log.Printf("receiveChan: %+v", msg)
 
-		myPNum = msg.ll.YourPNum
-		clearEntities()
 		pingFrames = receiveCount
 		receiveCount = 0
 		receiveDebug = ""
