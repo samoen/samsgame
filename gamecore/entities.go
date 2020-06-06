@@ -145,7 +145,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	addBasicSprite(hBarSprite, hBarEnt)
 
 	if isMe {
-		addPlayerControlled(accelplayer, playerid)
 		centerOn = accelplayer.rect
 		mySlasher = playerSlasher
 		myAccelEnt = accelplayer

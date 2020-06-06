@@ -217,6 +217,21 @@ func deathSystemwork() {
 	}
 }
 
+type Directions struct {
+	Right bool
+	Down  bool
+	Left  bool
+	Up    bool
+}
+
+func updatePlayerControl() {
+	mySlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
+	mySlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
+	mySlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
+	mySlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
+	mySlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
+}
+
 func eliminate(id *entityid) {
 
 	for _, sys := range id.systems {
@@ -239,8 +254,6 @@ func eliminate(id *entityid) {
 				eliminate(d.hBarid)
 			}
 			delete(deathables, id)
-		case playerControlled:
-			delete(playerControllables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
 		}

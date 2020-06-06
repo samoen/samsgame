@@ -38,7 +38,6 @@ const (
 	spriteRenderable
 	solidCollider
 	enemyControlled
-	playerControlled
 	abilityActivator
 	hurtable
 	weaponBlocker
