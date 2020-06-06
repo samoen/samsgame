@@ -36,9 +36,52 @@ func addSlasher(id *entityid, b *slasher) {
 }
 
 func slashersWork() {
-
+	rms := interpolating
+	if receiveCount > interpTime {
+		rms = deadreckoning
+	}
+	if receiveCount > interpTime + deathreckTime{
+		rms = momentumOnly
+	}
 	for slasherid, bot := range slashers {
 		bot := bot
+		if slasherid.remote {
+			switch rms {
+			case interpolating:
+				var newplace location
+				if receiveCount == interpTime {
+					newplace = bot.ent.endpoint
+				}else{
+					diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x)/interpTime
+					diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y)/interpTime
+					newplace = bot.ent.rect.location
+					newplace.x += diffx
+					newplace.y += diffy
+				}
+				checkrect := newRectangle(newplace, bot.ent.rect.dimens)
+				if !normalcollides(*checkrect.shape, solids, slasherid) {
+					bot.ent.rect.refreshShape(newplace)
+				}
+			case deadreckoning:
+				bot.ent.moment = calcMomentum(*bot.ent)
+				moveCollide(bot.ent, slasherid)
+			case momentumOnly:
+				//if receiveCount > pingFrames {
+				bot.ent.directions.Down = false
+				bot.ent.directions.Left = false
+				bot.ent.directions.Right = false
+				bot.ent.directions.Up = false
+				//}
+				bot.ent.moment = calcMomentum(*bot.ent)
+				moveCollide(bot.ent, slasherid)
+			}
+
+		}
+		if !slasherid.remote{
+			bot.ent.moment = calcMomentum(*bot.ent)
+			moveCollide(bot.ent, slasherid)
+		}
+		
 		if !slasherid.remote && !bot.swangin {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
@@ -70,26 +113,18 @@ func slashersWork() {
 			bot.cooldownCount = 60
 			bot.pivShape.alreadyHit = make(map[*entityid]bool)
 
-			//if slasherid.remote {
-			//	bot.pivShape.animationCount = bot.startangle
-			//}
-			//if !slasherid.remote {
-				bot.pivShape.animationCount = bot.startangle + 2.1
-			//}
+			bot.pivShape.animationCount = bot.startangle + 2.1
 
 			bot.swangin = true
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
 			bs := &baseSprite{}
-			bs.layer = 1
 			bs.bOps = &ebiten.DrawImageOptions{}
 			bs.sprite = images.sword
 			addBasicSprite(bs, bot.wepid)
-			addHitbox(bot.pivShape.pivoterShape,bot.wepid)
+			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 		}
-		//bot.ent.ignoreflip = bot.swangin
 		if bot.swangin {
-
 			bot.pivShape.animationCount -= axeRotateSpeed
 			bot.pivShape.makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
@@ -112,11 +147,11 @@ func slashersWork() {
 			if arcProgress > axeArc {
 				bot.swangin = false
 				eliminate(bot.wepid)
-			} else if arcProgress < axeArc * 0.3 {
+			} else if arcProgress < axeArc*0.3 {
 				bot.pivShape.bladeLength += 4
 			} else if arcProgress > axeArc*0.8 {
 				bot.pivShape.bladeLength -= 3
-			}else{
+			} else {
 				bot.pivShape.bladeLength = maxAxeLength
 			}
 		}
@@ -190,8 +225,6 @@ func eliminate(id *entityid) {
 			delete(basicSprites, id)
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
-		case moveCollider:
-			delete(movers, id)
 		case solidCollider:
 			delete(solids, id)
 		case enemyControlled:

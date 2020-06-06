@@ -36,7 +36,6 @@ type sysIndex int
 const (
 	hitBoxRenderable sysIndex = iota
 	spriteRenderable
-	moveCollider
 	solidCollider
 	enemyControlled
 	playerControlled

@@ -46,8 +46,7 @@ func connectToServer() {
 	myPNum = v.YourPNum
 	clearEntities()
 
-
-	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s",myPNum)
+	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s", myPNum)
 	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
@@ -88,24 +87,21 @@ func connectToServer() {
 }
 
 func clearEntities() {
-	//select {
-	//case _ = <-resetChan:
-		movers = make(map[*entityid]*acceleratingEnt)
-		solids = make(map[*entityid]*shape)
-		wepBlockers = make(map[*entityid]*shape)
-		slashers = make(map[*entityid]*slasher)
-		basicSprites = make(map[*entityid]*baseSprite)
-		deathables = make(map[*entityid]*deathable)
-		deathables = make(map[*entityid]*deathable)
-		playerControllables = make(map[*entityid]*acceleratingEnt)
-		enemyControllers = make(map[*entityid]*enemyController)
-		hitBoxes = make(map[*entityid]*shape)
-		myDeathable.hp.CurrentHP = -1
-		placeMap()
-	//default:
-	//}
+	solids = make(map[*entityid]*shape)
+	wepBlockers = make(map[*entityid]*shape)
+	slashers = make(map[*entityid]*slasher)
+	basicSprites = make(map[*entityid]*baseSprite)
+	deathables = make(map[*entityid]*deathable)
+	deathables = make(map[*entityid]*deathable)
+	playerControllables = make(map[*entityid]*acceleratingEnt)
+	enemyControllers = make(map[*entityid]*enemyController)
+	hitBoxes = make(map[*entityid]*shape)
+	myDeathable.hp.CurrentHP = -1
+	placeMap()
 }
+
 var myPNum string
+
 func socketReceive() {
 
 	if socketConnection == nil {
@@ -147,10 +143,10 @@ func socketReceive() {
 			//diffx := l.Loc.X - movers[res].rect.location.x
 			//diffy := l.Loc.Y - movers[res].rect.location.y
 			//movers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
-			movers[res].baseloc = movers[res].rect.location
-			movers[res].endpoint = location{l.Loc.X, l.Loc.Y}
-			movers[res].directions = l.ServMessage.Mydir
-			movers[res].moment = l.ServMessage.Mymom
+			slashers[res].ent.baseloc = slashers[res].ent.rect.location
+			slashers[res].ent.endpoint = location{l.Loc.X, l.Loc.Y}
+			slashers[res].ent.directions = l.ServMessage.Mydir
+			slashers[res].ent.moment = l.ServMessage.Mymom
 			slashers[res].startangle = l.ServMessage.Myaxe.Startangle
 			slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
 			if deathables[res].skipHpUpdate > 0 {

@@ -4,7 +4,6 @@ import (
 	"math"
 )
 
-var movers = make(map[*entityid]*acceleratingEnt)
 var solids = make(map[*entityid]*shape)
 
 type Momentum struct {
@@ -25,11 +24,6 @@ type acceleratingEnt struct {
 	destination  location
 	baseloc      location
 	endpoint     location
-}
-
-func addMoveCollider(p *acceleratingEnt, id *entityid) {
-	movers[id] = p
-	id.systems = append(id.systems, moveCollider)
 }
 
 func addSolid(s *shape, id *entityid) {
@@ -179,50 +173,3 @@ const (
 )
 const interpTime = 4
 const deathreckTime = 4
-func collisionSystemWork() {
-	rms := interpolating
-	if receiveCount > interpTime {
-		rms = deadreckoning
-	}
-	if receiveCount > interpTime + deathreckTime{
-		rms = momentumOnly
-	}
-	for moverid, p := range movers {
-		if moverid.remote {
-			switch rms {
-			case interpolating:
-				var newplace location
-				if receiveCount == interpTime {
-					newplace = p.endpoint
-				}else{
-					diffx := (p.endpoint.x - p.baseloc.x)/interpTime
-					diffy := (p.endpoint.y - p.baseloc.y)/interpTime
-					newplace = p.rect.location
-					newplace.x += diffx
-					newplace.y += diffy
-				}
-				checkrect := newRectangle(newplace, p.rect.dimens)
-				if !normalcollides(*checkrect.shape, solids, moverid) {
-					p.rect.refreshShape(newplace)
-				}
-			case deadreckoning:
-				p.moment = calcMomentum(*p)
-				moveCollide(p, moverid)
-			case momentumOnly:
-				//if receiveCount > pingFrames {
-					p.directions.Down = false
-					p.directions.Left = false
-					p.directions.Right = false
-					p.directions.Up = false
-				//}
-				p.moment = calcMomentum(*p)
-				moveCollide(p, moverid)
-			}
-
-		}
-		if !moverid.remote{
-			p.moment = calcMomentum(*p)
-			moveCollide(p, moverid)
-		}
-	}
-}

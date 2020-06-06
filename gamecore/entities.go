@@ -3,13 +3,13 @@ package gamecore
 import (
 	"errors"
 	"fmt"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"image/color"
 	"log"
 	"nhooyr.io/websocket"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
@@ -40,7 +40,6 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	socketReceive()
 	updatePlayerControl()
 	enemyControlWork()
-	collisionSystemWork()
 	slashersWork()
 	deathSystemwork()
 	updateSprites()
@@ -64,7 +63,7 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 	)
 }
 
-func (g *SamGame) Layout(outsideWidth, outsideHeight int) (w, h int) {
+func (g *SamGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 	//ScreenWidth = outsideWidth
 	//ScreenHeight = outsideHeight
 	return ScreenWidth, ScreenHeight
@@ -129,7 +128,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	accelplayer.tracktion = 3
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
-	addMoveCollider(accelplayer, playerid)
 	addSolid(accelplayer.rect.shape, playerid)
 	addHitbox(accelplayer.rect.shape, playerid)
 	playerSlasher := newSlasher(accelplayer)
@@ -141,7 +139,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 
 	hBarEnt := &entityid{}
 	hBarSprite := &baseSprite{}
-	hBarSprite.layer = 3
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
@@ -156,7 +153,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	}
 
 	ps := &baseSprite{}
-	ps.layer = 2
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = images.playerStand
 	addBasicSprite(ps, playerid)
@@ -179,9 +175,9 @@ func ClientInit() {
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
 		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
-		if a, ok := movers[enemyid]; ok {
+		if a, ok := slashers[enemyid]; ok {
 			eController := &enemyController{}
-			eController.aEnt = a
+			eController.aEnt = a.ent
 			addEnemyController(eController, enemyid)
 		}
 	}

@@ -12,7 +12,6 @@ import (
 type baseSprite struct {
 	sprite *ebiten.Image
 	bOps   *ebiten.DrawImageOptions
-	layer  int
 	yaxis  int
 }
 
@@ -164,7 +163,6 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 	toAdd := ebiten.GeoM{}
 	toAdd.Scale(wRatio, hRatio)
 	ops.GeoM.Add(toAdd)
-	//ops.GeoM.Scale(wRatio, hRatio)
 }
 
 func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOptions) {
@@ -199,15 +197,8 @@ func updateSprites() {
 		if slasher, ok := slashers[pid]; ok {
 			bs.yaxis = rectCenterPoint(*slasher.ent.rect).y
 
-
-			flipped := false
-			if math.Abs(slasher.startangle) > math.Pi/2 {
-				flipped = true
-			}
-
 			spriteSelect := images.empty
 			tolerance := math.Pi / 9
-
 			if slasher.swangin {
 				spriteSelect = images.playerSwing
 			}else if math.Abs(slasher.startangle) < tolerance {
@@ -230,25 +221,12 @@ func updateSprites() {
 
 			bs.sprite = spriteSelect
 
-			//if !slasher.ent.ignoreflip {
-			//	if slasher.ent.directions.Left && !slasher.ent.directions.Right {
-			//		slasher.ent.lastflip = true
-			//	}
-			//	if slasher.ent.directions.Right && !slasher.ent.directions.Left {
-			//		slasher.ent.lastflip = false
-			//	}
-			//}
 			intverted := 1
-			if flipped {
+			if math.Abs(slasher.startangle) > math.Pi/2 {
 				intverted = -1
-				//invertGeom := ebiten.GeoM{}
-				//invertGeom.Scale(-1, 1)
-
 				flipTrans := ebiten.GeoM{}
 				flipTrans.Translate(float64(-slasher.ent.rect.dimens.width-(slasher.ent.rect.dimens.width/2)), 0)
 				bs.bOps.GeoM.Add(flipTrans)
-
-				//bs.bOps.GeoM.Add(invertGeom)
 				bs.bOps.GeoM.Scale(-1, 1)
 			}
 			scaleto := dimens{}
@@ -282,11 +260,6 @@ func updateSprites() {
 			}
 		}
 
-		//if p, ok := movers[pid]; ok {
-		//
-		//
-		//
-		//}
 		if mDeathable, ok := deathables[pid]; ok {
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
@@ -297,18 +270,7 @@ func updateSprites() {
 				cameraShift(healthbarlocation, offset, subbs.bOps)
 			}
 		}
-		//if bot, ok := slashers[pid]; ok {
-		//	
-		//}
 	}
-	//toRender = nil
-	//for i := 0; i < 4; i++ {
-	//	for _, bs := range basicSprites {
-	//		if bs.layer == i {
-	//			toRender = append(toRender, *bs)
-	//		}
-	//	}
-	//}
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})
