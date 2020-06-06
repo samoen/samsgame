@@ -126,7 +126,7 @@ func slashersWork() {
 		}
 		if bot.swangin {
 			bot.pivShape.animationCount -= axeRotateSpeed
-			bot.pivShape.makeAxe(bot.pivShape.animationCount, *bot.pivShape.pivotPoint)
+			bot.pivShape.makeAxe()
 			blocked := checkBlocker(*bot.pivShape.pivoterShape)
 			if !blocked {
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
