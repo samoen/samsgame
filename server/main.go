@@ -28,6 +28,7 @@ type ServerEntity struct {
 func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 	timer1 := time.NewTimer(300 * time.Millisecond)
 	var locs []gamecore.LocWithPNum
+	conMutex.Lock()
 	for subcon, loc := range connections {
 		if subcon == mapid {
 			continue
@@ -51,6 +52,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 
 		locs = append(locs, locWithP)
 	}
+	conMutex.Unlock()
 	toSend := gamecore.LocationList{}
 	toSend.Locs = locs
 	toSend.YourPNum = fmt.Sprintf("%p", mapid)
