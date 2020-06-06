@@ -166,9 +166,9 @@ func socketReceive() {
 		}
 		message := ServerMessage{}
 		message.MyPNum = msg.ll.YourPNum
-		message.Myloc = ServerLocation{myAccelEnt.rect.location.x, myAccelEnt.rect.location.y}
-		message.Mymom = myAccelEnt.moment
-		message.Mydir = myAccelEnt.directions
+		message.Myloc = ServerLocation{mySlasher.ent.rect.location.x, mySlasher.ent.rect.location.y}
+		message.Mymom = mySlasher.ent.moment
+		message.Mydir = mySlasher.ent.directions
 		messageWep := Weapon{}
 		messageWep.Dmg = mySlasher.pivShape.damage
 		messageWep.Swinging = mySlasher.swangSinceSend
