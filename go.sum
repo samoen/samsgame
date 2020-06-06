@@ -19,8 +19,8 @@ github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/gorilla/websocket v1.4.1 h1:q7AeDBpnBk8AogcD4DSag/Ukw/KV+YhzLj2bP5HvKCM=
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/hajimehoshi/bitmapfont v1.2.0/go.mod h1:h9QrPk6Ktb2neObTlAbma6Ini1xgMjbJ3w7ysmD7IOU=
-github.com/hajimehoshi/ebiten v1.11.0 h1:+pIxfzfVgRbHGM7wBAJtgzPiWiZopA7lyIKNQqc9amk=
-github.com/hajimehoshi/ebiten v1.11.0/go.mod h1:aDEhx0K9gSpXw3Cxf2hCXDxPSoF8vgjNqKxrZa/B4Dg=
+github.com/hajimehoshi/ebiten v1.11.2 h1:4oixxPh5DuSNlmL/Q4LIOGFXCY8uLC+pcxOnqAGbwEY=
+github.com/hajimehoshi/ebiten v1.11.2/go.mod h1:aDEhx0K9gSpXw3Cxf2hCXDxPSoF8vgjNqKxrZa/B4Dg=
 github.com/hajimehoshi/go-mp3 v0.2.1 h1:DH4ns3cPv39n3cs8MPcAlWqPeAwLCK8iNgqvg0QBWI8=
 github.com/hajimehoshi/go-mp3 v0.2.1/go.mod h1:Rr+2P46iH6PwTPVgSsEwBkon0CK5DxCAeX/Rp65DCTE=
 github.com/hajimehoshi/oto v0.3.4/go.mod h1:PgjqsBJff0efqL2nlMJidJgVJywLn6M4y8PI4TfeWfA=
