@@ -92,7 +92,6 @@ func clearEntities() {
 	slashers = make(map[*entityid]*slasher)
 	basicSprites = make(map[*entityid]*baseSprite)
 	deathables = make(map[*entityid]*deathable)
-	deathables = make(map[*entityid]*deathable)
 	enemyControllers = make(map[*entityid]*enemyController)
 	hitBoxes = make(map[*entityid]*shape)
 	myDeathable.hp.CurrentHP = -1
@@ -152,14 +151,18 @@ func socketReceive() {
 				deathables[res].skipHpUpdate--
 			} else {
 				if l.ServMessage.Myhealth.CurrentHP < deathables[res].hp.CurrentHP {
-					deathables[res].gotHit = true
+					deathables[res].redScale = 10
 				}
 				deathables[res].hp = l.ServMessage.Myhealth
 			}
 
 			if l.YouCopped {
-				myDeathable.gotHit = true
+				myDeathable.redScale = 10
 				myDeathable.hp.CurrentHP -= l.ServMessage.Myaxe.Dmg
+				if myDeathable.hp.CurrentHP < 1 {
+					eliminate(myId)
+				}
+
 				//myDeathable.hp.CurrentHP--
 			}
 			//}

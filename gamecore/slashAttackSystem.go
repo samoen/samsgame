@@ -131,14 +131,16 @@ func slashersWork() {
 			if !blocked {
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
 					if !slasherid.remote {
-						//if !slashee.remote {
-						slashee.gotHit = true
-						//slashee.hp.CurrentHP--
+						slashee.redScale = 10
 						slashee.hp.CurrentHP -= bot.pivShape.damage
 						slashee.skipHpUpdate = 2
-						//}
 						bot.pivShape.alreadyHit[slasheeid] = true
 						bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+
+						if slashee.hp.CurrentHP < 1 && !slasheeid.remote {
+							eliminate(slasheeid)
+						}
+
 					}
 				}
 			}
@@ -166,7 +168,6 @@ const (
 )
 
 type deathable struct {
-	gotHit         bool
 	deathableShape *rectangle
 	redScale       int
 	hp             Hitpoints
@@ -194,27 +195,6 @@ func respawnsWork() {
 		return
 	}
 	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
-}
-
-func deathSystemwork() {
-	for _, mDeathable := range deathables {
-		if mDeathable.redScale > 0 {
-			mDeathable.redScale--
-		}
-		if mDeathable.gotHit {
-			mDeathable.redScale = 10
-			mDeathable.gotHit = false
-			//mDeathable.hp.CurrentHP--
-		}
-
-	}
-
-	for dID, mDeathable := range deathables {
-		if mDeathable.hp.CurrentHP < 1 && !dID.remote {
-			eliminate(dID)
-		}
-
-	}
 }
 
 type Directions struct {

@@ -261,6 +261,9 @@ func updateSprites() {
 		}
 
 		if mDeathable, ok := deathables[pid]; ok {
+			if mDeathable.redScale > 0 {
+				mDeathable.redScale--
+			}
 			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
 			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
 				subbs.yaxis = rectCenterPoint(*mDeathable.deathableShape).y + 10

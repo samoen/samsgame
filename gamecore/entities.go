@@ -41,7 +41,6 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	updatePlayerControl()
 	enemyControlWork()
 	slashersWork()
-	deathSystemwork()
 	updateSprites()
 	return nil
 }
@@ -107,6 +106,7 @@ type ServerLocation struct {
 
 var mySlasher *slasher
 var myDeathable *deathable
+var myId *entityid
 
 func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool) {
 	accelplayer := &acceleratingEnt{}
@@ -147,6 +147,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 		centerOn = accelplayer.rect
 		mySlasher = playerSlasher
 		myDeathable = pDeathable
+		myId = playerid
 	}
 
 	ps := &baseSprite{}
