@@ -112,47 +112,56 @@ func socketReceive() {
 		receiveCount = 0
 		receiveDebug = ""
 	found:
-		for pnum, rm := range otherPlayers {
+		for rpid, rp := range remotePlayers {
 			for _, l := range msg.ll.Locs {
-				if l.MyPNum == pnum {
+				if l.MyPNum == rp.servId {
 					continue found
 				}
 			}
-			eliminate(rm)
-			delete(otherPlayers, pnum)
+			eliminate(rpid)
 		}
 
 		for _, l := range msg.ll.Locs {
-			if _, ok := otherPlayers[l.MyPNum]; !ok {
+			exists := false
+			for _, rp := range remotePlayers {
+				if l.MyPNum == rp.servId {
+					exists = true
+					break
+				}
+			}
+			if !exists {
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
-				otherPlayers[l.MyPNum] = newOtherPlayer
 				remoteP := addPlayerEntity(newOtherPlayer, location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
-				addRemotePlayer(newOtherPlayer,remoteP)
+				remoteP.servId = l.MyPNum
+				addRemotePlayer(newOtherPlayer, remoteP)
 			}
-			res := otherPlayers[l.MyPNum]
-			remotePlayers[res].ent.baseloc = remotePlayers[res].ent.rect.location
-			remotePlayers[res].ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
-			remotePlayers[res].ent.directions = l.Mydir
-			remotePlayers[res].ent.moment = l.Mymom
-			remotePlayers[res].startangle = l.Myaxe.Startangle
-			remotePlayers[res].ent.atkButton = l.Myaxe.Swinging
-			if remotePlayers[res].deth.skipHpUpdate > 0 {
-				remotePlayers[res].deth.skipHpUpdate--
-			} else {
-				if l.Myhealth.CurrentHP < remotePlayers[res].deth.hp.CurrentHP {
-					remotePlayers[res].deth.redScale = 10
-				}
-				remotePlayers[res].deth.hp = l.Myhealth
-			}
-			for _, hitid := range l.Myaxe.IHit {
-				if hitid == myPNum {
-					mySlasher.deth.redScale = 10
-					mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
-					if mySlasher.deth.hp.CurrentHP < 1 {
-						eliminate(myId)
+			for _, rp := range remotePlayers {
+				if l.MyPNum == rp.servId {
+					rp.ent.baseloc = rp.ent.rect.location
+					rp.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
+					rp.ent.directions = l.Mydir
+					rp.ent.moment = l.Mymom
+					rp.startangle = l.Myaxe.Startangle
+					rp.ent.atkButton = l.Myaxe.Swinging
+					if rp.deth.skipHpUpdate > 0 {
+						rp.deth.skipHpUpdate--
+					} else {
+						if l.Myhealth.CurrentHP < rp.deth.hp.CurrentHP {
+							rp.deth.redScale = 10
+						}
+						rp.deth.hp = l.Myhealth
 					}
-					break
+					for _, hitid := range l.Myaxe.IHit {
+						if hitid == myPNum {
+							mySlasher.deth.redScale = 10
+							mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+							if mySlasher.deth.hp.CurrentHP < 1 {
+								eliminate(myId)
+							}
+							break
+						}
+					}
 				}
 			}
 		}
@@ -166,10 +175,11 @@ func socketReceive() {
 		messageWep.Swinging = mySlasher.swangSinceSend
 		messageWep.Startangle = mySlasher.startangle
 		var hitlist []string
-		for serverid, localid := range otherPlayers {
-			for _, hitlocal := range mySlasher.hitsToSend {
-				if localid == hitlocal {
-					hitlist = append(hitlist, serverid)
+
+		for _, hitlocal := range mySlasher.hitsToSend {
+			for _, rp := range remotePlayers {
+				if rp.servId == hitlocal {
+					hitlist = append(hitlist, rp.servId)
 				}
 			}
 		}

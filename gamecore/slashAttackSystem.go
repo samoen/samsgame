@@ -16,7 +16,8 @@ type slasher struct {
 	swangin        bool
 	swangSinceSend bool
 	pivShape       *pivotingShape
-	hitsToSend     []*entityid
+	hitsToSend     []string
+	servId         string
 }
 
 var slashers = make(map[*entityid]*slasher)
@@ -160,7 +161,7 @@ func slashersWork() {
 				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
 				slashee.deth.skipHpUpdate = 2
 				bot.pivShape.alreadyHit[slasheeid] = true
-				bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 				//}
 				//}
 			}
@@ -168,7 +169,7 @@ func slashersWork() {
 				slashee.deth.redScale = 10
 				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
 				bot.pivShape.alreadyHit[slasheeid] = true
-				bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 
 				if slashee.deth.hp.CurrentHP < 1 {
 					eliminate(slasheeid)
