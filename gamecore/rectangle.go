@@ -34,9 +34,7 @@ func (l line) intersects(l2 line) (int, int, bool) {
 type sysIndex int
 
 const (
-	hitBoxRenderable sysIndex = iota
-	solidCollider
-	enemyControlled
+	enemyControlled sysIndex = iota
 	abilityActivator
 	remotePlayer
 	weaponBlocker
@@ -52,12 +50,36 @@ func newShape() *shape {
 }
 
 func normalcollides(checkcopy shape, entities map[*entityid]*shape, exclude *entityid) bool {
-	for solidID, obj := range entities {
+	for solidID, obj := range wepBlockers {
 		if solidID == exclude {
 			continue
 		}
 		for _, li := range checkcopy.lines {
 			for _, subline := range obj.lines {
+				if _, _, intersects := subline.intersects(li); intersects {
+					return true
+				}
+			}
+		}
+	}
+	for solidID, obj := range slashers {
+		if solidID == exclude {
+			continue
+		}
+		for _, li := range checkcopy.lines {
+			for _, subline := range obj.ent.rect.shape.lines {
+				if _, _, intersects := subline.intersects(li); intersects {
+					return true
+				}
+			}
+		}
+	}
+	for solidID, obj := range remotePlayers {
+		if solidID == exclude {
+			continue
+		}
+		for _, li := range checkcopy.lines {
+			for _, subline := range obj.ent.rect.shape.lines {
 				if _, _, intersects := subline.intersects(li); intersects {
 					return true
 				}

@@ -92,7 +92,6 @@ func clearEntities() {
 	slashers = make(map[*entityid]*slasher)
 	remotePlayers = make(map[*entityid]*slasher)
 	enemyControllers = make(map[*entityid]*enemyController)
-	hitBoxes = make(map[*entityid]*shape)
 	mySlasher.deth.hp.CurrentHP = -1
 	placeMap()
 }

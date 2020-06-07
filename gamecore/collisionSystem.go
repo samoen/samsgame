@@ -26,11 +26,6 @@ type acceleratingEnt struct {
 	endpoint     location
 }
 
-func addSolid(s *shape, id *entityid) {
-	solids[id] = s
-	id.systems = append(id.systems, solidCollider)
-}
-
 func calcMomentum(p acceleratingEnt) Momentum {
 
 	xmov := 0

@@ -61,7 +61,7 @@ func handleSwing(bot *slasher) bool {
 		bot.swangin = true
 		bot.swangSinceSend = true
 		bot.pivShape.startCount = bot.pivShape.animationCount
-		addHitbox(bot.pivShape.pivoterShape, bot.wepid)
+		//addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 	}
 	if bot.swangin {
 		bot.pivShape.animationCount -= axeRotateSpeed
@@ -242,10 +242,6 @@ func eliminate(id *entityid) {
 
 	for _, sys := range id.systems {
 		switch sys {
-		case hitBoxRenderable:
-			delete(hitBoxes, id)
-		case solidCollider:
-			delete(solids, id)
 		case enemyControlled:
 			delete(enemyControllers, id)
 		case abilityActivator:

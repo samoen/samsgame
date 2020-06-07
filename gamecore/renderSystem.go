@@ -7,13 +7,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-var hitBoxes = make(map[*entityid]*shape)
-
-func addHitbox(s *shape, id *entityid) {
-	hitBoxes[id] = s
-	id.systems = append(id.systems, hitBoxRenderable)
-}
-
 func drawHitboxes(s *ebiten.Image) {
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
@@ -43,9 +36,29 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 
-	for _, shape := range hitBoxes {
+	for _, shape := range wepBlockers {
 		for _, l := range shape.lines {
 			samDrawLine(l)
+		}
+	}
+	for _, slshr := range slashers {
+		for _, l := range slshr.ent.rect.shape.lines {
+			samDrawLine(l)
+		}
+		if slshr.swangin {
+			for _, l := range slshr.pivShape.pivoterShape.lines {
+				samDrawLine(l)
+			}
+		}
+	}
+	for _, slshr := range remotePlayers {
+		for _, l := range slshr.ent.rect.shape.lines {
+			samDrawLine(l)
+		}
+		if slshr.swangin {
+			for _, l := range slshr.pivShape.pivoterShape.lines {
+				samDrawLine(l)
+			}
 		}
 	}
 }

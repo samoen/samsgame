@@ -126,8 +126,8 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	accelplayer.tracktion = 3
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
-	addSolid(accelplayer.rect.shape, playerid)
-	addHitbox(accelplayer.rect.shape, playerid)
+	//addSolid(accelplayer.rect.shape, playerid)
+	//addHitbox(accelplayer.rect.shape, playerid)
 	playerSlasher := newSlasher(accelplayer)
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
@@ -214,8 +214,6 @@ func placeMap() {
 		location{0, 0},
 		dimens{worldWidth, worldWidth},
 	)
-	addHitbox(worldBoundRect.shape, worldBoundaryID)
-	addSolid(worldBoundRect.shape, worldBoundaryID)
 	addBlocker(worldBoundRect.shape, worldBoundaryID)
 
 	diagonalWallID := &entityid{}
@@ -227,8 +225,6 @@ func placeMap() {
 		},
 	}
 
-	addHitbox(diagonalWall, diagonalWallID)
-	addSolid(diagonalWall, diagonalWallID)
 	addBlocker(diagonalWall, diagonalWallID)
 
 	lilRoomID := &entityid{}
@@ -237,11 +233,8 @@ func placeMap() {
 		dimens{70, 20},
 	)
 	addBlocker(lilRoom.shape, lilRoomID)
-	addHitbox(lilRoom.shape, lilRoomID)
-	addSolid(lilRoom.shape, lilRoomID)
 
 	anotherRoomID := &entityid{}
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	addHitbox(anotherRoom.shape, anotherRoomID)
-	addSolid(anotherRoom.shape, anotherRoomID)
+	addBlocker(anotherRoom.shape,anotherRoomID)
 }
