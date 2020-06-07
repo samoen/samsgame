@@ -87,7 +87,6 @@ func connectToServer() {
 }
 
 func clearEntities() {
-	solids = make(map[*entityid]*shape)
 	wepBlockers = make(map[*entityid]*shape)
 	slashers = make(map[*entityid]*slasher)
 	remotePlayers = make(map[*entityid]*slasher)

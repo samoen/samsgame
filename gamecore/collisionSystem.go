@@ -4,26 +4,24 @@ import (
 	"math"
 )
 
-var solids = make(map[*entityid]*shape)
-
 type Momentum struct {
 	Xaxis int
 	Yaxis int
 }
 
 type acceleratingEnt struct {
-	rect         *rectangle
-	moment       Momentum
-	tracktion    float64
-	agility      float64
-	moveSpeed    float64
-	directions   Directions
-	atkButton    bool
-	lastflip     bool
-	ignoreflip   bool
-	destination  location
-	baseloc      location
-	endpoint     location
+	rect        *rectangle
+	moment      Momentum
+	tracktion   float64
+	agility     float64
+	moveSpeed   float64
+	directions  Directions
+	atkButton   bool
+	lastflip    bool
+	ignoreflip  bool
+	destination location
+	baseloc     location
+	endpoint    location
 }
 
 func calcMomentum(p acceleratingEnt) Momentum {
@@ -129,7 +127,7 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 			checklocx := p.rect.location
 			checklocx.x += unitmovex
 			checkRect := newRectangle(checklocx, p.rect.dimens)
-			if !normalcollides(*checkRect.shape, solids, moverid) {
+			if !normalcollides(*checkRect.shape, moverid) {
 				p.rect.refreshShape(checklocx)
 			} else {
 				p.moment.Xaxis = 0
@@ -145,7 +143,7 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 			checklocy := checkrecty.location
 			checklocy.y += unitmovey
 			checkrecty.refreshShape(checklocy)
-			if !normalcollides(*checkrecty.shape, solids, moverid) {
+			if !normalcollides(*checkrecty.shape, moverid) {
 				p.rect.refreshShape(checklocy)
 			} else {
 				p.moment.Yaxis = 0
@@ -159,12 +157,13 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 		}
 	}
 }
+
 type remoteMoveState int
+
 const (
 	interpolating remoteMoveState = iota
 	deadreckoning
 	momentumOnly
-
 )
 const interpTime = 4
 const deathreckTime = 4

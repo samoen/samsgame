@@ -114,7 +114,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *sl
 		dimens{20, 40},
 	)
 	for {
-		if normalcollides(*accelplayer.rect.shape, solids, playerid) {
+		if normalcollides(*accelplayer.rect.shape, playerid) {
 			accelplayer.rect = newRectangle(
 				location{startloc.x, accelplayer.rect.location.y + 20},
 				dimens{20, 40},

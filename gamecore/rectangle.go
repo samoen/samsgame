@@ -49,7 +49,7 @@ func newShape() *shape {
 	return s
 }
 
-func normalcollides(checkcopy shape, entities map[*entityid]*shape, exclude *entityid) bool {
+func normalcollides(checkcopy shape, exclude *entityid) bool {
 	for solidID, obj := range wepBlockers {
 		if solidID == exclude {
 			continue

@@ -100,7 +100,7 @@ func remotePlayersWork() {
 				newplace.y += diffy
 			}
 			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape, solids, slasherid) {
+			if !normalcollides(*checkrect.shape, slasherid) {
 				bot.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
