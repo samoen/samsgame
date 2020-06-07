@@ -90,7 +90,6 @@ func clearEntities() {
 	solids = make(map[*entityid]*shape)
 	wepBlockers = make(map[*entityid]*shape)
 	slashers = make(map[*entityid]*slasher)
-	basicSprites = make(map[*entityid]*baseSprite)
 	enemyControllers = make(map[*entityid]*enemyController)
 	hitBoxes = make(map[*entityid]*shape)
 	myDeathable.hp.CurrentHP = -1

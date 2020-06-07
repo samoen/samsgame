@@ -107,13 +107,6 @@ func newImages(assetsDir string) (imagesStruct, error) {
 	return is, nil
 }
 
-var basicSprites = make(map[*entityid]*baseSprite)
-
-func addBasicSprite(ws *baseSprite, id *entityid) {
-	basicSprites[id] = ws
-	id.systems = append(id.systems, spriteRenderable)
-}
-
 var centerOn *rectangle
 
 func renderingCenter() location {
@@ -186,90 +179,96 @@ var toRender []*baseSprite
 func updateSprites() {
 	offset := renderOffset()
 	toRender = nil
-	for _, bs := range basicSprites {
-		bs.bOps.ColorM.Reset()
-		bs.bOps.GeoM.Reset()
-		toRender = append(toRender, bs)
+	for _, bs := range slashers {
+		bs.bsprit.bOps.GeoM.Reset()
+		bs.bsprit.bOps.ColorM.Reset()
+		toRender = append(toRender, bs.bsprit)
+
+		bs.hbarsprit.bOps.GeoM.Reset()
+		bs.hbarsprit.bOps.ColorM.Reset()
+		toRender = append(toRender, bs.hbarsprit)
+
+		if bs.swangin{
+			bs.wepsprit.bOps.GeoM.Reset()
+			bs.wepsprit.bOps.ColorM.Reset()
+			toRender = append(toRender, bs.wepsprit)
+		}
 	}
 
-	for pid, bs := range basicSprites {
+	for _, bs := range slashers {
 
-		if slasher, ok := slashers[pid]; ok {
-			if slasher.deth.redScale > 0 {
-				slasher.deth.redScale--
-			}
-			bs.bOps.ColorM.Translate(float64(slasher.deth.redScale), 0, 0, 0)
-			if subbs, ok := basicSprites[slasher.deth.hBarid]; ok {
-				subbs.yaxis = rectCenterPoint(*slasher.deth.deathableShape).y + 10
-				healthbarlocation := location{slasher.deth.deathableShape.location.x, slasher.deth.deathableShape.location.y - (slasher.deth.deathableShape.dimens.height / 2) - 10}
-				healthbardimenswidth := slasher.deth.hp.CurrentHP * slasher.deth.deathableShape.dimens.width / slasher.deth.hp.MaxHP
-				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
-				cameraShift(healthbarlocation, offset, subbs.bOps)
-			}
+		if bs.deth.redScale > 0 {
+			bs.deth.redScale--
+		}
+		bs.bsprit.bOps.ColorM.Translate(float64(bs.deth.redScale), 0, 0, 0)
+		bs.hbarsprit.yaxis = rectCenterPoint(*bs.deth.deathableShape).y + 10
+		healthbarlocation := location{bs.deth.deathableShape.location.x, bs.deth.deathableShape.location.y - (bs.deth.deathableShape.dimens.height / 2) - 10}
+		healthbardimenswidth := bs.deth.hp.CurrentHP * bs.deth.deathableShape.dimens.width / bs.deth.hp.MaxHP
+		scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps)
+		cameraShift(healthbarlocation, offset, bs.hbarsprit.bOps)
 
-			bs.yaxis = rectCenterPoint(*slasher.ent.rect).y
+		bs.bsprit.yaxis = rectCenterPoint(*bs.ent.rect).y
 
-			spriteSelect := images.empty
-			tolerance := math.Pi / 9
-			if slasher.swangin {
-				spriteSelect = images.playerSwing
-			}else if math.Abs(slasher.startangle) < tolerance {
-				spriteSelect = images.playerStand
-			} else if math.Abs(slasher.startangle-(math.Pi/4)) < tolerance {
-				spriteSelect = images.playerWalkDownAngle
-			} else if math.Abs(slasher.startangle-(math.Pi/2)) < tolerance {
-				spriteSelect = images.playerWalkDown
-			} else if math.Abs(slasher.startangle-(3*math.Pi/4)) < tolerance {
-				spriteSelect = images.playerWalkDownAngle
-			} else if math.Abs(slasher.startangle-(-3*math.Pi/4)) < tolerance {
-				spriteSelect = images.playerWalkUpAngle
-			}else if math.Abs(slasher.startangle-(-math.Pi/2)) < tolerance {
-				spriteSelect = images.playerWalkUp
-			}else if math.Abs(slasher.startangle-(-math.Pi/4)) < tolerance {
-				spriteSelect = images.playerWalkUpAngle
-			}else if math.Abs(slasher.startangle)-math.Pi < tolerance {
-				spriteSelect = images.playerStand
-			}
+		spriteSelect := images.empty
+		tolerance := math.Pi / 9
+		if bs.swangin {
+			spriteSelect = images.playerSwing
+		} else if math.Abs(bs.startangle) < tolerance {
+			spriteSelect = images.playerStand
+		} else if math.Abs(bs.startangle-(math.Pi/4)) < tolerance {
+			spriteSelect = images.playerWalkDownAngle
+		} else if math.Abs(bs.startangle-(math.Pi/2)) < tolerance {
+			spriteSelect = images.playerWalkDown
+		} else if math.Abs(bs.startangle-(3*math.Pi/4)) < tolerance {
+			spriteSelect = images.playerWalkDownAngle
+		} else if math.Abs(bs.startangle-(-3*math.Pi/4)) < tolerance {
+			spriteSelect = images.playerWalkUpAngle
+		} else if math.Abs(bs.startangle-(-math.Pi/2)) < tolerance {
+			spriteSelect = images.playerWalkUp
+		} else if math.Abs(bs.startangle-(-math.Pi/4)) < tolerance {
+			spriteSelect = images.playerWalkUpAngle
+		} else if math.Abs(bs.startangle)-math.Pi < tolerance {
+			spriteSelect = images.playerStand
+		}
 
-			bs.sprite = spriteSelect
+		bs.bsprit.sprite = spriteSelect
 
-			intverted := 1
-			if math.Abs(slasher.startangle) > math.Pi/2 {
-				intverted = -1
-				flipTrans := ebiten.GeoM{}
-				flipTrans.Translate(float64(-slasher.ent.rect.dimens.width-(slasher.ent.rect.dimens.width/2)), 0)
-				bs.bOps.GeoM.Add(flipTrans)
-				bs.bOps.GeoM.Scale(-1, 1)
-			}
-			scaleto := dimens{}
+		intverted := 1
+		if math.Abs(bs.startangle) > math.Pi/2 {
+			intverted = -1
+			flipTrans := ebiten.GeoM{}
+			flipTrans.Translate(float64(-bs.ent.rect.dimens.width-(bs.ent.rect.dimens.width/2)), 0)
+			bs.bsprit.bOps.GeoM.Add(flipTrans)
+			bs.bsprit.bOps.GeoM.Scale(-1, 1)
+		}
+		scaleto := dimens{}
 
-			scaleto.width = slasher.ent.rect.dimens.width
-			scaleto.width += (slasher.ent.rect.dimens.width / 2) * intverted
+		scaleto.width = bs.ent.rect.dimens.width
+		scaleto.width += (bs.ent.rect.dimens.width / 2) * intverted
 
-			scaleto.height = slasher.ent.rect.dimens.height
-			scaleto.height += (slasher.ent.rect.dimens.height / 2)
+		scaleto.height = bs.ent.rect.dimens.height
+		scaleto.height += (bs.ent.rect.dimens.height / 2)
 
-			shiftto := location{}
-			shiftto.x = slasher.ent.rect.location.x
-			shiftto.x -= (slasher.ent.rect.dimens.width / 4)
-			shiftto.y = slasher.ent.rect.location.y
-			shiftto.y -= (slasher.ent.rect.dimens.height / 2)
+		shiftto := location{}
+		shiftto.x = bs.ent.rect.location.x
+		shiftto.x -= (bs.ent.rect.dimens.width / 4)
+		shiftto.y = bs.ent.rect.location.y
+		shiftto.y -= (bs.ent.rect.dimens.height / 2)
 
-			scaleToDimension(scaleto, bs.sprite, bs.bOps)
-			cameraShift(shiftto, offset, bs.bOps)
+		scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps)
+		cameraShift(shiftto, offset, bs.bsprit.bOps)
 
-			if bs, ok := basicSprites[slasher.wepid]; ok {
-				_, imH := bs.sprite.Size()
-				bs.yaxis = slasher.pivShape.pivoterShape.lines[0].p2.y
-				ownerCenter := rectCenterPoint(*slasher.ent.rect)
-				cameraShift(ownerCenter, offset, bs.bOps)
-				addOp := ebiten.GeoM{}
-				hRatio := float64(slasher.pivShape.bladeLength+slasher.pivShape.bladeLength/4) / float64(imH)
-				addOp.Scale(hRatio, hRatio)
-				addOp.Translate(-float64(slasher.ent.rect.dimens.width)/2, 0)
-				addOp.Rotate(slasher.pivShape.animationCount - (math.Pi / 2))
-				bs.bOps.GeoM.Add(addOp)
-			}
+		if bs.swangin{
+			_, imH := bs.wepsprit.sprite.Size()
+			bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
+			ownerCenter := rectCenterPoint(*bs.ent.rect)
+			cameraShift(ownerCenter, offset, bs.wepsprit.bOps)
+			addOp := ebiten.GeoM{}
+			hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)
+			addOp.Scale(hRatio, hRatio)
+			addOp.Translate(-float64(bs.ent.rect.dimens.width)/2, 0)
+			addOp.Rotate(bs.pivShape.animationCount - (math.Pi / 2))
+			bs.wepsprit.bOps.GeoM.Add(addOp)
 		}
 
 	}

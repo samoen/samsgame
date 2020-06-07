@@ -142,7 +142,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
-	addBasicSprite(hBarSprite, hBarEnt)
+	playerSlasher.hbarsprit = hBarSprite
 
 	if isMe {
 		centerOn = accelplayer.rect
@@ -154,7 +154,12 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	ps := &baseSprite{}
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = images.playerStand
-	addBasicSprite(ps, playerid)
+	playerSlasher.bsprit = ps
+
+	bs := &baseSprite{}
+	bs.bOps = &ebiten.DrawImageOptions{}
+	bs.sprite = images.sword
+	playerSlasher.wepsprit = bs
 }
 
 func ClientInit() {

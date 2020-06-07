@@ -6,6 +6,9 @@ import (
 )
 
 type slasher struct {
+	bsprit         *baseSprite
+	wepsprit         *baseSprite
+	hbarsprit         *baseSprite
 	ent            *acceleratingEnt
 	deth           *deathable
 	startangle     float64
@@ -119,10 +122,10 @@ func slashersWork() {
 			bot.swangin = true
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
-			bs := &baseSprite{}
-			bs.bOps = &ebiten.DrawImageOptions{}
-			bs.sprite = images.sword
-			addBasicSprite(bs, bot.wepid)
+			//bs := &baseSprite{}
+			//bs.bOps = &ebiten.DrawImageOptions{}
+			//bs.sprite = images.sword
+			//bot.wepsprit = bs
 			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 		}
 		if bot.swangin {
@@ -210,8 +213,6 @@ func eliminate(id *entityid) {
 
 	for _, sys := range id.systems {
 		switch sys {
-		case spriteRenderable:
-			delete(basicSprites, id)
 		case hitBoxRenderable:
 			delete(hitBoxes, id)
 		case solidCollider:
