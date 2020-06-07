@@ -93,7 +93,7 @@ func clearEntities() {
 	remotePlayers = make(map[*entityid]*slasher)
 	enemyControllers = make(map[*entityid]*enemyController)
 	hitBoxes = make(map[*entityid]*shape)
-	myDeathable.hp.CurrentHP = -1
+	mySlasher.deth.hp.CurrentHP = -1
 	placeMap()
 }
 
@@ -155,15 +155,12 @@ func socketReceive() {
 			}
 
 			if l.YouCopped {
-				myDeathable.redScale = 10
-				myDeathable.hp.CurrentHP -= l.ServMessage.Myaxe.Dmg
-				if myDeathable.hp.CurrentHP < 1 {
+				mySlasher.deth.redScale = 10
+				mySlasher.deth.hp.CurrentHP -= l.ServMessage.Myaxe.Dmg
+				if mySlasher.deth.hp.CurrentHP < 1 {
 					eliminate(myId)
 				}
-
-				//myDeathable.hp.CurrentHP--
 			}
-			//}
 		}
 		message := ServerMessage{}
 		message.MyPNum = msg.ll.YourPNum
@@ -184,7 +181,7 @@ func socketReceive() {
 		}
 		messageWep.IHit = hitlist
 		message.Myaxe = messageWep
-		message.Myhealth = myDeathable.hp
+		message.Myhealth = mySlasher.deth.hp
 
 		mySlasher.hitsToSend = nil
 		mySlasher.swangSinceSend = false

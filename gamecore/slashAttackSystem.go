@@ -214,7 +214,7 @@ type Hitpoints struct {
 }
 
 func respawnsWork() {
-	if myDeathable.hp.CurrentHP > 0 {
+	if mySlasher.deth.hp.CurrentHP > 0 {
 		return
 	}
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {

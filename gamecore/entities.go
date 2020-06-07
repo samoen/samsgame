@@ -105,7 +105,6 @@ type ServerLocation struct {
 }
 
 var mySlasher *slasher
-var myDeathable *deathable
 var myId *entityid
 
 func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool, remote bool) {
@@ -150,7 +149,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	if isMe {
 		centerOn = accelplayer.rect
 		mySlasher = playerSlasher
-		myDeathable = pDeathable
 		myId = playerid
 	}
 
