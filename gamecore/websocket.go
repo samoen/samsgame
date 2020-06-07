@@ -89,7 +89,7 @@ func connectToServer() {
 func clearEntities() {
 	wepBlockers = make(map[*entityid]*shape)
 	slashers = make(map[*entityid]*slasher)
-	remotePlayers = make(map[*entityid]*slasher)
+	remotePlayers = make(map[string]*slasher)
 	enemyControllers = make(map[*entityid]*enemyController)
 	mySlasher.deth.hp.CurrentHP = -1
 	placeMap()
@@ -123,45 +123,36 @@ func socketReceive() {
 		}
 
 		for _, l := range msg.ll.Locs {
-			exists := false
-			for _, rp := range remotePlayers {
-				if l.MyPNum == rp.servId {
-					exists = true
-					break
-				}
-			}
-			if !exists {
+			if _,ok:=remotePlayers[l.MyPNum];!ok{
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				remoteP := addPlayerEntity(newOtherPlayer, location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
 				remoteP.servId = l.MyPNum
-				addRemotePlayer(newOtherPlayer, remoteP)
+				remotePlayers[l.MyPNum] = remoteP
 			}
-			for _, rp := range remotePlayers {
-				if l.MyPNum == rp.servId {
-					rp.ent.baseloc = rp.ent.rect.location
-					rp.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
-					rp.ent.directions = l.Mydir
-					rp.ent.moment = l.Mymom
-					rp.startangle = l.Myaxe.Startangle
-					rp.ent.atkButton = l.Myaxe.Swinging
-					if rp.deth.skipHpUpdate > 0 {
-						rp.deth.skipHpUpdate--
-					} else {
-						if l.Myhealth.CurrentHP < rp.deth.hp.CurrentHP {
-							rp.deth.redScale = 10
-						}
-						rp.deth.hp = l.Myhealth
+			if rp,ok:=remotePlayers[l.MyPNum];ok{
+				rp.ent.baseloc = rp.ent.rect.location
+				rp.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
+				rp.ent.directions = l.Mydir
+				rp.ent.moment = l.Mymom
+				rp.startangle = l.Myaxe.Startangle
+				rp.ent.atkButton = l.Myaxe.Swinging
+				if rp.deth.skipHpUpdate > 0 {
+					rp.deth.skipHpUpdate--
+				} else {
+					if l.Myhealth.CurrentHP < rp.deth.hp.CurrentHP {
+						rp.deth.redScale = 10
 					}
-					for _, hitid := range l.Myaxe.IHit {
-						if hitid == myPNum {
-							mySlasher.deth.redScale = 10
-							mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
-							if mySlasher.deth.hp.CurrentHP < 1 {
-								delete(slashers,myId)
-							}
-							break
+					rp.deth.hp = l.Myhealth
+				}
+				for _, hitid := range l.Myaxe.IHit {
+					if hitid == myPNum {
+						mySlasher.deth.redScale = 10
+						mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+						if mySlasher.deth.hp.CurrentHP < 1 {
+							delete(slashers,myId)
 						}
+						break
 					}
 				}
 			}

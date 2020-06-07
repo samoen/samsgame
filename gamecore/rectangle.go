@@ -40,7 +40,7 @@ func newShape() *shape {
 	return s
 }
 
-func normalcollides(checkcopy shape, exclude *entityid) bool {
+func normalcollides(checkcopy shape, exclude *entityid, remoteexclude string) bool {
 	for solidID, obj := range wepBlockers {
 		if solidID == exclude {
 			continue
@@ -66,7 +66,7 @@ func normalcollides(checkcopy shape, exclude *entityid) bool {
 		}
 	}
 	for solidID, obj := range remotePlayers {
-		if solidID == exclude {
+		if solidID == remoteexclude {
 			continue
 		}
 		for _, li := range checkcopy.lines {

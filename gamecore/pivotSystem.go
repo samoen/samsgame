@@ -1,6 +1,7 @@
 package gamecore
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -12,7 +13,7 @@ type pivotingShape struct {
 	pivoterShape   *shape
 	pivotPoint     *rectangle
 	animationCount float64
-	alreadyHit     map[*entityid]bool
+	alreadyHit     map[string]bool
 	startCount     float64
 	bladeLength    int
 	damage         int
@@ -61,12 +62,28 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	return result
 // }
 
-func checkSlashee(bot *pivotingShape, ownerid *entityid, slashables map[*entityid]*slasher) (bool, *slasher, *entityid) {
+func checkSlashee(bot *pivotingShape, slashables map[string]*slasher) (bool, *slasher, string) {
+	for slasheeid, slashee := range slashables {
+
+		if _, ok := bot.alreadyHit[slasheeid]; ok {
+			continue
+		}
+		for _, slasheeLine := range slashee.deth.deathableShape.shape.lines {
+			for _, bladeLine := range bot.pivoterShape.lines {
+				if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+					return true, slashee, slasheeid
+				}
+			}
+		}
+	}
+	return false, nil, ""
+}
+func checkLocalSlashee(bot *pivotingShape, ownerid *entityid, slashables map[*entityid]*slasher) (bool, *slasher, *entityid) {
 	for slasheeid, slashee := range slashables {
 		if slasheeid == ownerid {
 			continue
 		}
-		if _, ok := bot.alreadyHit[slasheeid]; ok {
+		if _, ok := bot.alreadyHit[fmt.Sprintf("%p", slasheeid)]; ok {
 			continue
 		}
 		for _, slasheeLine := range slashee.deth.deathableShape.shape.lines {

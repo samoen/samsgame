@@ -102,7 +102,7 @@ func calcMomentum(p acceleratingEnt) Momentum {
 	return p.moment
 }
 
-func moveCollide(p *acceleratingEnt, moverid *entityid) {
+func moveCollide(p *acceleratingEnt, moverid *entityid, remoteid string) {
 	unitmovex := 1
 	unitmovey := 1
 
@@ -127,7 +127,7 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 			checklocx := p.rect.location
 			checklocx.x += unitmovex
 			checkRect := newRectangle(checklocx, p.rect.dimens)
-			if !normalcollides(*checkRect.shape, moverid) {
+			if !normalcollides(*checkRect.shape, moverid,remoteid) {
 				p.rect.refreshShape(checklocx)
 			} else {
 				p.moment.Xaxis = 0
@@ -143,7 +143,7 @@ func moveCollide(p *acceleratingEnt, moverid *entityid) {
 			checklocy := checkrecty.location
 			checklocy.y += unitmovey
 			checkrecty.refreshShape(checklocy)
-			if !normalcollides(*checkrecty.shape, moverid) {
+			if !normalcollides(*checkrecty.shape, moverid,remoteid) {
 				p.rect.refreshShape(checklocy)
 			} else {
 				p.moment.Yaxis = 0

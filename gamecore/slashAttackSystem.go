@@ -1,6 +1,7 @@
 package gamecore
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"math"
 )
@@ -26,11 +27,7 @@ func addSlasher(id *entityid, b *slasher) {
 	slashers[id] = b
 }
 
-var remotePlayers = make(map[*entityid]*slasher)
-
-func addRemotePlayer(id *entityid, b *slasher) {
-	remotePlayers[id] = b
-}
+var remotePlayers = make(map[string]*slasher)
 
 func handleSwing(bot *slasher) bool {
 	if bot.cooldownCount > 0 {
@@ -40,7 +37,7 @@ func handleSwing(bot *slasher) bool {
 	if bot.ent.atkButton && bot.cooldownCount < 1 {
 		bot.pivShape.bladeLength = 5
 		bot.cooldownCount = 60
-		bot.pivShape.alreadyHit = make(map[*entityid]bool)
+		bot.pivShape.alreadyHit = make(map[string]bool)
 
 		bot.pivShape.animationCount = bot.startangle + 2.1
 
@@ -96,12 +93,12 @@ func remotePlayersWork() {
 				newplace.y += diffy
 			}
 			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape, slasherid) {
+			if !normalcollides(*checkrect.shape,nil, slasherid) {
 				bot.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
 			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent, slasherid)
+			moveCollide(bot.ent, nil,slasherid)
 		case momentumOnly:
 			//if receiveCount > pingFrames {
 			bot.ent.directions.Down = false
@@ -110,7 +107,7 @@ func remotePlayersWork() {
 			bot.ent.directions.Up = false
 			//}
 			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent, slasherid)
+			moveCollide(bot.ent,nil, slasherid)
 		}
 		handleSwing(bot)
 	}
@@ -121,7 +118,7 @@ func slashersWork() {
 		bot := bot
 
 		bot.ent.moment = calcMomentum(*bot.ent)
-		moveCollide(bot.ent, slasherid)
+		moveCollide(bot.ent, slasherid,"")
 
 		if !bot.swangin {
 			if bot.ent.directions.Down ||
@@ -147,7 +144,7 @@ func slashersWork() {
 		handleSwing(bot)
 
 		if bot.swangin {
-			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid, remotePlayers); ok {
+			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, remotePlayers); ok {
 				//blockx,blocky,blocked := checkBlocker(*bot.pivShape.pivoterShape)
 				//if blocked{
 				//	mecenter := rectCenterPoint(*bot.ent.rect)
@@ -163,17 +160,15 @@ func slashersWork() {
 				//}
 				//}
 			}
-			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid, slashers); ok {
+			if ok, slashee, slasheeid := checkLocalSlashee(bot.pivShape, slasherid, slashers); ok {
 				slashee.deth.redScale = 10
 				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-				bot.pivShape.alreadyHit[slasheeid] = true
+				bot.pivShape.alreadyHit[fmt.Sprintf("%p",slasheeid)] = true
 				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 
 				if slashee.deth.hp.CurrentHP < 1 {
 					delete(slashers,slasheeid)
 					delete(enemyControllers,slasheeid)
-					//eliminate(slasheeid)
-
 				}
 			}
 
