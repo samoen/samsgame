@@ -36,17 +36,17 @@ func addBlocker(b *shape, id *entityid) {
 	id.systems = append(id.systems, weaponBlocker)
 }
 
-func checkBlocker(sh shape) bool {
+func checkBlocker(sh shape) (int,int,bool) {
 	for _, blocker := range wepBlockers {
 		for _, blockerLine := range blocker.lines {
 			for _, bladeLine := range sh.lines {
-				if _, _, intersected := bladeLine.intersects(blockerLine); intersected {
-					return true
+				if x, y, intersected := bladeLine.intersects(blockerLine); intersected {
+					return x,y,true
 				}
 			}
 		}
 	}
-	return false
+	return 0,0,false
 }
 func newLinePolar(loc location, length int, angle float64) line {
 	xpos := int(float64(length)*math.Cos(angle)) + loc.x

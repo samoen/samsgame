@@ -7,8 +7,8 @@ import (
 
 type slasher struct {
 	bsprit         *baseSprite
-	wepsprit         *baseSprite
-	hbarsprit         *baseSprite
+	wepsprit       *baseSprite
+	hbarsprit      *baseSprite
 	ent            *acceleratingEnt
 	deth           *deathable
 	startangle     float64
@@ -122,30 +122,38 @@ func slashersWork() {
 			bot.swangin = true
 			bot.swangSinceSend = true
 			bot.pivShape.startCount = bot.pivShape.animationCount
-			//bs := &baseSprite{}
-			//bs.bOps = &ebiten.DrawImageOptions{}
-			//bs.sprite = images.sword
-			//bot.wepsprit = bs
 			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 		}
 		if bot.swangin {
 			bot.pivShape.animationCount -= axeRotateSpeed
 			bot.pivShape.makeAxe()
-			blocked := checkBlocker(*bot.pivShape.pivoterShape)
-			if !blocked {
+
+			if _, _, blocked := checkBlocker(*bot.pivShape.pivoterShape); blocked {
+				bot.swangin = false
+				eliminate(bot.wepid)
+				continue
+			}
+
+			if !slasherid.remote {
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
-					if !slasherid.remote {
-						slashee.deth.redScale = 10
-						slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-						slashee.deth.skipHpUpdate = 2
-						bot.pivShape.alreadyHit[slasheeid] = true
-						bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+					//blockx,blocky,blocked := checkBlocker(*bot.pivShape.pivoterShape)
+					//if blocked{
+					//	mecenter := rectCenterPoint(*bot.ent.rect)
+					//	blockdist := math.Abs(float64(mecenter.x - blockx))+math.Abs(float64(mecenter.y - blocky))
+					//	slasheecenter := rectCenterPoint(*slashee.ent.rect)
+					//	slasheedist := math.Abs(float64(mecenter.x - slasheecenter.x))+math.Abs(float64(mecenter.y - slasheecenter.y))
+					//	if blockdist > slasheedist{
+					slashee.deth.redScale = 10
+					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+					slashee.deth.skipHpUpdate = 2
+					bot.pivShape.alreadyHit[slasheeid] = true
+					bot.hitsToSend = append(bot.hitsToSend, slasheeid)
 
-						if slashee.deth.hp.CurrentHP < 1 && !slasheeid.remote {
-							eliminate(slasheeid)
-						}
-
+					if slashee.deth.hp.CurrentHP < 1 && !slasheeid.remote {
+						eliminate(slasheeid)
 					}
+					//}
+					//}
 				}
 			}
 			arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
