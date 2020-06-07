@@ -41,12 +41,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	enemyControlWork()
 	slashersWork()
 	remotePlayersWork()
-	updateSprites()
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
+	updateSprites()
 	renderEntSprites(screen)
 	drawHitboxes(screen)
 	ebitenutil.DebugPrintAt(
@@ -126,23 +126,18 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *sl
 	playerSlasher.pivShape.damage = 2
 	playerSlasher.pivShape.pivoterShape = newShape()
 	playerSlasher.pivShape.pivotPoint = playerSlasher.ent.rect
-	playerSlasher.wepid = &entityid{}
-
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
 	pDeathable.deathableShape = accelplayer.rect
 	playerSlasher.deth = pDeathable
-	hBarEnt := &entityid{}
 	hBarSprite := &baseSprite{}
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = images.empty
-	pDeathable.hBarid = hBarEnt
 	playerSlasher.hbarsprit = hBarSprite
 	ps := &baseSprite{}
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = images.playerStand
 	playerSlasher.bsprit = ps
-
 	bs := &baseSprite{}
 	bs.bOps = &ebiten.DrawImageOptions{}
 	bs.sprite = images.sword

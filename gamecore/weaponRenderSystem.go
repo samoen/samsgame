@@ -179,21 +179,6 @@ var offset location
 func updateSprites() {
 	offset = renderOffset()
 	toRender = nil
-	//for _, bs := range slashers {
-	//	bs.bsprit.bOps.GeoM.Reset()
-	//	bs.bsprit.bOps.ColorM.Reset()
-	//	toRender = append(toRender, bs.bsprit)
-	//
-	//	bs.hbarsprit.bOps.GeoM.Reset()
-	//	bs.hbarsprit.bOps.ColorM.Reset()
-	//	toRender = append(toRender, bs.hbarsprit)
-	//
-	//	if bs.swangin{
-	//		bs.wepsprit.bOps.GeoM.Reset()
-	//		bs.wepsprit.bOps.ColorM.Reset()
-	//		toRender = append(toRender, bs.wepsprit)
-	//	}
-	//}
 
 	for _, bs := range slashers {
 		updateSlasherSprite(bs)

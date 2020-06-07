@@ -15,7 +15,6 @@ type slasher struct {
 	cooldownCount  int
 	swangin        bool
 	swangSinceSend bool
-	wepid          *entityid
 	pivShape       *pivotingShape
 	hitsToSend     []*entityid
 }
@@ -57,7 +56,6 @@ func handleSwing(bot *slasher) bool {
 
 		if _, _, blocked := checkBlocker(*bot.pivShape.pivoterShape); blocked {
 			bot.swangin = false
-			eliminate(bot.wepid)
 			return true
 		}
 
@@ -65,7 +63,6 @@ func handleSwing(bot *slasher) bool {
 
 		if arcProgress > axeArc {
 			bot.swangin = false
-			eliminate(bot.wepid)
 			return true
 		} else if arcProgress < axeArc*0.3 {
 			bot.pivShape.bladeLength += 4
@@ -193,7 +190,6 @@ type deathable struct {
 	redScale       int
 	hp             Hitpoints
 	skipHpUpdate   int
-	hBarid         *entityid
 }
 
 type Hitpoints struct {
@@ -233,16 +229,8 @@ func eliminate(id *entityid) {
 		case enemyControlled:
 			delete(enemyControllers, id)
 		case abilityActivator:
-			if d, ok := slashers[id]; ok {
-				eliminate(d.wepid)
-				eliminate(d.deth.hBarid)
-			}
 			delete(slashers, id)
 		case remotePlayer:
-			if d, ok := remotePlayers[id]; ok {
-				eliminate(d.wepid)
-				eliminate(d.deth.hBarid)
-			}
 			delete(remotePlayers, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
