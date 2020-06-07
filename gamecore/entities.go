@@ -88,15 +88,8 @@ type Weapon struct {
 }
 
 type LocationList struct {
-	Locs     []LocWithPNum
+	Locs     []ServerMessage
 	YourPNum string
-}
-
-type LocWithPNum struct {
-	Loc         ServerLocation
-	PNum        string
-	ServMessage ServerMessage
-	YouCopped   bool
 }
 
 type ServerLocation struct {

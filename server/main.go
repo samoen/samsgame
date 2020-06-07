@@ -27,7 +27,7 @@ type ServerEntity struct {
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 	timer1 := time.NewTimer(300 * time.Millisecond)
-	var locs []gamecore.LocWithPNum
+	var locs []gamecore.ServerMessage
 	conMutex.Lock()
 	for subcon, loc := range connections {
 		if subcon == mapid {
@@ -39,18 +39,8 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 		if loc.sm.Myhealth.CurrentHP < 1 {
 			continue
 		}
-		locWithP := gamecore.LocWithPNum{}
-		locWithP.Loc = loc.sm.Myloc
-		locWithP.PNum = fmt.Sprintf("%p", subcon)
-		locWithP.ServMessage = loc.sm
-		locWithP.ServMessage.Myaxe.IHit = nil
-		for _, hitid := range loc.sm.Myaxe.IHit {
-			if hitid == fmt.Sprintf("%p", mapid) {
-				locWithP.YouCopped = true
-			}
-		}
 
-		locs = append(locs, locWithP)
+		locs = append(locs, loc.sm)
 	}
 	conMutex.Unlock()
 	toSend := gamecore.LocationList{}
