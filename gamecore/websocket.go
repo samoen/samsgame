@@ -118,7 +118,8 @@ func socketReceive() {
 					continue found
 				}
 			}
-			eliminate(rpid)
+			delete(remotePlayers,rpid)
+			//eliminate(rpid)
 		}
 
 		for _, l := range msg.ll.Locs {
@@ -157,7 +158,7 @@ func socketReceive() {
 							mySlasher.deth.redScale = 10
 							mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
 							if mySlasher.deth.hp.CurrentHP < 1 {
-								eliminate(myId)
+								delete(slashers,myId)
 							}
 							break
 						}

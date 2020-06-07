@@ -24,14 +24,12 @@ var slashers = make(map[*entityid]*slasher)
 
 func addSlasher(id *entityid, b *slasher) {
 	slashers[id] = b
-	id.systems = append(id.systems, abilityActivator)
 }
 
 var remotePlayers = make(map[*entityid]*slasher)
 
 func addRemotePlayer(id *entityid, b *slasher) {
 	remotePlayers[id] = b
-	id.systems = append(id.systems, remotePlayer)
 }
 
 func handleSwing(bot *slasher) bool {
@@ -172,7 +170,10 @@ func slashersWork() {
 				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 
 				if slashee.deth.hp.CurrentHP < 1 {
-					eliminate(slasheeid)
+					delete(slashers,slasheeid)
+					delete(enemyControllers,slasheeid)
+					//eliminate(slasheeid)
+
 				}
 			}
 
@@ -223,18 +224,3 @@ func updatePlayerControl() {
 	mySlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }
 
-func eliminate(id *entityid) {
-
-	for _, sys := range id.systems {
-		switch sys {
-		case enemyControlled:
-			delete(enemyControllers, id)
-		case abilityActivator:
-			delete(slashers, id)
-		case remotePlayer:
-			delete(remotePlayers, id)
-		case weaponBlocker:
-			delete(wepBlockers, id)
-		}
-	}
-}

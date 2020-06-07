@@ -31,15 +31,6 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
-type sysIndex int
-
-const (
-	enemyControlled sysIndex = iota
-	abilityActivator
-	remotePlayer
-	weaponBlocker
-)
-
 type shape struct {
 	lines []line
 }

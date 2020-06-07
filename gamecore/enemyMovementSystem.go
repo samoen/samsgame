@@ -13,7 +13,6 @@ var enemyControllers = make(map[*entityid]*enemyController)
 
 func addEnemyController(m *enemyController, id *entityid) {
 	enemyControllers[id] = m
-	id.systems = append(id.systems, enemyControlled)
 }
 
 func enemyControlWork() {

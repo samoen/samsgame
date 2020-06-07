@@ -5,7 +5,7 @@ import (
 )
 
 type entityid struct {
-	systems []sysIndex
+	nothing bool
 }
 
 type pivotingShape struct {
@@ -32,7 +32,6 @@ var wepBlockers = make(map[*entityid]*shape)
 
 func addBlocker(b *shape, id *entityid) {
 	wepBlockers[id] = b
-	id.systems = append(id.systems, weaponBlocker)
 }
 
 func checkBlocker(sh shape) (int,int,bool) {
