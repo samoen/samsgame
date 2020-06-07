@@ -90,6 +90,7 @@ func clearEntities() {
 	solids = make(map[*entityid]*shape)
 	wepBlockers = make(map[*entityid]*shape)
 	slashers = make(map[*entityid]*slasher)
+	remotePlayers = make(map[*entityid]*slasher)
 	enemyControllers = make(map[*entityid]*enemyController)
 	hitBoxes = make(map[*entityid]*shape)
 	myDeathable.hp.CurrentHP = -1
@@ -129,9 +130,8 @@ func socketReceive() {
 
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
-				newOtherPlayer.remote = true
 				otherPlayers[l.PNum] = newOtherPlayer
-				addPlayerEntity(newOtherPlayer, location{l.Loc.X, l.Loc.Y}, l.ServMessage.Myhealth, false)
+				addPlayerEntity(newOtherPlayer, location{l.Loc.X, l.Loc.Y}, l.ServMessage.Myhealth, false, true)
 
 			}
 			res := otherPlayers[l.PNum]
@@ -139,19 +139,19 @@ func socketReceive() {
 			//diffx := l.Loc.X - movers[res].rect.location.x
 			//diffy := l.Loc.Y - movers[res].rect.location.y
 			//movers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
-			slashers[res].ent.baseloc = slashers[res].ent.rect.location
-			slashers[res].ent.endpoint = location{l.Loc.X, l.Loc.Y}
-			slashers[res].ent.directions = l.ServMessage.Mydir
-			slashers[res].ent.moment = l.ServMessage.Mymom
-			slashers[res].startangle = l.ServMessage.Myaxe.Startangle
-			slashers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
-			if slashers[res].deth.skipHpUpdate > 0 {
-				slashers[res].deth.skipHpUpdate--
+			remotePlayers[res].ent.baseloc = remotePlayers[res].ent.rect.location
+			remotePlayers[res].ent.endpoint = location{l.Loc.X, l.Loc.Y}
+			remotePlayers[res].ent.directions = l.ServMessage.Mydir
+			remotePlayers[res].ent.moment = l.ServMessage.Mymom
+			remotePlayers[res].startangle = l.ServMessage.Myaxe.Startangle
+			remotePlayers[res].ent.atkButton = l.ServMessage.Myaxe.Swinging
+			if remotePlayers[res].deth.skipHpUpdate > 0 {
+				remotePlayers[res].deth.skipHpUpdate--
 			} else {
-				if l.ServMessage.Myhealth.CurrentHP < slashers[res].deth.hp.CurrentHP {
-					slashers[res].deth.redScale = 10
+				if l.ServMessage.Myhealth.CurrentHP < remotePlayers[res].deth.hp.CurrentHP {
+					remotePlayers[res].deth.redScale = 10
 				}
-				slashers[res].deth.hp = l.ServMessage.Myhealth
+				remotePlayers[res].deth.hp = l.ServMessage.Myhealth
 			}
 
 			if l.YouCopped {

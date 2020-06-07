@@ -6,7 +6,6 @@ import (
 
 type entityid struct {
 	systems []sysIndex
-	remote  bool
 }
 
 type pivotingShape struct {
@@ -63,8 +62,8 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	return result
 // }
 
-func checkSlashee(bot *pivotingShape, ownerid *entityid) (bool, *slasher, *entityid) {
-	for slasheeid, slashee := range slashers {
+func checkSlashee(bot *pivotingShape, ownerid *entityid, slashables map[*entityid]*slasher) (bool, *slasher, *entityid) {
+	for slasheeid, slashee := range slashables {
 		if slasheeid == ownerid {
 			continue
 		}

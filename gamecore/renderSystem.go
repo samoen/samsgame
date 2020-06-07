@@ -15,14 +15,13 @@ func addHitbox(s *shape, id *entityid) {
 }
 
 func drawHitboxes(s *ebiten.Image) {
-	center := renderOffset()
 	samDrawLine := func(l line) {
 		op := ebiten.DrawImageOptions{}
 		op.ColorM.Scale(0, 230, 64, 1)
-		l.p1.x += center.x
-		l.p1.y += center.y
-		l.p2.x += center.x
-		l.p2.y += center.y
+		l.p1.x += offset.x
+		l.p1.y += offset.y
+		l.p2.x += offset.x
+		l.p2.y += offset.y
 
 		x1 := float64(l.p1.x)
 		x2 := float64(l.p2.x)

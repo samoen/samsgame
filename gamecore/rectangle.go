@@ -35,10 +35,10 @@ type sysIndex int
 
 const (
 	hitBoxRenderable sysIndex = iota
-	spriteRenderable
 	solidCollider
 	enemyControlled
 	abilityActivator
+	remotePlayer
 	weaponBlocker
 )
 

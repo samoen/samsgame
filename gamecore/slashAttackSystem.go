@@ -39,7 +39,57 @@ func addSlasher(id *entityid, b *slasher) {
 	id.systems = append(id.systems, abilityActivator)
 }
 
-func slashersWork() {
+var remotePlayers = make(map[*entityid]*slasher)
+
+func addRemotePlayer(id *entityid, b *slasher) {
+	remotePlayers[id] = b
+	id.systems = append(id.systems, remotePlayer)
+}
+
+func handleSwing(bot *slasher) bool {
+	if bot.cooldownCount > 0 {
+		bot.cooldownCount--
+	}
+
+	if bot.ent.atkButton && bot.cooldownCount < 1 {
+		bot.pivShape.bladeLength = 5
+		bot.cooldownCount = 60
+		bot.pivShape.alreadyHit = make(map[*entityid]bool)
+
+		bot.pivShape.animationCount = bot.startangle + 2.1
+
+		bot.swangin = true
+		bot.swangSinceSend = true
+		bot.pivShape.startCount = bot.pivShape.animationCount
+		addHitbox(bot.pivShape.pivoterShape, bot.wepid)
+	}
+	if bot.swangin {
+		bot.pivShape.animationCount -= axeRotateSpeed
+		bot.pivShape.makeAxe()
+
+		if _, _, blocked := checkBlocker(*bot.pivShape.pivoterShape); blocked {
+			bot.swangin = false
+			eliminate(bot.wepid)
+			return true
+		}
+
+		arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
+
+		if arcProgress > axeArc {
+			bot.swangin = false
+			eliminate(bot.wepid)
+			return true
+		} else if arcProgress < axeArc*0.3 {
+			bot.pivShape.bladeLength += 4
+		} else if arcProgress > axeArc*0.8 {
+			bot.pivShape.bladeLength -= 3
+		} else {
+			bot.pivShape.bladeLength = maxAxeLength
+		}
+	}
+	return false
+}
+func remotePlayersWork() {
 	rms := interpolating
 	if receiveCount > interpTime {
 		rms = deadreckoning
@@ -47,46 +97,49 @@ func slashersWork() {
 	if receiveCount > interpTime+deathreckTime {
 		rms = momentumOnly
 	}
-	for slasherid, bot := range slashers {
+	for slasherid, bot := range remotePlayers {
 		bot := bot
-		if slasherid.remote {
-			switch rms {
-			case interpolating:
-				var newplace location
-				if receiveCount == interpTime {
-					newplace = bot.ent.endpoint
-				} else {
-					diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x) / interpTime
-					diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y) / interpTime
-					newplace = bot.ent.rect.location
-					newplace.x += diffx
-					newplace.y += diffy
-				}
-				checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-				if !normalcollides(*checkrect.shape, solids, slasherid) {
-					bot.ent.rect.refreshShape(newplace)
-				}
-			case deadreckoning:
-				bot.ent.moment = calcMomentum(*bot.ent)
-				moveCollide(bot.ent, slasherid)
-			case momentumOnly:
-				//if receiveCount > pingFrames {
-				bot.ent.directions.Down = false
-				bot.ent.directions.Left = false
-				bot.ent.directions.Right = false
-				bot.ent.directions.Up = false
-				//}
-				bot.ent.moment = calcMomentum(*bot.ent)
-				moveCollide(bot.ent, slasherid)
+		switch rms {
+		case interpolating:
+			var newplace location
+			if receiveCount == interpTime {
+				newplace = bot.ent.endpoint
+			} else {
+				diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x) / interpTime
+				diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y) / interpTime
+				newplace = bot.ent.rect.location
+				newplace.x += diffx
+				newplace.y += diffy
 			}
-
-		}
-		if !slasherid.remote {
+			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
+			if !normalcollides(*checkrect.shape, solids, slasherid) {
+				bot.ent.rect.refreshShape(newplace)
+			}
+		case deadreckoning:
+			bot.ent.moment = calcMomentum(*bot.ent)
+			moveCollide(bot.ent, slasherid)
+		case momentumOnly:
+			//if receiveCount > pingFrames {
+			bot.ent.directions.Down = false
+			bot.ent.directions.Left = false
+			bot.ent.directions.Right = false
+			bot.ent.directions.Up = false
+			//}
 			bot.ent.moment = calcMomentum(*bot.ent)
 			moveCollide(bot.ent, slasherid)
 		}
+		handleSwing(bot)
+	}
+}
+func slashersWork() {
 
-		if !slasherid.remote && !bot.swangin {
+	for slasherid, bot := range slashers {
+		bot := bot
+
+		bot.ent.moment = calcMomentum(*bot.ent)
+		moveCollide(bot.ent, slasherid)
+
+		if !bot.swangin {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
 				bot.ent.directions.Right ||
@@ -107,69 +160,37 @@ func slashersWork() {
 				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 			}
 		}
+		handleSwing(bot)
 
-		if bot.cooldownCount > 0 {
-			bot.cooldownCount--
-		}
-
-		if bot.ent.atkButton && bot.cooldownCount < 1 {
-			bot.pivShape.bladeLength = 5
-			bot.cooldownCount = 60
-			bot.pivShape.alreadyHit = make(map[*entityid]bool)
-
-			bot.pivShape.animationCount = bot.startangle + 2.1
-
-			bot.swangin = true
-			bot.swangSinceSend = true
-			bot.pivShape.startCount = bot.pivShape.animationCount
-			addHitbox(bot.pivShape.pivoterShape, bot.wepid)
-		}
 		if bot.swangin {
-			bot.pivShape.animationCount -= axeRotateSpeed
-			bot.pivShape.makeAxe()
-
-			if _, _, blocked := checkBlocker(*bot.pivShape.pivoterShape); blocked {
-				bot.swangin = false
-				eliminate(bot.wepid)
-				continue
+			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid, remotePlayers); ok {
+				//blockx,blocky,blocked := checkBlocker(*bot.pivShape.pivoterShape)
+				//if blocked{
+				//	mecenter := rectCenterPoint(*bot.ent.rect)
+				//	blockdist := math.Abs(float64(mecenter.x - blockx))+math.Abs(float64(mecenter.y - blocky))
+				//	slasheecenter := rectCenterPoint(*slashee.ent.rect)
+				//	slasheedist := math.Abs(float64(mecenter.x - slasheecenter.x))+math.Abs(float64(mecenter.y - slasheecenter.y))
+				//	if blockdist > slasheedist{
+				slashee.deth.redScale = 10
+				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+				slashee.deth.skipHpUpdate = 2
+				bot.pivShape.alreadyHit[slasheeid] = true
+				bot.hitsToSend = append(bot.hitsToSend, slasheeid)
+				//}
+				//}
 			}
+			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid, slashers); ok {
+				slashee.deth.redScale = 10
+				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+				bot.pivShape.alreadyHit[slasheeid] = true
+				bot.hitsToSend = append(bot.hitsToSend, slasheeid)
 
-			if !slasherid.remote {
-				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
-					//blockx,blocky,blocked := checkBlocker(*bot.pivShape.pivoterShape)
-					//if blocked{
-					//	mecenter := rectCenterPoint(*bot.ent.rect)
-					//	blockdist := math.Abs(float64(mecenter.x - blockx))+math.Abs(float64(mecenter.y - blocky))
-					//	slasheecenter := rectCenterPoint(*slashee.ent.rect)
-					//	slasheedist := math.Abs(float64(mecenter.x - slasheecenter.x))+math.Abs(float64(mecenter.y - slasheecenter.y))
-					//	if blockdist > slasheedist{
-					slashee.deth.redScale = 10
-					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-					slashee.deth.skipHpUpdate = 2
-					bot.pivShape.alreadyHit[slasheeid] = true
-					bot.hitsToSend = append(bot.hitsToSend, slasheeid)
-
-					if slashee.deth.hp.CurrentHP < 1 && !slasheeid.remote {
-						eliminate(slasheeid)
-					}
-					//}
-					//}
+				if slashee.deth.hp.CurrentHP < 1 {
+					eliminate(slasheeid)
 				}
 			}
-			arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
 
-			if arcProgress > axeArc {
-				bot.swangin = false
-				eliminate(bot.wepid)
-			} else if arcProgress < axeArc*0.3 {
-				bot.pivShape.bladeLength += 4
-			} else if arcProgress > axeArc*0.8 {
-				bot.pivShape.bladeLength -= 3
-			} else {
-				bot.pivShape.bladeLength = maxAxeLength
-			}
 		}
-
 	}
 }
 
@@ -199,7 +220,7 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
+	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true, false)
 }
 
 type Directions struct {
@@ -233,6 +254,12 @@ func eliminate(id *entityid) {
 				eliminate(d.deth.hBarid)
 			}
 			delete(slashers, id)
+		case remotePlayer:
+			if d, ok := remotePlayers[id]; ok {
+				eliminate(d.wepid)
+				eliminate(d.deth.hBarid)
+			}
+			delete(remotePlayers, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
 		}

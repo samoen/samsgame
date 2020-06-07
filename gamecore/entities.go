@@ -35,12 +35,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		closeConn()
 		return errors.New("SamGame ended by player")
 	}
-
 	respawnsWork()
 	socketReceive()
 	updatePlayerControl()
 	enemyControlWork()
 	slashersWork()
+	remotePlayersWork()
 	updateSprites()
 	return nil
 }
@@ -108,7 +108,7 @@ var mySlasher *slasher
 var myDeathable *deathable
 var myId *entityid
 
-func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool) {
+func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool, remote bool) {
 	accelplayer := &acceleratingEnt{}
 	accelplayer.rect = newRectangle(
 		startloc,
@@ -130,19 +130,22 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	addSolid(accelplayer.rect.shape, playerid)
 	addHitbox(accelplayer.rect.shape, playerid)
 	playerSlasher := newSlasher(accelplayer)
-
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
 	pDeathable.deathableShape = accelplayer.rect
 	playerSlasher.deth = pDeathable
-	addSlasher(playerid, playerSlasher)
-
 	hBarEnt := &entityid{}
 	hBarSprite := &baseSprite{}
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
 	playerSlasher.hbarsprit = hBarSprite
+	if remote{
+		addRemotePlayer(playerid,playerSlasher)
+	}else{
+		addSlasher(playerid, playerSlasher)
+	}
+
 
 	if isMe {
 		centerOn = accelplayer.rect
@@ -174,11 +177,11 @@ func ClientInit() {
 	}
 	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 
-	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true)
+	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true, false)
 
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
-		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false)
+		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false, false)
 		if a, ok := slashers[enemyid]; ok {
 			eController := &enemyController{}
 			eController.aEnt = a.ent
