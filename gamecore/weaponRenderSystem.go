@@ -195,6 +195,18 @@ func updateSprites() {
 	for pid, bs := range basicSprites {
 
 		if slasher, ok := slashers[pid]; ok {
+			if slasher.deth.redScale > 0 {
+				slasher.deth.redScale--
+			}
+			bs.bOps.ColorM.Translate(float64(slasher.deth.redScale), 0, 0, 0)
+			if subbs, ok := basicSprites[slasher.deth.hBarid]; ok {
+				subbs.yaxis = rectCenterPoint(*slasher.deth.deathableShape).y + 10
+				healthbarlocation := location{slasher.deth.deathableShape.location.x, slasher.deth.deathableShape.location.y - (slasher.deth.deathableShape.dimens.height / 2) - 10}
+				healthbardimenswidth := slasher.deth.hp.CurrentHP * slasher.deth.deathableShape.dimens.width / slasher.deth.hp.MaxHP
+				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
+				cameraShift(healthbarlocation, offset, subbs.bOps)
+			}
+
 			bs.yaxis = rectCenterPoint(*slasher.ent.rect).y
 
 			spriteSelect := images.empty
@@ -260,19 +272,6 @@ func updateSprites() {
 			}
 		}
 
-		if mDeathable, ok := deathables[pid]; ok {
-			if mDeathable.redScale > 0 {
-				mDeathable.redScale--
-			}
-			bs.bOps.ColorM.Translate(float64(mDeathable.redScale), 0, 0, 0)
-			if subbs, ok := basicSprites[mDeathable.hBarid]; ok {
-				subbs.yaxis = rectCenterPoint(*mDeathable.deathableShape).y + 10
-				healthbarlocation := location{mDeathable.deathableShape.location.x, mDeathable.deathableShape.location.y - (mDeathable.deathableShape.dimens.height / 2) - 10}
-				healthbardimenswidth := mDeathable.hp.CurrentHP * mDeathable.deathableShape.dimens.width / mDeathable.hp.MaxHP
-				scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, subbs.bOps)
-				cameraShift(healthbarlocation, offset, subbs.bOps)
-			}
-		}
 	}
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis

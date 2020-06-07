@@ -63,15 +63,15 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	return result
 // }
 
-func checkSlashee(bot *pivotingShape, ownerid *entityid) (bool, *deathable, *entityid) {
-	for slasheeid, slashee := range deathables {
+func checkSlashee(bot *pivotingShape, ownerid *entityid) (bool, *slasher, *entityid) {
+	for slasheeid, slashee := range slashers {
 		if slasheeid == ownerid {
 			continue
 		}
 		if _, ok := bot.alreadyHit[slasheeid]; ok {
 			continue
 		}
-		for _, slasheeLine := range slashee.deathableShape.shape.lines {
+		for _, slasheeLine := range slashee.deth.deathableShape.shape.lines {
 			for _, bladeLine := range bot.pivoterShape.lines {
 				if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
 					return true, slashee, slasheeid

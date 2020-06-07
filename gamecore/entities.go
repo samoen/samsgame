@@ -130,11 +130,12 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	addSolid(accelplayer.rect.shape, playerid)
 	addHitbox(accelplayer.rect.shape, playerid)
 	playerSlasher := newSlasher(accelplayer)
-	addSlasher(playerid, playerSlasher)
+
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
 	pDeathable.deathableShape = accelplayer.rect
-	addDeathable(playerid, pDeathable)
+	playerSlasher.deth = pDeathable
+	addSlasher(playerid, playerSlasher)
 
 	hBarEnt := &entityid{}
 	hBarSprite := &baseSprite{}

@@ -7,6 +7,7 @@ import (
 
 type slasher struct {
 	ent            *acceleratingEnt
+	deth           *deathable
 	startangle     float64
 	cooldownCount  int
 	swangin        bool
@@ -40,7 +41,7 @@ func slashersWork() {
 	if receiveCount > interpTime {
 		rms = deadreckoning
 	}
-	if receiveCount > interpTime + deathreckTime{
+	if receiveCount > interpTime+deathreckTime {
 		rms = momentumOnly
 	}
 	for slasherid, bot := range slashers {
@@ -51,9 +52,9 @@ func slashersWork() {
 				var newplace location
 				if receiveCount == interpTime {
 					newplace = bot.ent.endpoint
-				}else{
-					diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x)/interpTime
-					diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y)/interpTime
+				} else {
+					diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x) / interpTime
+					diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y) / interpTime
 					newplace = bot.ent.rect.location
 					newplace.x += diffx
 					newplace.y += diffy
@@ -77,11 +78,11 @@ func slashersWork() {
 			}
 
 		}
-		if !slasherid.remote{
+		if !slasherid.remote {
 			bot.ent.moment = calcMomentum(*bot.ent)
 			moveCollide(bot.ent, slasherid)
 		}
-		
+
 		if !slasherid.remote && !bot.swangin {
 			if bot.ent.directions.Down ||
 				bot.ent.directions.Up ||
@@ -131,13 +132,13 @@ func slashersWork() {
 			if !blocked {
 				if ok, slashee, slasheeid := checkSlashee(bot.pivShape, slasherid); ok {
 					if !slasherid.remote {
-						slashee.redScale = 10
-						slashee.hp.CurrentHP -= bot.pivShape.damage
-						slashee.skipHpUpdate = 2
+						slashee.deth.redScale = 10
+						slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+						slashee.deth.skipHpUpdate = 2
 						bot.pivShape.alreadyHit[slasheeid] = true
 						bot.hitsToSend = append(bot.hitsToSend, slasheeid)
 
-						if slashee.hp.CurrentHP < 1 && !slasheeid.remote {
+						if slashee.deth.hp.CurrentHP < 1 && !slasheeid.remote {
 							eliminate(slasheeid)
 						}
 
@@ -180,13 +181,6 @@ type Hitpoints struct {
 	MaxHP     int
 }
 
-var deathables = make(map[*entityid]*deathable)
-
-func addDeathable(id *entityid, d *deathable) {
-	id.systems = append(id.systems, hurtable)
-	deathables[id] = d
-}
-
 func respawnsWork() {
 	if myDeathable.hp.CurrentHP > 0 {
 		return
@@ -227,13 +221,9 @@ func eliminate(id *entityid) {
 		case abilityActivator:
 			if d, ok := slashers[id]; ok {
 				eliminate(d.wepid)
+				eliminate(d.deth.hBarid)
 			}
 			delete(slashers, id)
-		case hurtable:
-			if d, ok := deathables[id]; ok {
-				eliminate(d.hBarid)
-			}
-			delete(deathables, id)
 		case weaponBlocker:
 			delete(wepBlockers, id)
 		}

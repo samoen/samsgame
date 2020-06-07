@@ -39,7 +39,6 @@ const (
 	solidCollider
 	enemyControlled
 	abilityActivator
-	hurtable
 	weaponBlocker
 )
 
