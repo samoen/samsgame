@@ -107,7 +107,7 @@ type ServerLocation struct {
 var mySlasher *slasher
 var myId *entityid
 
-func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isMe bool, remote bool) {
+func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *slasher{
 	accelplayer := &acceleratingEnt{}
 	accelplayer.rect = newRectangle(
 		startloc,
@@ -126,9 +126,15 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	accelplayer.tracktion = 3
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
-	//addSolid(accelplayer.rect.shape, playerid)
-	//addHitbox(accelplayer.rect.shape, playerid)
-	playerSlasher := newSlasher(accelplayer)
+	playerSlasher := &slasher{}
+	playerSlasher.ent = accelplayer
+	playerSlasher.cooldownCount = 0
+	playerSlasher.pivShape = &pivotingShape{}
+	playerSlasher.pivShape.damage = 2
+	playerSlasher.pivShape.pivoterShape = newShape()
+	playerSlasher.pivShape.pivotPoint = playerSlasher.ent.rect
+	playerSlasher.wepid = &entityid{}
+
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
 	pDeathable.deathableShape = accelplayer.rect
@@ -139,19 +145,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	hBarSprite.sprite = images.empty
 	pDeathable.hBarid = hBarEnt
 	playerSlasher.hbarsprit = hBarSprite
-	if remote{
-		addRemotePlayer(playerid,playerSlasher)
-	}else{
-		addSlasher(playerid, playerSlasher)
-	}
-
-
-	if isMe {
-		centerOn = accelplayer.rect
-		mySlasher = playerSlasher
-		myId = playerid
-	}
-
 	ps := &baseSprite{}
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = images.playerStand
@@ -161,6 +154,18 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints, isM
 	bs.bOps = &ebiten.DrawImageOptions{}
 	bs.sprite = images.sword
 	playerSlasher.wepsprit = bs
+
+	return playerSlasher
+
+}
+
+func placePlayer(){
+	pid := &entityid{}
+	ps := addPlayerEntity(pid, location{50, 50}, Hitpoints{6, 6})
+	centerOn = ps.ent.rect
+	mySlasher = ps
+	myId = pid
+	addSlasher(pid, ps)
 }
 
 func ClientInit() {
@@ -175,11 +180,11 @@ func ClientInit() {
 	}
 	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 
-	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true, false)
-
+	placePlayer()
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
-		addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3}, false, false)
+		animal := addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3})
+		addSlasher(enemyid,animal)
 		if a, ok := slashers[enemyid]; ok {
 			eController := &enemyController{}
 			eController.aEnt = a.ent

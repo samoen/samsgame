@@ -20,18 +20,6 @@ type slasher struct {
 	hitsToSend     []*entityid
 }
 
-func newSlasher(p *acceleratingEnt) *slasher {
-	s := &slasher{}
-	s.ent = p
-	s.cooldownCount = 0
-	s.pivShape = &pivotingShape{}
-	s.pivShape.damage = 2
-	s.pivShape.pivoterShape = newShape()
-	s.pivShape.pivotPoint = s.ent.rect
-	s.wepid = &entityid{}
-	return s
-}
-
 var slashers = make(map[*entityid]*slasher)
 
 func addSlasher(id *entityid, b *slasher) {
@@ -220,7 +208,7 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	addPlayerEntity(&entityid{}, location{50, 50}, Hitpoints{6, 6}, true, false)
+	placePlayer()
 }
 
 type Directions struct {

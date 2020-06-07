@@ -124,20 +124,14 @@ func socketReceive() {
 		}
 
 		for _, l := range msg.ll.Locs {
-			//var remoteent *entityid
 			if _, ok := otherPlayers[l.PNum]; !ok {
-
 				log.Println("adding new player")
 				newOtherPlayer := &entityid{}
 				otherPlayers[l.PNum] = newOtherPlayer
-				addPlayerEntity(newOtherPlayer, location{l.Loc.X, l.Loc.Y}, l.ServMessage.Myhealth, false, true)
-
+				remoteP := addPlayerEntity(newOtherPlayer, location{l.Loc.X, l.Loc.Y}, l.ServMessage.Myhealth)
+				addRemotePlayer(newOtherPlayer,remoteP)
 			}
 			res := otherPlayers[l.PNum]
-			//else {
-			//diffx := l.Loc.X - movers[res].rect.location.x
-			//diffy := l.Loc.Y - movers[res].rect.location.y
-			//movers[res].destination = location{diffx / (pingFrames / 2), diffy / (pingFrames / 2)}
 			remotePlayers[res].ent.baseloc = remotePlayers[res].ent.rect.location
 			remotePlayers[res].ent.endpoint = location{l.Loc.X, l.Loc.Y}
 			remotePlayers[res].ent.directions = l.ServMessage.Mydir
