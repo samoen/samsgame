@@ -113,10 +113,7 @@ func remotePlayersWork() {
 	}
 }
 func slashersWork() {
-
 	for slasherid, bot := range slashers {
-		bot := bot
-
 		bot.ent.moment = calcMomentum(*bot.ent)
 		moveCollide(bot.ent, slasherid,"")
 
@@ -144,34 +141,38 @@ func slashersWork() {
 		handleSwing(bot)
 
 		if bot.swangin {
-			if ok, slashee, slasheeid := checkSlashee(bot.pivShape, remotePlayers); ok {
-				//blockx,blocky,blocked := checkBlocker(*bot.pivShape.pivoterShape)
-				//if blocked{
-				//	mecenter := rectCenterPoint(*bot.ent.rect)
-				//	blockdist := math.Abs(float64(mecenter.x - blockx))+math.Abs(float64(mecenter.y - blocky))
-				//	slasheecenter := rectCenterPoint(*slashee.ent.rect)
-				//	slasheedist := math.Abs(float64(mecenter.x - slasheecenter.x))+math.Abs(float64(mecenter.y - slasheecenter.y))
-				//	if blockdist > slasheedist{
-				slashee.deth.redScale = 10
-				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-				slashee.deth.skipHpUpdate = 2
-				bot.pivShape.alreadyHit[slasheeid] = true
-				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
-				//}
-				//}
-			}
-			if ok, slashee, slasheeid := checkLocalSlashee(bot.pivShape, slasherid, slashers); ok {
-				slashee.deth.redScale = 10
-				slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-				bot.pivShape.alreadyHit[fmt.Sprintf("%p",slasheeid)] = true
-				bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
-
-				if slashee.deth.hp.CurrentHP < 1 {
-					delete(slashers,slasheeid)
-					delete(enemyControllers,slasheeid)
+			for slasheeid, slashee := range remotePlayers {
+				if _, ok := bot.pivShape.alreadyHit[slasheeid]; ok {
+					continue
+				}
+				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape){
+					slashee.deth.redScale = 10
+					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+					slashee.deth.skipHpUpdate = 2
+					bot.pivShape.alreadyHit[slasheeid] = true
+					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 				}
 			}
 
+			for slasheeid, slashee := range slashers {
+				if slasheeid == slasherid {
+					continue
+				}
+				if _, ok := bot.pivShape.alreadyHit[fmt.Sprintf("%p", slasheeid)]; ok {
+					continue
+				}
+				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape){
+					slashee.deth.redScale = 10
+					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+					bot.pivShape.alreadyHit[fmt.Sprintf("%p",slasheeid)] = true
+					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
+
+					if slashee.deth.hp.CurrentHP < 1 {
+						delete(slashers,slasheeid)
+						delete(enemyControllers,slasheeid)
+					}
+				}
+			}
 		}
 	}
 }

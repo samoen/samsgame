@@ -34,6 +34,16 @@ func (l line) intersects(l2 line) (int, int, bool) {
 type shape struct {
 	lines []line
 }
+func (s shape)collidesWith(os shape)bool{
+	for _, slasheeLine := range s.lines {
+		for _, bladeLine := range os.lines {
+			if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func newShape() *shape {
 	s := &shape{}

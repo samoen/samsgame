@@ -1,7 +1,6 @@
 package gamecore
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -61,38 +60,3 @@ func newLinePolar(loc location, length int, angle float64) line {
 // 	result.y = int(rotatedY)
 // 	return result
 // }
-
-func checkSlashee(bot *pivotingShape, slashables map[string]*slasher) (bool, *slasher, string) {
-	for slasheeid, slashee := range slashables {
-
-		if _, ok := bot.alreadyHit[slasheeid]; ok {
-			continue
-		}
-		for _, slasheeLine := range slashee.deth.deathableShape.shape.lines {
-			for _, bladeLine := range bot.pivoterShape.lines {
-				if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-					return true, slashee, slasheeid
-				}
-			}
-		}
-	}
-	return false, nil, ""
-}
-func checkLocalSlashee(bot *pivotingShape, ownerid *entityid, slashables map[*entityid]*slasher) (bool, *slasher, *entityid) {
-	for slasheeid, slashee := range slashables {
-		if slasheeid == ownerid {
-			continue
-		}
-		if _, ok := bot.alreadyHit[fmt.Sprintf("%p", slasheeid)]; ok {
-			continue
-		}
-		for _, slasheeLine := range slashee.deth.deathableShape.shape.lines {
-			for _, bladeLine := range bot.pivoterShape.lines {
-				if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
-					return true, slashee, slasheeid
-				}
-			}
-		}
-	}
-	return false, nil, nil
-}
