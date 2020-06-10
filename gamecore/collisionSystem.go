@@ -12,14 +12,11 @@ type Momentum struct {
 type acceleratingEnt struct {
 	rect        *rectangle
 	moment      Momentum
-	tracktion   float64
 	agility     float64
 	moveSpeed   float64
 	directions  Directions
 	atkButton   bool
 	lastflip    bool
-	ignoreflip  bool
-	destination location
 	baseloc     location
 	endpoint    location
 }

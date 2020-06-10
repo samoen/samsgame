@@ -115,7 +115,6 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *sl
 			break
 		}
 	}
-	accelplayer.tracktion = 3
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
 	playerSlasher := &slasher{}
