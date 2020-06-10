@@ -99,7 +99,7 @@ func calcMomentum(p acceleratingEnt) Momentum {
 	return p.moment
 }
 
-func moveCollide(p *acceleratingEnt, moverid *entityid, remoteid string) {
+func moveCollide(p *acceleratingEnt) {
 	unitmovex := 1
 	unitmovey := 1
 
@@ -117,22 +117,22 @@ func moveCollide(p *acceleratingEnt, moverid *entityid, remoteid string) {
 		maxSpd = absSpdy
 	}
 	for i := 1; i < maxSpd+1; i++ {
-		xcollided := directionalCollide(&absSpdx,p,unitmovex, 0,moverid,remoteid, &p.moment.Xaxis)
-		ycollided := directionalCollide(&absSpdy,p,0,unitmovey,moverid,remoteid,&p.moment.Yaxis)
+		xcollided := directionalCollide(&absSpdx,p,unitmovex, 0, &p.moment.Xaxis)
+		ycollided := directionalCollide(&absSpdy,p,0,unitmovey,&p.moment.Yaxis)
 		if xcollided && ycollided {
 			break
 		}
 	}
 }
 
-func directionalCollide(absSpdx *int, p *acceleratingEnt, unitmovex int, unitmovey int, moverid *entityid,remoteid string, tozero *int)bool{
+func directionalCollide(absSpdx *int, p *acceleratingEnt, unitmovex int, unitmovey int, tozero *int)bool{
 	if *absSpdx > 0 {
 		*absSpdx--
 		checklocx := p.rect.location
 		checklocx.x += unitmovex
 		checklocx.y += unitmovey
 		checkRect := newRectangle(checklocx, p.rect.dimens)
-		if !normalcollides(*checkRect.shape, moverid,remoteid) {
+		if !normalcollides(*checkRect.shape, p.rect.shape) {
 			p.rect.refreshShape(checklocx)
 		} else {
 			*absSpdx = 0

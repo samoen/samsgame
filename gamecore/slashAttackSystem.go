@@ -23,10 +23,6 @@ type slasher struct {
 
 var slashers = make(map[*entityid]*slasher)
 
-func addSlasher(id *entityid, b *slasher) {
-	slashers[id] = b
-}
-
 var remotePlayers = make(map[string]*slasher)
 
 func handleSwing(bot *slasher) {
@@ -77,7 +73,7 @@ func remotePlayersWork() {
 	if receiveCount > interpTime+deathreckTime {
 		rms = momentumOnly
 	}
-	for slasherid, bot := range remotePlayers {
+	for _, bot := range remotePlayers {
 		bot := bot
 		switch rms {
 		case interpolating:
@@ -92,12 +88,12 @@ func remotePlayersWork() {
 				newplace.y += diffy
 			}
 			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape,nil, slasherid) {
+			if !normalcollides(*checkrect.shape,bot.ent.rect.shape) {
 				bot.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
 			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent, nil,slasherid)
+			moveCollide(bot.ent)
 		case momentumOnly:
 			//if receiveCount > pingFrames {
 			bot.ent.directions.Down = false
@@ -106,7 +102,7 @@ func remotePlayersWork() {
 			bot.ent.directions.Up = false
 			//}
 			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent,nil, slasherid)
+			moveCollide(bot.ent)
 		}
 		handleSwing(bot)
 	}
@@ -114,7 +110,7 @@ func remotePlayersWork() {
 func slashersWork() {
 	for slasherid, bot := range slashers {
 		bot.ent.moment = calcMomentum(*bot.ent)
-		moveCollide(bot.ent, slasherid,"")
+		moveCollide(bot.ent)
 
 		if !bot.swangin {
 			if bot.ent.directions.Down ||

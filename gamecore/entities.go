@@ -106,7 +106,7 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *sl
 		dimens{20, 40},
 	)
 	for {
-		if normalcollides(*accelplayer.rect.shape, playerid,"") {
+		if normalcollides(*accelplayer.rect.shape, accelplayer.rect.shape) {
 			accelplayer.rect = newRectangle(
 				location{startloc.x, accelplayer.rect.location.y + 20},
 				dimens{20, 40},
@@ -151,7 +151,7 @@ func placePlayer(){
 	centerOn = ps.ent.rect
 	mySlasher = ps
 	myId = pid
-	addSlasher(pid, ps)
+	slashers[pid] = ps
 }
 
 func ClientInit() {
@@ -170,7 +170,7 @@ func ClientInit() {
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
 		animal := addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3})
-		addSlasher(enemyid,animal)
+		slashers[enemyid]=animal
 		if a, ok := slashers[enemyid]; ok {
 			eController := &enemyController{}
 			eController.aEnt = a.ent
