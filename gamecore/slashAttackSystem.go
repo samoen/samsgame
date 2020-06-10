@@ -1,7 +1,6 @@
 package gamecore
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"math"
 )
@@ -33,7 +32,7 @@ func handleSwing(bot *slasher) {
 	if bot.ent.atkButton && bot.cooldownCount < 1 {
 		bot.pivShape.bladeLength = 5
 		bot.cooldownCount = 60
-		bot.pivShape.alreadyHit = make(map[string]bool)
+		bot.pivShape.alreadyHit = make(map[*shape]bool)
 		bot.pivShape.animationCount = bot.startangle + 2.1
 		bot.swangin = true
 		bot.swangSinceSend = true
@@ -44,7 +43,7 @@ func handleSwing(bot *slasher) {
 		bot.pivShape.makeAxe()
 
 		for _, blocker := range wepBlockers {
-			if blocker.collidesWith(*bot.pivShape.pivoterShape){
+			if blocker.collidesWith(*bot.pivShape.pivoterShape) {
 				bot.swangin = false
 				return
 			}
@@ -88,7 +87,7 @@ func remotePlayersWork() {
 				newplace.y += diffy
 			}
 			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape,bot.ent.rect.shape) {
+			if !normalcollides(*checkrect.shape, bot.ent.rect.shape) {
 				bot.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
@@ -136,15 +135,15 @@ func slashersWork() {
 		handleSwing(bot)
 
 		if bot.swangin {
-			for slasheeid, slashee := range remotePlayers {
-				if _, ok := bot.pivShape.alreadyHit[slasheeid]; ok {
+			for _, slashee := range remotePlayers {
+				if _, ok := bot.pivShape.alreadyHit[slashee.ent.rect.shape]; ok {
 					continue
 				}
-				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape){
+				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape) {
 					slashee.deth.redScale = 10
 					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
 					slashee.deth.skipHpUpdate = 2
-					bot.pivShape.alreadyHit[slasheeid] = true
+					bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
 					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 				}
 			}
@@ -153,18 +152,18 @@ func slashersWork() {
 				if slasheeid == slasherid {
 					continue
 				}
-				if _, ok := bot.pivShape.alreadyHit[fmt.Sprintf("%p", slasheeid)]; ok {
+				if _, ok := bot.pivShape.alreadyHit[slashee.ent.rect.shape]; ok {
 					continue
 				}
-				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape){
+				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape) {
 					slashee.deth.redScale = 10
 					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-					bot.pivShape.alreadyHit[fmt.Sprintf("%p",slasheeid)] = true
+					bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
 					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 
 					if slashee.deth.hp.CurrentHP < 1 {
-						delete(slashers,slasheeid)
-						delete(enemyControllers,slasheeid)
+						delete(slashers, slasheeid)
+						delete(enemyControllers, slasheeid)
 					}
 				}
 			}
@@ -214,4 +213,3 @@ func updatePlayerControl() {
 	mySlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
 	mySlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }
-

@@ -16,7 +16,6 @@ type acceleratingEnt struct {
 	moveSpeed   float64
 	directions  Directions
 	atkButton   bool
-	lastflip    bool
 	baseloc     location
 	endpoint    location
 }

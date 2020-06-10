@@ -12,7 +12,7 @@ type pivotingShape struct {
 	pivoterShape   *shape
 	pivotPoint     *rectangle
 	animationCount float64
-	alreadyHit     map[string]bool
+	alreadyHit     map[*shape]bool
 	startCount     float64
 	bladeLength    int
 	damage         int
