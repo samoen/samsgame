@@ -117,42 +117,30 @@ func moveCollide(p *acceleratingEnt, moverid *entityid, remoteid string) {
 		maxSpd = absSpdy
 	}
 	for i := 1; i < maxSpd+1; i++ {
-		xcollided := false
-		ycollided := false
-		if absSpdx > 0 {
-			absSpdx--
-			checklocx := p.rect.location
-			checklocx.x += unitmovex
-			checkRect := newRectangle(checklocx, p.rect.dimens)
-			if !normalcollides(*checkRect.shape, moverid,remoteid) {
-				p.rect.refreshShape(checklocx)
-			} else {
-				p.moment.Xaxis = 0
-				absSpdx = 0
-				xcollided = true
-			}
-		}
-
-		if absSpdy > 0 {
-			absSpdy--
-			checkrecty := *p.rect
-			checkrecty.shape = newShape()
-			checklocy := checkrecty.location
-			checklocy.y += unitmovey
-			checkrecty.refreshShape(checklocy)
-			if !normalcollides(*checkrecty.shape, moverid,remoteid) {
-				p.rect.refreshShape(checklocy)
-			} else {
-				p.moment.Yaxis = 0
-				absSpdy = 0
-				ycollided = true
-			}
-		}
-
+		xcollided := directionalCollide(&absSpdx,p,unitmovex, 0,moverid,remoteid, &p.moment.Xaxis)
+		ycollided := directionalCollide(&absSpdy,p,0,unitmovey,moverid,remoteid,&p.moment.Yaxis)
 		if xcollided && ycollided {
 			break
 		}
 	}
+}
+
+func directionalCollide(absSpdx *int, p *acceleratingEnt, unitmovex int, unitmovey int, moverid *entityid,remoteid string, tozero *int)bool{
+	if *absSpdx > 0 {
+		*absSpdx--
+		checklocx := p.rect.location
+		checklocx.x += unitmovex
+		checklocx.y += unitmovey
+		checkRect := newRectangle(checklocx, p.rect.dimens)
+		if !normalcollides(*checkRect.shape, moverid,remoteid) {
+			p.rect.refreshShape(checklocx)
+		} else {
+			*absSpdx = 0
+			*tozero = 0
+			return true
+		}
+	}
+	return false
 }
 
 type remoteMoveState int

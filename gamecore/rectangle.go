@@ -51,40 +51,25 @@ func newShape() *shape {
 }
 
 func normalcollides(checkcopy shape, exclude *entityid, remoteexclude string) bool {
-	for solidID, obj := range wepBlockers {
-		if solidID == exclude {
-			continue
-		}
-		for _, li := range checkcopy.lines {
-			for _, subline := range obj.lines {
-				if _, _, intersects := subline.intersects(li); intersects {
-					return true
-				}
-			}
+	for _, obj := range wepBlockers {
+		if checkcopy.collidesWith(*obj){
+			return true
 		}
 	}
 	for solidID, obj := range slashers {
 		if solidID == exclude {
 			continue
 		}
-		for _, li := range checkcopy.lines {
-			for _, subline := range obj.ent.rect.shape.lines {
-				if _, _, intersects := subline.intersects(li); intersects {
-					return true
-				}
-			}
+		if checkcopy.collidesWith(*obj.ent.rect.shape){
+			return true
 		}
 	}
 	for solidID, obj := range remotePlayers {
 		if solidID == remoteexclude {
 			continue
 		}
-		for _, li := range checkcopy.lines {
-			for _, subline := range obj.ent.rect.shape.lines {
-				if _, _, intersects := subline.intersects(li); intersects {
-					return true
-				}
-			}
+		if checkcopy.collidesWith(*obj.ent.rect.shape){
+			return true
 		}
 	}
 	return false
