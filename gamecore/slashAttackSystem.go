@@ -29,7 +29,7 @@ func addSlasher(id *entityid, b *slasher) {
 
 var remotePlayers = make(map[string]*slasher)
 
-func handleSwing(bot *slasher) bool {
+func handleSwing(bot *slasher) {
 	if bot.cooldownCount > 0 {
 		bot.cooldownCount--
 	}
@@ -38,28 +38,27 @@ func handleSwing(bot *slasher) bool {
 		bot.pivShape.bladeLength = 5
 		bot.cooldownCount = 60
 		bot.pivShape.alreadyHit = make(map[string]bool)
-
 		bot.pivShape.animationCount = bot.startangle + 2.1
-
 		bot.swangin = true
 		bot.swangSinceSend = true
 		bot.pivShape.startCount = bot.pivShape.animationCount
-		//addHitbox(bot.pivShape.pivoterShape, bot.wepid)
 	}
 	if bot.swangin {
 		bot.pivShape.animationCount -= axeRotateSpeed
 		bot.pivShape.makeAxe()
 
-		if _, _, blocked := checkBlocker(*bot.pivShape.pivoterShape); blocked {
-			bot.swangin = false
-			return true
+		for _, blocker := range wepBlockers {
+			if blocker.collidesWith(*bot.pivShape.pivoterShape){
+				bot.swangin = false
+				return
+			}
 		}
 
 		arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
 
 		if arcProgress > axeArc {
 			bot.swangin = false
-			return true
+			return
 		} else if arcProgress < axeArc*0.3 {
 			bot.pivShape.bladeLength += 4
 		} else if arcProgress > axeArc*0.8 {
@@ -68,8 +67,8 @@ func handleSwing(bot *slasher) bool {
 			bot.pivShape.bladeLength = maxAxeLength
 		}
 	}
-	return false
 }
+
 func remotePlayersWork() {
 	rms := interpolating
 	if receiveCount > interpTime {
