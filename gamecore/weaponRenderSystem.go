@@ -1,12 +1,11 @@
 package gamecore
 
 import (
+	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
 	"math"
 	"sort"
-
-	"github.com/hajimehoshi/ebiten"
 )
 
 type baseSprite struct {
@@ -14,11 +13,6 @@ type baseSprite struct {
 	bOps   *ebiten.DrawImageOptions
 	yaxis  int
 }
-
-var ScreenWidth = 700
-
-var ScreenHeight = 500
-var bgTileWidth = 2500
 
 var images imagesStruct
 
@@ -34,7 +28,9 @@ type imagesStruct struct {
 	bg                  *ebiten.Image
 }
 
-func newImages(assetsDir string) (imagesStruct, error) {
+
+var assetsDir = "assets"
+func newImages() (imagesStruct, error) {
 	playerStandImage, _, err := ebitenutil.NewImageFromFile(
 		assetsDir+"/playerstand.png",
 		ebiten.FilterDefault,
@@ -129,24 +125,76 @@ func rectCenterPoint(r rectangle) location {
 	return location{x, y}
 }
 
-var bgOps = &ebiten.DrawImageOptions{}
+//var bgOps = &ebiten.DrawImageOptions{}
+var backgrounds = make(map[location]bgLoading)
+var bgchan = make(chan bgLoading)
+//var bgtiles = make(map[location])
 
 func drawBackground(screen *ebiten.Image) {
-	myBgOps := *bgOps
-	myBgOps.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
-	myBgOps.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
+	//myBgOps := &ebiten.DrawImageOptions{}
 
 	tilesAcross := worldWidth / bgTileWidth
+	myCoordx := centerOn.location.x / bgTileWidth
+	myCoordy := centerOn.location.y / bgTileWidth
+
+	select {
+	case bgl:= <- bgchan:
+		newbg := backgrounds[bgl.coords]
+		newbg.image = bgl.image
+		backgrounds[bgl.coords] = newbg
+	default:
+	}
 
 	for i := 0; i < tilesAcross; i++ {
+		if i<myCoordx-1 || i>myCoordx+1{
+			continue
+		}
 		for j := 0; j < tilesAcross; j++ {
-			tileOps := myBgOps
-			tileOps.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-			if err := screen.DrawImage(images.bg, &tileOps); err != nil {
-				log.Fatal(err)
+			if j<myCoordy-1 || j>myCoordy+1{
+				continue
+			}
+
+
+			if _,ok := backgrounds[location{i,j}]; !ok{
+				loadingim := bgLoading{}
+				loadingim.image = images.empty
+				loadingim.coords = location{i,j}
+				loadingim.ops = &ebiten.DrawImageOptions{}
+				backgrounds[loadingim.coords]=loadingim
+				log.Println(i,j)
+				rei := i
+				rej := j
+				go func() {
+					im, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
+					if err != nil {
+						panic(err)
+					}
+					bgl:=bgLoading{}
+					bgl.coords = location{rei,rej}
+					bgl.image = im
+					bgchan<-bgl
+				}()
+			}
+			if im,ok := backgrounds[location{i,j}];ok{
+				im.ops.GeoM.Reset()
+				im.ops.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
+				im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
+				im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
+				scaleToDimension(dimens{bgTileWidth,bgTileWidth},im.image,im.ops)
+				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+
+				if err := screen.DrawImage(im.image, im.ops); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}
+}
+
+type bgLoading struct{
+	coords location
+	image *ebiten.Image
+	ops *ebiten.DrawImageOptions
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions) {

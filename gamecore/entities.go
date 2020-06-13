@@ -13,7 +13,10 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-const worldWidth = 5000
+const worldWidth = 1000
+var ScreenWidth = 700
+var ScreenHeight = 500
+var bgTileWidth = 200
 
 type SamGame struct{}
 
@@ -40,11 +43,26 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	enemyControlWork()
 	slashersWork()
 	remotePlayersWork()
+
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
+	//for _,im:=range backgrounds{
+	//	myCoordx := centerOn.location.x / bgTileWidth
+	//	myCoordy := centerOn.location.y / bgTileWidth
+	//	if im.coords.x<myCoordx-1 || im.coords.x>myCoordx+1{
+	//		continue
+	//	}
+	//	if im.coords.y<myCoordy-1 || im.coords.y>myCoordy+1{
+	//		continue
+	//	}
+	//	if err := screen.DrawImage(im.image, im.ops); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}
+
 	updateSprites()
 	renderEntSprites(screen)
 	drawHitboxes(screen)
@@ -155,7 +173,7 @@ func placePlayer() {
 }
 
 func ClientInit() {
-	i, err := newImages("assets")
+	i, err := newImages()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -164,7 +182,6 @@ func ClientInit() {
 	if err := images.empty.Fill(color.White); err != nil {
 		log.Fatal(err)
 	}
-	bgOps.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 
 	placePlayer()
 	for i := 1; i < 10; i++ {
@@ -181,6 +198,7 @@ func ClientInit() {
 		time.Sleep(1500 * time.Millisecond)
 		connectToServer()
 	}()
+
 	ebiten.SetRunnableOnUnfocused(true)
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
 	ebiten.SetWindowTitle("sams cool game")
@@ -205,25 +223,25 @@ func placeMap() {
 	)
 	addBlocker(worldBoundRect.shape, worldBoundaryID)
 
-	diagonalWallID := &entityid{}
-	diagonalWall := newShape()
-	diagonalWall.lines = []line{
-		{
-			location{250, 310},
-			location{600, 655},
-		},
-	}
-
-	addBlocker(diagonalWall, diagonalWallID)
-
-	lilRoomID := &entityid{}
-	lilRoom := newRectangle(
-		location{45, 400},
-		dimens{70, 20},
-	)
-	addBlocker(lilRoom.shape, lilRoomID)
-
-	anotherRoomID := &entityid{}
-	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	addBlocker(anotherRoom.shape, anotherRoomID)
+	//diagonalWallID := &entityid{}
+	//diagonalWall := newShape()
+	//diagonalWall.lines = []line{
+	//	{
+	//		location{250, 310},
+	//		location{600, 655},
+	//	},
+	//}
+	//
+	//addBlocker(diagonalWall, diagonalWallID)
+	//
+	//lilRoomID := &entityid{}
+	//lilRoom := newRectangle(
+	//	location{45, 400},
+	//	dimens{70, 20},
+	//)
+	//addBlocker(lilRoom.shape, lilRoomID)
+	//
+	//anotherRoomID := &entityid{}
+	//anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
+	//addBlocker(anotherRoom.shape, anotherRoomID)
 }
