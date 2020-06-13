@@ -22,8 +22,8 @@ var pingFrames = 10
 var receiveCount = pingFrames
 var receiveDebug = ""
 
-type sockSelecter struct{
-	ll LocationList
+type sockSelecter struct {
+	ll   LocationList
 	sock *websocket.Conn
 }
 
@@ -99,7 +99,7 @@ type ServerLocation struct {
 var mySlasher *slasher
 var myId *entityid
 
-func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *slasher{
+func newSlasher(startloc location, heath Hitpoints) *slasher {
 	accelplayer := &acceleratingEnt{}
 	accelplayer.rect = newRectangle(
 		startloc,
@@ -145,9 +145,9 @@ func addPlayerEntity(playerid *entityid, startloc location, heath Hitpoints) *sl
 
 }
 
-func placePlayer(){
+func placePlayer() {
 	pid := &entityid{}
-	ps := addPlayerEntity(pid, location{50, 50}, Hitpoints{6, 6})
+	ps := newSlasher(location{50, 50}, Hitpoints{6, 6})
 	centerOn = ps.ent.rect
 	mySlasher = ps
 	myId = pid
@@ -169,13 +169,11 @@ func ClientInit() {
 	placePlayer()
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
-		animal := addPlayerEntity(enemyid, location{i*50 + 50, i * 30}, Hitpoints{3, 3})
-		slashers[enemyid]=animal
-		if a, ok := slashers[enemyid]; ok {
-			eController := &enemyController{}
-			eController.aEnt = a.ent
-			addEnemyController(eController, enemyid)
-		}
+		animal := newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})
+		slashers[enemyid] = animal
+		eController := &enemyController{}
+		eController.aEnt = animal.ent
+		addEnemyController(eController, enemyid)
 	}
 
 	placeMap()
@@ -227,5 +225,5 @@ func placeMap() {
 
 	anotherRoomID := &entityid{}
 	anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	addBlocker(anotherRoom.shape,anotherRoomID)
+	addBlocker(anotherRoom.shape, anotherRoomID)
 }

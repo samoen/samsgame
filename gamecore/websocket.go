@@ -125,8 +125,7 @@ func socketReceive() {
 		for _, l := range msg.ll.Locs {
 			if _,ok:=remotePlayers[l.MyPNum];!ok{
 				log.Println("adding new player")
-				newOtherPlayer := &entityid{}
-				remoteP := addPlayerEntity(newOtherPlayer, location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
+				remoteP := newSlasher(location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
 				remoteP.servId = l.MyPNum
 				remotePlayers[l.MyPNum] = remoteP
 			}

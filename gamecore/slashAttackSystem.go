@@ -107,7 +107,7 @@ func remotePlayersWork() {
 	}
 }
 func slashersWork() {
-	for slasherid, bot := range slashers {
+	for _, bot := range slashers {
 		bot.ent.moment = calcMomentum(*bot.ent)
 		moveCollide(bot.ent)
 
@@ -149,7 +149,7 @@ func slashersWork() {
 			}
 
 			for slasheeid, slashee := range slashers {
-				if slasheeid == slasherid {
+				if slashee.ent == bot.ent {
 					continue
 				}
 				if _, ok := bot.pivShape.alreadyHit[slashee.ent.rect.shape]; ok {
