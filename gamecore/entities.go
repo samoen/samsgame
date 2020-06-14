@@ -13,10 +13,10 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-const worldWidth = 1000
+const worldWidth = 1050
 var ScreenWidth = 700
 var ScreenHeight = 500
-var bgTileWidth = 200
+var bgTileWidth = 150
 
 type SamGame struct{}
 
@@ -43,26 +43,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	enemyControlWork()
 	slashersWork()
 	remotePlayersWork()
-
+	bgShapesWork()
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	drawBackground(screen)
-	//for _,im:=range backgrounds{
-	//	myCoordx := centerOn.location.x / bgTileWidth
-	//	myCoordy := centerOn.location.y / bgTileWidth
-	//	if im.coords.x<myCoordx-1 || im.coords.x>myCoordx+1{
-	//		continue
-	//	}
-	//	if im.coords.y<myCoordy-1 || im.coords.y>myCoordy+1{
-	//		continue
-	//	}
-	//	if err := screen.DrawImage(im.image, im.ops); err != nil {
-	//		log.Fatal(err)
-	//	}
-	//}
-
 	updateSprites()
 	renderEntSprites(screen)
 	drawHitboxes(screen)
@@ -196,11 +182,14 @@ func ClientInit() {
 	placeMap()
 
 	tilesAcross := worldWidth / bgTileWidth
-	for i := 0; i < tilesAcross; i++ {
-		for j := 0; j < tilesAcross; j++ {
+	for i := -1; i < tilesAcross+1; i++ {
+		for j := -1; j < tilesAcross+1; j++ {
 			ttype := blank
 			if j>tilesAcross/2{
 				ttype = rocky
+			}
+			if j>tilesAcross-1 || i>tilesAcross-1 || j<0 || i<0{
+				ttype = offworld
 			}
 			bgtiles[location{i,j}]=tileAndIm{ttype,nil}
 		}
@@ -209,6 +198,9 @@ func ClientInit() {
 	//bgtiles[location{2,1}]=tileAndIm{rocky,nil}
 	//bgtiles[location{2,0}]=tileAndIm{blank,nil}
 	//bgtiles[location{2,3}]=tileAndIm{blank,nil}
+
+	ttshapes[blank] = shape{lines:[]line{line{location{180,5},location{20,140}}}}
+	ttshapes[rocky] = shape{lines:[]line{line{location{80,20},location{120,120}}}}
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)

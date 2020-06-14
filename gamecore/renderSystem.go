@@ -36,6 +36,16 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 
+	for loc,shape := range currentTShapes{
+		for _, l := range shape.lines {
+			l.p1.x += loc.x*bgTileWidth
+			l.p1.y += loc.y*bgTileWidth
+			l.p2.x += loc.x*bgTileWidth
+			l.p2.y += loc.y*bgTileWidth
+			samDrawLine(l)
+		}
+	}
+
 	for _, shape := range wepBlockers {
 		for _, l := range shape.lines {
 			samDrawLine(l)
