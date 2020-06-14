@@ -144,8 +144,6 @@ const (
 )
 
 func drawBackground(screen *ebiten.Image) {
-	myCoordx := centerOn.location.x / bgTileWidth
-	myCoordy := centerOn.location.y / bgTileWidth
 
 	select {
 	case bgl := <-bgchan:
@@ -153,8 +151,23 @@ func drawBackground(screen *ebiten.Image) {
 		ttmap[bgl.tyti].loading = false
 	default:
 	}
-	for i := -1; i < 2; i++ {
-		for j := -1; j < 2; j++ {
+
+	myCoordx := centerOn.location.x / bgTileWidth
+	myCoordy := centerOn.location.y / bgTileWidth
+	remx := centerOn.location.x%bgTileWidth
+	remy := centerOn.location.y%bgTileWidth
+	upx := 0
+	if remx<bgTileWidth/2{
+		upx = -1
+	}
+	upy :=0
+	if remy<bgTileWidth/2{
+		upy = -1
+	}
+	//handleBgtile(m)
+
+	for i := upx; i < 2+upx; i++ {
+		for j := upy; j < 2+upy; j++ {
 			handleBgtile(myCoordx+i, myCoordy+j, screen)
 		}
 	}
