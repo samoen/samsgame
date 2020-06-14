@@ -191,13 +191,12 @@ func ClientInit() {
 			if j>tilesAcross-1 || i>tilesAcross-1 || j<0 || i<0{
 				ttype = offworld
 			}
-			bgtiles[location{i,j}]=tileAndIm{ttype,nil}
+			bgl := &bgLoading{}
+			bgl.tiletyp = ttype
+			bgl.ops = &ebiten.DrawImageOptions{}
+			bgtiles[location{i,j}]=bgl
 		}
 	}
-	//bgtiles[location{2,2}]=tileAndIm{blank,nil}
-	//bgtiles[location{2,1}]=tileAndIm{rocky,nil}
-	//bgtiles[location{2,0}]=tileAndIm{blank,nil}
-	//bgtiles[location{2,3}]=tileAndIm{blank,nil}
 
 	ttshapes[blank] = shape{lines:[]line{line{location{180,5},location{20,140}}}}
 	ttshapes[rocky] = shape{lines:[]line{line{location{80,20},location{120,120}}}}

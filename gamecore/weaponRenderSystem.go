@@ -125,18 +125,16 @@ func rectCenterPoint(r rectangle) location {
 	return location{x, y}
 }
 
-//var bgOps = &ebiten.DrawImageOptions{}
-var backgrounds = make(map[location]bgLoading)
-var bgchan = make(chan bgLoading)
-var bgtiles = make(map[location]tileAndIm)
-var ttmap = make(map[tileType]*ebiten.Image)
+type imwithload struct{
+	im *ebiten.Image
+	loading bool
+}
+var bgchan = make(chan ttwithIm)
+var bgtiles = make(map[location]*bgLoading)
+var ttmap = make(map[tileType]*imwithload)
 var ttshapes = make(map[tileType]shape)
 var currentTShapes = make(map[location]shape)
 
-type tileAndIm struct {
-	tt tileType
-	im *ebiten.Image
-}
 type tileType int
 
 const (
@@ -151,12 +149,8 @@ func drawBackground(screen *ebiten.Image) {
 
 	select {
 	case bgl := <-bgchan:
-		newbg := backgrounds[bgl.coords]
-		newbg.image = bgl.image
-		backgrounds[bgl.coords] = newbg
-		//if ti,ok := bgtiles[bgl.coords];ok{
-		ttmap[bgl.tiletyp] = bgl.image
-		//}
+		ttmap[bgl.tyti].im = bgl.imim
+		ttmap[bgl.tyti].loading = false
 	default:
 	}
 	for i := -1; i < 2; i++ {
@@ -167,73 +161,75 @@ func drawBackground(screen *ebiten.Image) {
 }
 
 func handleBgtile(i int, j int, screen *ebiten.Image) {
-	if _, ok := backgrounds[location{i, j}]; !ok {
-		log.Println(i, j)
-		loadingim := bgLoading{}
-		loadingim.image = images.empty
-		loadingim.coords = location{i, j}
-		loadingim.ops = &ebiten.DrawImageOptions{}
-		done := false
-		prett := tileType(0)
-		if ti, ok := bgtiles[location{i, j}]; ok {
-			prett = ti.tt
-			if img, ok := ttmap[ti.tt]; ok {
-				if img != nil {
-					loadingim.image = img
+	if ti, ok := bgtiles[location{i, j}]; ok {
+		prett := ti.tiletyp
+
+		if _, ok := ttmap[ti.tiletyp]; !ok {
+			ttmap[ti.tiletyp] = &imwithload{}
+		}
+
+		if img, ok := ttmap[ti.tiletyp]; ok {
+			done := false
+			if img.loading{
+				done = true
+				img.im = images.playerWalkDownAngle
+			}else{
+				if img.im != nil {
 					done = true
+				}else{
+					//img.im = images.playerWalkDownAngle
+				}
+			}
+			if !done {
+				log.Println(i, j)
+				img.loading = true
+				go func() {
+					var imstring string
+					switch prett {
+					case blank:
+						imstring = assetsDir + "/floor.png"
+					case rocky:
+						imstring = assetsDir + "/tile31.png"
+					case offworld:
+						imstring = assetsDir + "/8000paint.png"
+					default:
+						imstring = assetsDir + "/sword.png"
+					}
+
+					im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
+					if err != nil {
+						panic(err)
+					}
+					bgl := ttwithIm{}
+					bgl.imim = im
+					bgl.tyti = prett
+					bgchan <- bgl
+				}()
+			}
+		}
+	}
+
+	if im, ok := bgtiles[location{i, j}]; ok {
+		if ttim, ok := ttmap[im.tiletyp]; ok {
+			if ttim.im != nil {
+				im.ops.GeoM.Reset()
+				im.ops.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
+				im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
+				im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
+				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim.im, im.ops)
+				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+
+				if err := screen.DrawImage(ttim.im, im.ops); err != nil {
+					log.Fatal(err)
 				}
 			}
 		}
-		//else {
-		//	prett = offworld
-		//	if img, ok := ttmap[offworld]; ok {
-		//		if img != nil {
-		//			loadingim.image = img
-		//			done = true
-		//		}
-		//	}
-		//}
-		backgrounds[loadingim.coords] = loadingim
-		if !done {
-			rei := i
-			rej := j
-			var imstring string
-			switch prett {
-			case blank:
-				imstring = assetsDir + "/floor.png"
-			case rocky:
-				imstring = assetsDir + "/tile31.png"
-			case offworld:
-				imstring = assetsDir + "/8000paint.png"
-			default:
-				imstring = assetsDir + "/sword.png"
-			}
-
-			go func() {
-				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
-				if err != nil {
-					panic(err)
-				}
-				bgl := bgLoading{}
-				bgl.coords = location{rei, rej}
-				bgl.image = im
-				bgl.tiletyp = prett
-				bgchan <- bgl
-			}()
-		}
 	}
-	if im, ok := backgrounds[location{i, j}]; ok {
-		im.ops.GeoM.Reset()
-		im.ops.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
-		im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
-		im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
-		scaleToDimension(dimens{bgTileWidth, bgTileWidth}, im.image, im.ops)
-		im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+}
 
-		if err := screen.DrawImage(im.image, im.ops); err != nil {
-			log.Fatal(err)
-		}
-	}
+type ttwithIm struct {
+	tyti tileType
+	imim *ebiten.Image
 }
 
 func bgShapesWork() {
@@ -257,7 +253,7 @@ func bgShapesWork() {
 
 func addTshape(i, j int) {
 	if ti, ok := bgtiles[location{i, j}]; ok {
-		currentTShapes[location{i, j}] = ttshapes[ti.tt]
+		currentTShapes[location{i, j}] = ttshapes[ti.tiletyp]
 	}
 }
 func checkbgshape(i, j int) {
@@ -265,10 +261,8 @@ func checkbgshape(i, j int) {
 }
 
 type bgLoading struct {
-	coords  location
-	image   *ebiten.Image
-	ops     *ebiten.DrawImageOptions
-	tiletyp tileType
+	ops      *ebiten.DrawImageOptions
+	tiletyp  tileType
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions) {
