@@ -13,10 +13,10 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-const worldWidth = 1050
-var ScreenWidth = 700
-var ScreenHeight = 500
-var bgTileWidth = 150
+const ScreenWidth = 700
+const ScreenHeight = 500
+const worldWidth = ScreenWidth*5
+var bgTileWidth = ScreenWidth
 
 type SamGame struct{}
 
@@ -44,7 +44,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	enemyControlWork()
 	slashersWork()
 	remotePlayersWork()
-	bgShapesWork()
+
 	mycenterpoint = rectCenterPoint(*mySlasher.ent.rect)
 	center := mycenterpoint
 	center.x *=-1
@@ -52,6 +52,8 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	center.x += ScreenWidth / 2
 	center.y += ScreenHeight / 2
 	offset = center
+
+	bgShapesWork()
 	return nil
 }
 

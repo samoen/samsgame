@@ -236,17 +236,24 @@ func bgShapesWork() {
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
 
-	for i := -2; i < 3; i++ {
-		for j := -2; j < 3; j++ {
-			if math.Abs(float64(i)) < 2 && math.Abs(float64(j)) < 2 {
-				continue
-			}
-			checkbgshape(myCoordx+i, myCoordy+j)
-		}
+	remx := mycenterpoint.x%bgTileWidth
+	remy := mycenterpoint.y%bgTileWidth
+	upx := -1
+	if remx<bgTileWidth/2{
+		upx = 1
 	}
+	upy := -1
+	if remy<bgTileWidth/2{
+		upy = 1
+	}
+
 	for i := -1; i < 2; i++ {
 		for j := -1; j < 2; j++ {
-			addTshape(myCoordx+i, myCoordy+j)
+			if upx == i || upy == j{
+				checkbgshape(myCoordx+i,myCoordy+j)
+			}else{
+				addTshape(myCoordx+i, myCoordy+j)
+			}
 		}
 	}
 }
