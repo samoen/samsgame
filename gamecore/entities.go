@@ -194,6 +194,22 @@ func ClientInit() {
 	}
 
 	placeMap()
+
+	tilesAcross := worldWidth / bgTileWidth
+	for i := 0; i < tilesAcross; i++ {
+		for j := 0; j < tilesAcross; j++ {
+			ttype := blank
+			if j>tilesAcross/2{
+				ttype = rocky
+			}
+			bgtiles[location{i,j}]=tileAndIm{ttype,nil}
+		}
+	}
+	//bgtiles[location{2,2}]=tileAndIm{blank,nil}
+	//bgtiles[location{2,1}]=tileAndIm{rocky,nil}
+	//bgtiles[location{2,0}]=tileAndIm{blank,nil}
+	//bgtiles[location{2,3}]=tileAndIm{blank,nil}
+
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
 		connectToServer()

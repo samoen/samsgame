@@ -128,8 +128,18 @@ func rectCenterPoint(r rectangle) location {
 //var bgOps = &ebiten.DrawImageOptions{}
 var backgrounds = make(map[location]bgLoading)
 var bgchan = make(chan bgLoading)
-//var bgtiles = make(map[location])
+var bgtiles = make(map[location]tileAndIm)
+var ttmap = make(map[tileType]*ebiten.Image)
+type tileAndIm struct {
+	tt tileType
+	im *ebiten.Image
+}
+type tileType int
 
+const(
+	blank tileType = iota
+	rocky
+)
 func drawBackground(screen *ebiten.Image) {
 	//myBgOps := &ebiten.DrawImageOptions{}
 
@@ -142,6 +152,11 @@ func drawBackground(screen *ebiten.Image) {
 		newbg := backgrounds[bgl.coords]
 		newbg.image = bgl.image
 		backgrounds[bgl.coords] = newbg
+		if ti,ok := bgtiles[bgl.coords];ok{
+			//ti.im = bgl.image
+			//bgtiles[bgl.coords]=ti
+			ttmap[ti.tt]=bgl.image
+		}
 	default:
 	}
 
@@ -156,24 +171,51 @@ func drawBackground(screen *ebiten.Image) {
 
 
 			if _,ok := backgrounds[location{i,j}]; !ok{
+				log.Println(i,j)
 				loadingim := bgLoading{}
 				loadingim.image = images.empty
 				loadingim.coords = location{i,j}
 				loadingim.ops = &ebiten.DrawImageOptions{}
-				backgrounds[loadingim.coords]=loadingim
-				log.Println(i,j)
-				rei := i
-				rej := j
-				go func() {
-					im, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
-					if err != nil {
-						panic(err)
+
+				done := false
+				prescribed := false
+				prett := tileType(0)
+				if ti,ok := bgtiles[location{i,j}];ok{
+					prescribed = true
+					prett = ti.tt
+					if img,ok:=ttmap[ti.tt];ok{
+						if img != nil{
+							loadingim.image = img
+							done = true
+						}
 					}
-					bgl:=bgLoading{}
-					bgl.coords = location{rei,rej}
-					bgl.image = im
-					bgchan<-bgl
-				}()
+				}
+				backgrounds[loadingim.coords]=loadingim
+				if !done{
+					rei := i
+					rej := j
+					var imstring string
+					if prescribed{
+						switch prett{
+						case blank:
+							imstring = assetsDir+"/floor.png"
+						case rocky:
+							imstring = assetsDir+"/tile31.png"
+						}
+					}else{
+						imstring = assetsDir+"/8000paint.png"
+					}
+					go func() {
+						im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
+						if err != nil {
+							panic(err)
+						}
+						bgl:=bgLoading{}
+						bgl.coords = location{rei,rej}
+						bgl.image = im
+						bgchan<-bgl
+					}()
+				}
 			}
 			if im,ok := backgrounds[location{i,j}];ok{
 				im.ops.GeoM.Reset()
