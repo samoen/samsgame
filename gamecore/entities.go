@@ -37,6 +37,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		closeConn()
 		return errors.New("SamGame ended by player")
 	}
+
 	respawnsWork()
 	socketReceive()
 	updatePlayerControl()
@@ -44,6 +45,13 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	slashersWork()
 	remotePlayersWork()
 	bgShapesWork()
+	mycenterpoint = rectCenterPoint(*mySlasher.ent.rect)
+	center := mycenterpoint
+	center.x *=-1
+	center.y *=-1
+	center.x += ScreenWidth / 2
+	center.y += ScreenHeight / 2
+	offset = center
 	return nil
 }
 
@@ -152,7 +160,7 @@ func newSlasher(startloc location, heath Hitpoints) *slasher {
 func placePlayer() {
 	pid := &entityid{}
 	ps := newSlasher(location{50, 50}, Hitpoints{6, 6})
-	centerOn = ps.ent.rect
+	mycenterpoint = rectCenterPoint(*ps.ent.rect)
 	mySlasher = ps
 	myId = pid
 	slashers[pid] = ps
@@ -170,6 +178,7 @@ func ClientInit() {
 	}
 
 	placePlayer()
+
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
 		animal := newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})

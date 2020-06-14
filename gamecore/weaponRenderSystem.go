@@ -103,21 +103,8 @@ func newImages() (imagesStruct, error) {
 	return is, nil
 }
 
-var centerOn *rectangle
+var mycenterpoint location
 
-func renderingCenter() location {
-	l := rectCenterPoint(*centerOn)
-	l.x *= -1
-	l.y *= -1
-	return l
-}
-
-func renderOffset() location {
-	center := renderingCenter()
-	center.x += ScreenWidth / 2
-	center.y += ScreenHeight / 2
-	return center
-}
 
 func rectCenterPoint(r rectangle) location {
 	x := r.location.x + (r.dimens.width / 2)
@@ -152,10 +139,10 @@ func drawBackground(screen *ebiten.Image) {
 	default:
 	}
 
-	myCoordx := centerOn.location.x / bgTileWidth
-	myCoordy := centerOn.location.y / bgTileWidth
-	remx := centerOn.location.x%bgTileWidth
-	remy := centerOn.location.y%bgTileWidth
+	myCoordx := mycenterpoint.x / bgTileWidth
+	myCoordy := mycenterpoint.y / bgTileWidth
+	remx := mycenterpoint.x%bgTileWidth
+	remy := mycenterpoint.y%bgTileWidth
 	upx := 0
 	if remx<bgTileWidth/2{
 		upx = -1
@@ -226,8 +213,8 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 		if ttim, ok := ttmap[im.tiletyp]; ok {
 			if ttim.im != nil {
 				im.ops.GeoM.Reset()
-				im.ops.GeoM.Translate(float64(-centerOn.location.x), float64(-centerOn.location.y))
-				im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
+				im.ops.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
+				//im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
 				im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
 				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim.im, im.ops)
 				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
@@ -246,8 +233,8 @@ type ttwithIm struct {
 }
 
 func bgShapesWork() {
-	myCoordx := centerOn.location.x / bgTileWidth
-	myCoordy := centerOn.location.y / bgTileWidth
+	myCoordx := mycenterpoint.x / bgTileWidth
+	myCoordy := mycenterpoint.y / bgTileWidth
 
 	for i := -2; i < 3; i++ {
 		for j := -2; j < 3; j++ {
@@ -307,7 +294,6 @@ var toRender []*baseSprite
 var offset location
 
 func updateSprites() {
-	offset = renderOffset()
 	toRender = nil
 
 	for _, bs := range slashers {
