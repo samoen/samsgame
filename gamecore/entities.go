@@ -209,8 +209,8 @@ func ClientInit() {
 		}
 	}
 
-	ttshapes[blank] = shape{lines:[]line{line{location{180,5},location{20,140}}}}
-	ttshapes[rocky] = shape{lines:[]line{line{location{80,20},location{120,120}}}}
+	ttshapes[blank] = shape{lines:[]line{line{location{180,5},location{140,140}}}}
+	ttshapes[rocky] = shape{lines:[]line{line{location{80,20},location{80,120}}}}
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)

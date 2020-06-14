@@ -105,17 +105,17 @@ func newImages() (imagesStruct, error) {
 
 var mycenterpoint location
 
-
 func rectCenterPoint(r rectangle) location {
 	x := r.location.x + (r.dimens.width / 2)
 	y := r.location.y + (r.dimens.height / 2)
 	return location{x, y}
 }
 
-type imwithload struct{
-	im *ebiten.Image
+type imwithload struct {
+	im      *ebiten.Image
 	loading bool
 }
+
 var bgchan = make(chan ttwithIm)
 var bgtiles = make(map[location]*bgLoading)
 var ttmap = make(map[tileType]*imwithload)
@@ -141,14 +141,14 @@ func drawBackground(screen *ebiten.Image) {
 
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
-	remx := mycenterpoint.x%bgTileWidth
-	remy := mycenterpoint.y%bgTileWidth
+	remx := mycenterpoint.x % bgTileWidth
+	remy := mycenterpoint.y % bgTileWidth
 	upx := 0
-	if remx<bgTileWidth/2{
+	if remx < bgTileWidth/2 {
 		upx = -1
 	}
-	upy :=0
-	if remy<bgTileWidth/2{
+	upy := 0
+	if remy < bgTileWidth/2 {
 		upy = -1
 	}
 	//handleBgtile(m)
@@ -170,13 +170,13 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 
 		if img, ok := ttmap[ti.tiletyp]; ok {
 			done := false
-			if img.loading{
+			if img.loading {
 				done = true
 				img.im = images.playerWalkDownAngle
-			}else{
+			} else {
 				if img.im != nil {
 					done = true
-				}else{
+				} else {
 					//img.im = images.playerWalkDownAngle
 				}
 			}
@@ -236,22 +236,22 @@ func bgShapesWork() {
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
 
-	remx := mycenterpoint.x%bgTileWidth
-	remy := mycenterpoint.y%bgTileWidth
+	remx := mycenterpoint.x % bgTileWidth
+	remy := mycenterpoint.y % bgTileWidth
 	upx := -1
-	if remx<bgTileWidth/2{
+	if remx < bgTileWidth/2 {
 		upx = 1
 	}
 	upy := -1
-	if remy<bgTileWidth/2{
+	if remy < bgTileWidth/2 {
 		upy = 1
 	}
 
 	for i := -1; i < 2; i++ {
 		for j := -1; j < 2; j++ {
-			if upx == i || upy == j{
-				checkbgshape(myCoordx+i,myCoordy+j)
-			}else{
+			if upx == i || upy == j {
+				checkbgshape(myCoordx+i, myCoordy+j)
+			} else {
 				addTshape(myCoordx+i, myCoordy+j)
 			}
 		}
@@ -259,8 +259,29 @@ func bgShapesWork() {
 }
 
 func addTshape(i, j int) {
-	if ti, ok := bgtiles[location{i, j}]; ok {
-		currentTShapes[location{i, j}] = ttshapes[ti.tiletyp]
+	loc := location{i, j}
+	if ti, ok := bgtiles[loc]; ok {
+		transcoord := ttshapes[ti.tiletyp]
+		var newlines []line
+		for _, l := range transcoord.lines {
+			newlines = append(
+				newlines,
+				line{
+					location{
+						l.p1.x + (loc.x * bgTileWidth),
+						l.p1.y + (loc.y * bgTileWidth),
+					},
+					location{
+						l.p2.x + (loc.x * bgTileWidth),
+						l.p2.y + (loc.y * bgTileWidth),
+					},
+				},
+			)
+		}
+		transcoord.lines = newlines
+
+		log.Println("put bgshape ", transcoord)
+		currentTShapes[location{i, j}] = transcoord
 	}
 }
 func checkbgshape(i, j int) {
@@ -268,8 +289,8 @@ func checkbgshape(i, j int) {
 }
 
 type bgLoading struct {
-	ops      *ebiten.DrawImageOptions
-	tiletyp  tileType
+	ops     *ebiten.DrawImageOptions
+	tiletyp tileType
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions) {

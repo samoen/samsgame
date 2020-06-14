@@ -56,6 +56,11 @@ func normalcollides(checkcopy shape, exclude *shape) bool {
 			return true
 		}
 	}
+	for _, obj := range currentTShapes {
+		if checkcopy.collidesWith(obj){
+			return true
+		}
+	}
 	for _, obj := range slashers {
 		if obj.ent.rect.shape == exclude {
 			continue
