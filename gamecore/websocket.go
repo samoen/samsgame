@@ -88,10 +88,10 @@ func connectToServer() {
 
 func clearEntities() {
 	wepBlockers = make(map[*entityid]*shape)
-	slashers = make(map[*entityid]*slasher)
-	remotePlayers = make(map[string]*slasher)
+	slashers = make(map[*entityid]*localEnt)
+	remotePlayers = make(map[string]*remotePlayer)
 	enemyControllers = make(map[*entityid]*enemyController)
-	mySlasher.deth.hp.CurrentHP = -1
+	mySlasher.lSlasher.deth.hp.CurrentHP = -1
 	placeMap()
 }
 
@@ -125,30 +125,32 @@ func socketReceive() {
 		for _, l := range msg.ll.Locs {
 			if _,ok:=remotePlayers[l.MyPNum];!ok{
 				log.Println("adding new player")
-				remoteP := newSlasher(location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
+				remoteSlasher := newSlasher(location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
+				remoteP := &remotePlayer{}
+				remoteP.rSlasher = remoteSlasher
 				remoteP.servId = l.MyPNum
 				remotePlayers[l.MyPNum] = remoteP
 			}
 			if rp,ok:=remotePlayers[l.MyPNum];ok{
-				rp.ent.baseloc = rp.ent.rect.location
-				rp.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
-				rp.ent.directions = l.Mydir
-				rp.ent.moment = l.Mymom
-				rp.startangle = l.Myaxe.Startangle
-				rp.ent.atkButton = l.Myaxe.Swinging
-				if rp.deth.skipHpUpdate > 0 {
-					rp.deth.skipHpUpdate--
+				rp.rSlasher.ent.baseloc = rp.rSlasher.ent.rect.location
+				rp.rSlasher.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
+				rp.rSlasher.ent.directions = l.Mydir
+				rp.rSlasher.ent.moment = l.Mymom
+				rp.rSlasher.startangle = l.Myaxe.Startangle
+				rp.rSlasher.ent.atkButton = l.Myaxe.Swinging
+				if rp.rSlasher.deth.skipHpUpdate > 0 {
+					rp.rSlasher.deth.skipHpUpdate--
 				} else {
-					if l.Myhealth.CurrentHP < rp.deth.hp.CurrentHP {
-						rp.deth.redScale = 10
+					if l.Myhealth.CurrentHP < rp.rSlasher.deth.hp.CurrentHP {
+						rp.rSlasher.deth.redScale = 10
 					}
-					rp.deth.hp = l.Myhealth
+					rp.rSlasher.deth.hp = l.Myhealth
 				}
 				for _, hitid := range l.Myaxe.IHit {
 					if hitid == myPNum {
-						mySlasher.deth.redScale = 10
-						mySlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
-						if mySlasher.deth.hp.CurrentHP < 1 {
+						mySlasher.lSlasher.deth.redScale = 10
+						mySlasher.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+						if mySlasher.lSlasher.deth.hp.CurrentHP < 1 {
 							delete(slashers,myId)
 						}
 						break
@@ -158,13 +160,13 @@ func socketReceive() {
 		}
 		message := ServerMessage{}
 		message.MyPNum = msg.ll.YourPNum
-		message.Myloc = ServerLocation{mySlasher.ent.rect.location.x, mySlasher.ent.rect.location.y}
-		message.Mymom = mySlasher.ent.moment
-		message.Mydir = mySlasher.ent.directions
+		message.Myloc = ServerLocation{mySlasher.lSlasher.ent.rect.location.x, mySlasher.lSlasher.ent.rect.location.y}
+		message.Mymom = mySlasher.lSlasher.ent.moment
+		message.Mydir = mySlasher.lSlasher.ent.directions
 		messageWep := Weapon{}
-		messageWep.Dmg = mySlasher.pivShape.damage
-		messageWep.Swinging = mySlasher.swangSinceSend
-		messageWep.Startangle = mySlasher.startangle
+		messageWep.Dmg = mySlasher.lSlasher.pivShape.damage
+		messageWep.Swinging = mySlasher.lSlasher.swangSinceSend
+		messageWep.Startangle = mySlasher.lSlasher.startangle
 		var hitlist []string
 
 		for _, hitlocal := range mySlasher.hitsToSend {
@@ -176,10 +178,10 @@ func socketReceive() {
 		}
 		messageWep.IHit = hitlist
 		message.Myaxe = messageWep
-		message.Myhealth = mySlasher.deth.hp
+		message.Myhealth = mySlasher.lSlasher.deth.hp
 
 		mySlasher.hitsToSend = nil
-		mySlasher.swangSinceSend = false
+		mySlasher.lSlasher.swangSinceSend = false
 
 		go func() {
 			writeErr := wsjson.Write(context.Background(), msg.sock, message)

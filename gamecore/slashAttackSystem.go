@@ -16,13 +16,21 @@ type slasher struct {
 	swangin        bool
 	swangSinceSend bool
 	pivShape       *pivotingShape
+}
+
+type localEnt struct {
+	lSlasher 		*slasher
 	hitsToSend     []string
+}
+
+type remotePlayer struct {
+	rSlasher 		*slasher
 	servId         string
 }
 
-var slashers = make(map[*entityid]*slasher)
+var slashers = make(map[*entityid]*localEnt)
 
-var remotePlayers = make(map[string]*slasher)
+var remotePlayers = make(map[string]*remotePlayer)
 
 func handleSwing(bot *slasher) {
 	if bot.cooldownCount > 0 {
@@ -84,90 +92,90 @@ func remotePlayersWork() {
 		case interpolating:
 			var newplace location
 			if receiveCount == interpTime {
-				newplace = bot.ent.endpoint
+				newplace = bot.rSlasher.ent.endpoint
 			} else {
-				diffx := (bot.ent.endpoint.x - bot.ent.baseloc.x) / interpTime
-				diffy := (bot.ent.endpoint.y - bot.ent.baseloc.y) / interpTime
-				newplace = bot.ent.rect.location
+				diffx := (bot.rSlasher.ent.endpoint.x - bot.rSlasher.ent.baseloc.x) / interpTime
+				diffy := (bot.rSlasher.ent.endpoint.y - bot.rSlasher.ent.baseloc.y) / interpTime
+				newplace = bot.rSlasher.ent.rect.location
 				newplace.x += diffx
 				newplace.y += diffy
 			}
-			checkrect := newRectangle(newplace, bot.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape, bot.ent.rect.shape) {
-				bot.ent.rect.refreshShape(newplace)
+			checkrect := newRectangle(newplace, bot.rSlasher.ent.rect.dimens)
+			if !normalcollides(*checkrect.shape, bot.rSlasher.ent.rect.shape) {
+				bot.rSlasher.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
-			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent)
+			bot.rSlasher.ent.moment = calcMomentum(*bot.rSlasher.ent)
+			moveCollide(bot.rSlasher.ent)
 		case momentumOnly:
 			//if receiveCount > pingFrames {
-			bot.ent.directions.Down = false
-			bot.ent.directions.Left = false
-			bot.ent.directions.Right = false
-			bot.ent.directions.Up = false
+			bot.rSlasher.ent.directions.Down = false
+			bot.rSlasher.ent.directions.Left = false
+			bot.rSlasher.ent.directions.Right = false
+			bot.rSlasher.ent.directions.Up = false
 			//}
-			bot.ent.moment = calcMomentum(*bot.ent)
-			moveCollide(bot.ent)
+			bot.rSlasher.ent.moment = calcMomentum(*bot.rSlasher.ent)
+			moveCollide(bot.rSlasher.ent)
 		}
-		handleSwing(bot)
+		handleSwing(bot.rSlasher)
 	}
 }
 func slashersWork() {
 	for _, bot := range slashers {
-		bot.ent.moment = calcMomentum(*bot.ent)
-		moveCollide(bot.ent)
+		bot.lSlasher.ent.moment = calcMomentum(*bot.lSlasher.ent)
+		moveCollide(bot.lSlasher.ent)
 
-		if !bot.swangin {
-			if bot.ent.directions.Down ||
-				bot.ent.directions.Up ||
-				bot.ent.directions.Right ||
-				bot.ent.directions.Left {
+		if !bot.lSlasher.swangin {
+			if bot.lSlasher.ent.directions.Down ||
+				bot.lSlasher.ent.directions.Up ||
+				bot.lSlasher.ent.directions.Right ||
+				bot.lSlasher.ent.directions.Left {
 				hitRange := 1
 				moveTipX := 0
-				if bot.ent.directions.Right {
+				if bot.lSlasher.ent.directions.Right {
 					moveTipX = hitRange
-				} else if bot.ent.directions.Left {
+				} else if bot.lSlasher.ent.directions.Left {
 					moveTipX = -hitRange
 				}
 				moveTipY := 0
-				if bot.ent.directions.Up {
+				if bot.lSlasher.ent.directions.Up {
 					moveTipY = -hitRange
-				} else if bot.ent.directions.Down {
+				} else if bot.lSlasher.ent.directions.Down {
 					moveTipY = hitRange
 				}
-				bot.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
+				bot.lSlasher.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
 			}
 		}
-		handleSwing(bot)
+		handleSwing(bot.lSlasher)
 
-		if bot.swangin {
+		if bot.lSlasher.swangin {
 			for _, slashee := range remotePlayers {
-				if _, ok := bot.pivShape.alreadyHit[slashee.ent.rect.shape]; ok {
+				if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape]; ok {
 					continue
 				}
-				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape) {
-					slashee.deth.redScale = 10
-					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-					slashee.deth.skipHpUpdate = 2
-					bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
+				if slashee.rSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
+					slashee.rSlasher.deth.redScale = 10
+					slashee.rSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
+					slashee.rSlasher.deth.skipHpUpdate = 2
+					bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape] = true
 					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 				}
 			}
 
 			for slasheeid, slashee := range slashers {
-				if slashee.ent == bot.ent {
+				if slashee.lSlasher.ent == bot.lSlasher.ent {
 					continue
 				}
-				if _, ok := bot.pivShape.alreadyHit[slashee.ent.rect.shape]; ok {
+				if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.lSlasher.ent.rect.shape]; ok {
 					continue
 				}
-				if slashee.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape) {
-					slashee.deth.redScale = 10
-					slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-					bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
-					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
+				if slashee.lSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
+					slashee.lSlasher.deth.redScale = 10
+					slashee.lSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
+					bot.lSlasher.pivShape.alreadyHit[slashee.lSlasher.ent.rect.shape] = true
+					//bot.lSlasher.hitsToSend = append(bot.lSlasher.hitsToSend, slashee.lSlasher.servId)
 
-					if slashee.deth.hp.CurrentHP < 1 {
+					if slashee.lSlasher.deth.hp.CurrentHP < 1 {
 						delete(slashers, slasheeid)
 						delete(enemyControllers, slasheeid)
 					}
@@ -196,7 +204,7 @@ type Hitpoints struct {
 }
 
 func respawnsWork() {
-	if mySlasher.deth.hp.CurrentHP > 0 {
+	if mySlasher.lSlasher.deth.hp.CurrentHP > 0 {
 		return
 	}
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
@@ -213,9 +221,9 @@ type Directions struct {
 }
 
 func updatePlayerControl() {
-	mySlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
-	mySlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
-	mySlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
-	mySlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
-	mySlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
+	mySlasher.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
+	mySlasher.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
+	mySlasher.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
+	mySlasher.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
+	mySlasher.lSlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }

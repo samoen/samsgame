@@ -15,8 +15,9 @@ import (
 
 const ScreenWidth = 700
 const ScreenHeight = 400
-const worldWidth = ScreenWidth*4
-var bgTileWidth = ScreenWidth/4
+const worldWidth = ScreenWidth * 4
+
+var bgTileWidth = ScreenWidth / 4
 
 type SamGame struct{}
 
@@ -45,10 +46,10 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	slashersWork()
 	remotePlayersWork()
 
-	mycenterpoint = rectCenterPoint(*mySlasher.ent.rect)
+	mycenterpoint = rectCenterPoint(*mySlasher.lSlasher.ent.rect)
 	center := mycenterpoint
-	center.x *=-1
-	center.y *=-1
+	center.x *= -1
+	center.y *= -1
 	center.x += ScreenWidth / 2
 	center.y += ScreenHeight / 2
 	offset = center
@@ -110,7 +111,7 @@ type ServerLocation struct {
 	Y int
 }
 
-var mySlasher *slasher
+var mySlasher *localEnt
 var myId *entityid
 
 func newSlasher(startloc location, heath Hitpoints) *slasher {
@@ -163,17 +164,16 @@ func placePlayer() {
 	pid := &entityid{}
 	ps := newSlasher(location{50, 50}, Hitpoints{6, 6})
 	mycenterpoint = rectCenterPoint(*ps.ent.rect)
-	mySlasher = ps
+	myLocalEnt := &localEnt{}
+	myLocalEnt.lSlasher = ps
+	mySlasher = myLocalEnt
 	myId = pid
-	slashers[pid] = ps
+	slashers[pid] = myLocalEnt
 }
 
 func ClientInit() {
-	i, err := newImages()
-	if err != nil {
-		log.Fatal(err)
-	}
-	images = i
+	images = imagesStruct{}
+	images.newImages()
 
 	if err := images.empty.Fill(color.White); err != nil {
 		log.Fatal(err)
@@ -184,7 +184,9 @@ func ClientInit() {
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
 		animal := newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})
-		slashers[enemyid] = animal
+		localAnimal := &localEnt{}
+		localAnimal.lSlasher = animal
+		slashers[enemyid] = localAnimal
 		eController := &enemyController{}
 		eController.aEnt = animal.ent
 		addEnemyController(eController, enemyid)
@@ -196,21 +198,20 @@ func ClientInit() {
 	for i := -1; i < tilesAcross+1; i++ {
 		for j := -1; j < tilesAcross+1; j++ {
 			ttype := blank
-			if j>tilesAcross/2{
-				ttype = rocky
-			}
-			if j>tilesAcross-1 || i>tilesAcross-1 || j<0 || i<0{
+			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
 				ttype = offworld
+			} else if j%3 == 0 || i%3 == 0 {
+				ttype = rocky
 			}
 			bgl := &bgLoading{}
 			bgl.tiletyp = ttype
 			bgl.ops = &ebiten.DrawImageOptions{}
-			bgtiles[location{i,j}]=bgl
+			bgtiles[location{i, j}] = bgl
 		}
 	}
 
-	ttshapes[blank] = shape{lines:[]line{line{location{180,5},location{140,140}}}}
-	ttshapes[rocky] = shape{lines:[]line{line{location{80,20},location{80,120}}}}
+	ttshapes[blank] = shape{lines: []line{line{location{180, 5}, location{140, 60}}}}
+	ttshapes[rocky] = shape{lines: []line{line{location{80, 20}, location{80, 120}}}}
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)

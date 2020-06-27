@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"sort"
-	"time"
 )
 
 type baseSprite struct {
@@ -31,77 +30,26 @@ type imagesStruct struct {
 
 var assetsDir = "assets"
 
-func newImages() (imagesStruct, error) {
-	playerStandImage, _, err := ebitenutil.NewImageFromFile(
-		assetsDir+"/playerstand.png",
+func cacheImage(name string) (img *ebiten.Image) {
+	img, _, err := ebitenutil.NewImageFromFile(
+		"assets/"+name+".png",
 		ebiten.FilterDefault,
 	)
 	if err != nil {
-		return imagesStruct{}, err
+		panic(err)
 	}
+	return img
+}
 
-	playerWup, _, err := ebitenutil.NewImageFromFile(
-		assetsDir+"/playerwalkup.png",
-		ebiten.FilterDefault,
-	)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-	playerWdown, _, err := ebitenutil.NewImageFromFile(
-		assetsDir+"/playerwalkdown.png",
-		ebiten.FilterDefault,
-	)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-	playerDang, _, err := ebitenutil.NewImageFromFile(
-		assetsDir+"/playerwalkdownangle.png",
-		ebiten.FilterDefault,
-	)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-	playerUang, _, err := ebitenutil.NewImageFromFile(
-		assetsDir+"/playerwalkupangle.png",
-		ebiten.FilterDefault,
-	)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-
-	playerSwing, _, err := ebitenutil.NewImageFromFile(
-		"assets/playerswing1.png",
-		ebiten.FilterDefault,
-	)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-
-	emptyImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/floor.png", ebiten.FilterDefault)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-	swordImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/axe.png", ebiten.FilterDefault)
-	if err != nil {
-		return imagesStruct{}, err
-	}
-
-	//bgImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
-	//if err != nil {
-	//	return imagesStruct{}, err
-	//}
-
-	is := imagesStruct{}
-	is.playerStand = playerStandImage
-	is.playerWalkUp = playerWup
-	is.playerWalkDown = playerWdown
-	is.playerWalkDownAngle = playerDang
-	is.playerWalkUpAngle = playerUang
-	is.playerSwing = playerSwing
-	is.empty = emptyImage
-	is.sword = swordImage
-	//is.bg = bgImage
-	return is, nil
+func (is *imagesStruct) newImages() {
+	is.playerStand = cacheImage("playerstand")
+	is.playerWalkUp = cacheImage("playerwalkup")
+	is.playerWalkDown = cacheImage("playerwalkdown")
+	is.playerWalkDownAngle = cacheImage("playerwalkdownangle")
+	is.playerWalkUpAngle = cacheImage("playerwalkupangle")
+	is.playerSwing = cacheImage("playerswing1")
+	is.empty = cacheImage("floor")
+	is.sword = cacheImage("axe")
 }
 
 var mycenterpoint location
@@ -175,7 +123,7 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 				}
 
 				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
-				time.Sleep(500*time.Millisecond)
+				//time.Sleep(500*time.Millisecond)
 				if err != nil {
 					panic(err)
 				}
@@ -225,10 +173,11 @@ func bgShapesWork() {
 		upy = 1
 	}
 
-	for i := -1; i < 2; i++ {
-		for j := -1; j < 2; j++ {
+	for i := -1; i <= 1; i++ {
+		for j := -1; j <= 1; j++ {
 			if upx == i || upy == j {
-				checkbgshape(myCoordx+i, myCoordy+j)
+				delete(currentTShapes, location{myCoordx+i, myCoordy+j})
+				//checkbgshape(myCoordx+i, myCoordy+j)
 			} else {
 				addTshape(myCoordx+i, myCoordy+j)
 			}
@@ -262,9 +211,9 @@ func addTshape(i, j int) {
 		currentTShapes[location{i, j}] = transcoord
 	}
 }
-func checkbgshape(i, j int) {
-	delete(currentTShapes, location{i, j})
-}
+//func checkbgshape(i, j int) {
+//	delete(currentTShapes, location{i, j})
+//}
 
 type bgLoading struct {
 	ops     *ebiten.DrawImageOptions
@@ -303,11 +252,11 @@ func updateSprites() {
 	toRender = nil
 
 	for _, bs := range slashers {
-		updateSlasherSprite(bs)
+		updateSlasherSprite(bs.lSlasher)
 
 	}
 	for _, bs := range remotePlayers {
-		updateSlasherSprite(bs)
+		updateSlasherSprite(bs.rSlasher)
 
 	}
 	sort.Slice(toRender, func(i, j int) bool {

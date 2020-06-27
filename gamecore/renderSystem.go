@@ -48,21 +48,21 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 	for _, slshr := range slashers {
-		for _, l := range slshr.ent.rect.shape.lines {
+		for _, l := range slshr.lSlasher.ent.rect.shape.lines {
 			samDrawLine(l)
 		}
-		if slshr.swangin {
-			for _, l := range slshr.pivShape.pivoterShape.lines {
+		if slshr.lSlasher.swangin {
+			for _, l := range slshr.lSlasher.pivShape.pivoterShape.lines {
 				samDrawLine(l)
 			}
 		}
 	}
 	for _, slshr := range remotePlayers {
-		for _, l := range slshr.ent.rect.shape.lines {
+		for _, l := range slshr.rSlasher.ent.rect.shape.lines {
 			samDrawLine(l)
 		}
-		if slshr.swangin {
-			for _, l := range slshr.pivShape.pivoterShape.lines {
+		if slshr.rSlasher.swangin {
+			for _, l := range slshr.rSlasher.pivShape.pivoterShape.lines {
 				samDrawLine(l)
 			}
 		}
