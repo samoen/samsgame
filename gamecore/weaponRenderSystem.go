@@ -112,14 +112,9 @@ func rectCenterPoint(r rectangle) location {
 	return location{x, y}
 }
 
-type imwithload struct {
-	im      *ebiten.Image
-	loading bool
-}
-
 var bgchan = make(chan ttwithIm)
 var bgtiles = make(map[location]*bgLoading)
-var ttmap = make(map[tileType]*imwithload)
+var ttmap = make(map[tileType]*ebiten.Image)
 var ttshapes = make(map[tileType]shape)
 var currentTShapes = make(map[location]shape)
 
@@ -135,8 +130,7 @@ func drawBackground(screen *ebiten.Image) {
 
 	select {
 	case bgl := <-bgchan:
-		ttmap[bgl.tyti].im = bgl.imim
-		ttmap[bgl.tyti].loading = false
+		ttmap[bgl.tyti] = bgl.imim
 	default:
 	}
 
@@ -152,7 +146,6 @@ func drawBackground(screen *ebiten.Image) {
 	if remy < bgTileWidth/2 {
 		upy = -1
 	}
-	//handleBgtile(m)
 
 	for i := upx; i < 2+upx; i++ {
 		for j := upy; j < 2+upy; j++ {
@@ -165,62 +158,46 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 	if ti, ok := bgtiles[location{i, j}]; ok {
 		prett := ti.tiletyp
 
-		if _, ok := ttmap[ti.tiletyp]; !ok {
-			ttmap[ti.tiletyp] = &imwithload{}
-		}
-
-		if img, ok := ttmap[ti.tiletyp]; ok {
-			done := false
-			if img.loading {
-				done = true
-				img.im = images.playerWalkDownAngle
-			} else {
-				if img.im != nil {
-					done = true
-				} else {
-					//img.im = images.playerWalkDownAngle
+		if _, ok := ttmap[prett]; !ok {
+			iwl :=images.sword
+			ttmap[prett] = iwl
+			go func() {
+				var imstring string
+				switch prett {
+				case blank:
+					imstring = assetsDir + "/floor.png"
+				case rocky:
+					imstring = assetsDir + "/tile31.png"
+				case offworld:
+					imstring = assetsDir + "/8000paint.png"
+				default:
+					imstring = assetsDir + "/sword.png"
 				}
-			}
-			if !done {
-				log.Println(i, j)
-				img.loading = true
-				go func() {
-					var imstring string
-					switch prett {
-					case blank:
-						imstring = assetsDir + "/floor.png"
-					case rocky:
-						imstring = assetsDir + "/tile31.png"
-					case offworld:
-						imstring = assetsDir + "/8000paint.png"
-					default:
-						imstring = assetsDir + "/sword.png"
-					}
 
-					im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
-					if err != nil {
-						panic(err)
-					}
-					bgl := ttwithIm{}
-					bgl.imim = im
-					bgl.tyti = prett
-					bgchan <- bgl
-				}()
-			}
+				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
+				time.Sleep(500*time.Millisecond)
+				if err != nil {
+					panic(err)
+				}
+				bgl := ttwithIm{}
+				bgl.imim = im
+				bgl.tyti = prett
+				bgchan <- bgl
+			}()
 		}
 	}
 
 	if im, ok := bgtiles[location{i, j}]; ok {
 		if ttim, ok := ttmap[im.tiletyp]; ok {
-			if ttim.im != nil {
+			if ttim != nil {
 				im.ops.GeoM.Reset()
 				im.ops.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
 				//im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
 				im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
-				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim.im, im.ops)
+				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops)
 				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
 
-				if err := screen.DrawImage(ttim.im, im.ops); err != nil {
+				if err := screen.DrawImage(ttim, im.ops); err != nil {
 					log.Fatal(err)
 				}
 			}
