@@ -45,11 +45,6 @@ func (s shape)collidesWith(os shape)bool{
 	return false
 }
 
-func newShape() *shape {
-	s := &shape{}
-	return s
-}
-
 func normalcollides(checkcopy shape, exclude *shape) bool {
 	for _, obj := range wepBlockers {
 		if checkcopy.collidesWith(*obj){
@@ -93,7 +88,7 @@ type rectangle struct {
 func newRectangle(loc location, dims dimens) *rectangle {
 	r := rectangle{}
 	r.dimens = dims
-	r.shape = newShape()
+	r.shape = &shape{}
 	r.refreshShape(loc)
 	return &r
 }

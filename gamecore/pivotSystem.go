@@ -30,10 +30,6 @@ func (p *pivotingShape) makeAxe() {
 
 var wepBlockers = make(map[*entityid]*shape)
 
-func addBlocker(b *shape, id *entityid) {
-	wepBlockers[id] = b
-}
-
 func newLinePolar(loc location, length int, angle float64) line {
 	xpos := int(float64(length)*math.Cos(angle)) + loc.x
 	ypos := int(float64(length)*math.Sin(angle)) + loc.y

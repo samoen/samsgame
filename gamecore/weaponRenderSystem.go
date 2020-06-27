@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"sort"
+	"time"
 )
 
 type baseSprite struct {
@@ -25,7 +26,7 @@ type imagesStruct struct {
 	playerSwing         *ebiten.Image
 	empty               *ebiten.Image
 	sword               *ebiten.Image
-	bg                  *ebiten.Image
+	//bg                  *ebiten.Image
 }
 
 var assetsDir = "assets"
@@ -85,10 +86,10 @@ func newImages() (imagesStruct, error) {
 		return imagesStruct{}, err
 	}
 
-	bgImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
-	if err != nil {
-		return imagesStruct{}, err
-	}
+	//bgImage, _, err := ebitenutil.NewImageFromFile(assetsDir+"/8000paint.png", ebiten.FilterDefault)
+	//if err != nil {
+	//	return imagesStruct{}, err
+	//}
 
 	is := imagesStruct{}
 	is.playerStand = playerStandImage
@@ -99,7 +100,7 @@ func newImages() (imagesStruct, error) {
 	is.playerSwing = playerSwing
 	is.empty = emptyImage
 	is.sword = swordImage
-	is.bg = bgImage
+	//is.bg = bgImage
 	return is, nil
 }
 

@@ -48,6 +48,12 @@ func handleSwing(bot *slasher) {
 				return
 			}
 		}
+		for _, blocker := range currentTShapes {
+			if blocker.collidesWith(*bot.pivShape.pivoterShape) {
+				bot.swangin = false
+				return
+			}
+		}
 
 		arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
 

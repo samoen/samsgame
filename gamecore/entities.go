@@ -14,9 +14,9 @@ import (
 )
 
 const ScreenWidth = 700
-const ScreenHeight = 500
-const worldWidth = ScreenWidth*5
-var bgTileWidth = ScreenWidth
+const ScreenHeight = 400
+const worldWidth = ScreenWidth*4
+var bgTileWidth = ScreenWidth/4
 
 type SamGame struct{}
 
@@ -136,7 +136,7 @@ func newSlasher(startloc location, heath Hitpoints) *slasher {
 	playerSlasher.cooldownCount = 0
 	playerSlasher.pivShape = &pivotingShape{}
 	playerSlasher.pivShape.damage = 2
-	playerSlasher.pivShape.pivoterShape = newShape()
+	playerSlasher.pivShape.pivoterShape = &shape{}
 	playerSlasher.pivShape.pivotPoint = playerSlasher.ent.rect
 	pDeathable := &deathable{}
 	pDeathable.hp = heath
@@ -239,27 +239,5 @@ func placeMap() {
 		location{0, 0},
 		dimens{worldWidth, worldWidth},
 	)
-	addBlocker(worldBoundRect.shape, worldBoundaryID)
-
-	//diagonalWallID := &entityid{}
-	//diagonalWall := newShape()
-	//diagonalWall.lines = []line{
-	//	{
-	//		location{250, 310},
-	//		location{600, 655},
-	//	},
-	//}
-	//
-	//addBlocker(diagonalWall, diagonalWallID)
-	//
-	//lilRoomID := &entityid{}
-	//lilRoom := newRectangle(
-	//	location{45, 400},
-	//	dimens{70, 20},
-	//)
-	//addBlocker(lilRoom.shape, lilRoomID)
-	//
-	//anotherRoomID := &entityid{}
-	//anotherRoom := newRectangle(location{900, 1200}, dimens{90, 150})
-	//addBlocker(anotherRoom.shape, anotherRoomID)
+	wepBlockers[worldBoundaryID] = worldBoundRect.shape
 }
