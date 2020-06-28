@@ -13,10 +13,16 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-const ScreenWidth = 700
-const ScreenHeight = 500
-const worldWidth = ScreenWidth * 4
-var bgTileWidth = ScreenWidth / 2
+const (
+	maxAxeLength   = 45
+	axeRotateSpeed = 0.12
+	axeArc         = 3.9
+	ScreenWidth    = 700
+	ScreenHeight   = 500
+	worldWidth     = ScreenWidth * 4
+	bgTileWidth    = ScreenWidth / 2
+)
+
 var pingFrames = 10
 var receiveCount = pingFrames
 var receiveDebug = ""
@@ -24,9 +30,9 @@ var receiveChan = make(chan sockSelecter)
 var socketConnection *websocket.Conn
 var othersock *websocket.Conn
 var myLocalPlayer *localPlayer
-var slashers = make(map[*entityid]*localAnimal)
+var slashers = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
-var wepBlockers = make(map[*entityid]*shape)
+var wepBlockers = make(map[*shape]bool)
 
 type SamGame struct{}
 
@@ -44,8 +50,8 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	myLocalPlayer.locEnt.lSlasher.handleSwing()
 	if myLocalPlayer.locEnt.lSlasher.swangin {
 		myLocalPlayer.locEnt.hitremotes()
-		for slasheeid, slashee := range slashers {
-			myLocalPlayer.locEnt.checkHitAnimal(slashee,slasheeid)
+		for slashee, _ := range slashers {
+			myLocalPlayer.locEnt.checkHitAnimal(slashee)
 		}
 	}
 	animalsWork()
@@ -90,33 +96,6 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 	//return outsideWidth, outsideHeight
 }
 
-func placePlayer() {
-	ps := &slasher{}
-	ps.newSlasher()
-	ps.ent.rect.refreshShape(location{50, 50})
-	ps.deth.hp = Hitpoints{6, 6}
-	mycenterpoint = rectCenterPoint(ps.ent.rect)
-	myLocalEnt := localEnt{}
-	myLocalEnt.lSlasher = ps
-	locPlayer := localPlayer{}
-	locPlayer.locEnt = myLocalEnt
-	myLocalPlayer = &locPlayer
-	myLocalPlayer.locEnt.lSlasher.ent.spawnSafe()
-}
-
-func (accelplayer *acceleratingEnt) spawnSafe() {
-	for {
-		if normalcollides(*accelplayer.rect.shape, accelplayer.rect.shape) {
-			accelplayer.rect = newRectangle(
-				location{accelplayer.rect.location.x, accelplayer.rect.location.y + 20},
-				dimens{20, 40},
-			)
-		} else {
-			break
-		}
-	}
-}
-
 func ClientInit() {
 	images = imagesStruct{}
 	images.newImages()
@@ -124,17 +103,17 @@ func ClientInit() {
 	if err := images.empty.Fill(color.White); err != nil {
 		log.Fatal(err)
 	}
-
-	placePlayer()
+	myLocalPlayer = &localPlayer{}
+	myLocalPlayer.placePlayer()
+	//placePlayer()
 
 	for i := 1; i < 10; i++ {
-		enemyid := &entityid{}
 		animal := &slasher{}
 		animal.newSlasher()
 		animal.ent.rect.refreshShape(location{i*50 + 50, i * 30})
 		la := &localAnimal{}
 		la.locEnt.lSlasher = animal
-		slashers[enemyid] = la
+		slashers[la] = true
 	}
 
 	placeMap()
@@ -180,10 +159,9 @@ func ClientInit() {
 }
 
 func placeMap() {
-	worldBoundaryID := &entityid{}
 	worldBoundRect := newRectangle(
 		location{0, 0},
 		dimens{worldWidth, worldWidth},
 	)
-	wepBlockers[worldBoundaryID] = worldBoundRect.shape
+	wepBlockers[worldBoundRect.shape] = true
 }

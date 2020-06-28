@@ -83,6 +83,18 @@ type localPlayer struct {
 	dead   bool
 }
 
+func (l *localPlayer) placePlayer() {
+	ps := &slasher{}
+	ps.newSlasher()
+	ps.ent.rect.refreshShape(location{50, 50})
+	ps.deth.hp = Hitpoints{6, 6}
+	mycenterpoint = rectCenterPoint(ps.ent.rect)
+	myLocalEnt := localEnt{}
+	myLocalEnt.lSlasher = ps
+	l.locEnt = myLocalEnt
+	l.locEnt.lSlasher.ent.spawnSafe()
+}
+
 type localAnimal struct {
 	locEnt       localEnt
 	controlCount int
@@ -120,7 +132,7 @@ func (bot *slasher) handleSwing() {
 		frontCrossLine.newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount-math.Pi/2)
 		bot.pivShape.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
 
-		for _, blocker := range wepBlockers {
+		for blocker, _ := range wepBlockers {
 			if blocker.collidesWith(bot.pivShape.pivoterShape) {
 				bot.swangin = false
 				return
@@ -228,16 +240,16 @@ func (bot *localEnt) hitremotes() {
 	}
 }
 
-func (bot *localEnt) checkHitAnimal(slashee *localAnimal, slasheeid *entityid) {
-		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.rect.shape]; ok {
-			return
+func (bot *localEnt) checkHitAnimal(slashee *localAnimal) {
+	if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.rect.shape]; ok {
+		return
+	}
+	if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
+		slashee.locEnt.lSlasher.getClapped(bot.lSlasher)
+		if slashee.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
+			delete(slashers, slashee)
 		}
-		if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
-			slashee.locEnt.lSlasher.getClapped(bot.lSlasher)
-			if slashee.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-				delete(slashers, slasheeid)
-			}
-		}
+	}
 }
 
 func (slashee *slasher) getClapped(bot *slasher) {
@@ -261,29 +273,41 @@ func (bot *localAnimal) AIControl() {
 }
 
 func animalsWork() {
-	for _, bot := range slashers {
+	for bot, _ := range slashers {
 		bot.AIControl()
 		bot.locEnt.lSlasher.ent.moveCollide()
 		bot.locEnt.lSlasher.updateAim()
 		bot.locEnt.lSlasher.handleSwing()
 		if bot.locEnt.lSlasher.swangin {
 			bot.locEnt.hitremotes()
-			for slasheeid, slashee := range slashers {
+			for slashee, _ := range slashers {
 				if slashee.locEnt.lSlasher.ent.rect.shape == bot.locEnt.lSlasher.ent.rect.shape {
 					continue
 				}
-				bot.locEnt.checkHitAnimal(slashee,slasheeid)
+				bot.locEnt.checkHitAnimal(slashee)
 			}
 			bot.locEnt.lSlasher.hitPlayer()
 		}
 	}
 }
+type pivotingShape struct {
+	pivoterShape   shape
+	animationCount float64
+	alreadyHit     map[*shape]bool
+	startCount     float64
+	bladeLength    int
+	damage         int
+}
 
-const (
-	maxAxeLength   = 45
-	axeRotateSpeed = 0.12
-	axeArc         = 3.9
-)
+
+// func rotateAround(center location, point location, angle float64) location {
+// 	result := location{}
+// 	rotatedX := math.Cos(angle)*float64(point.x-center.x) - math.Sin(angle)*float64(point.y-center.y) + float64(center.x)
+// 	rotatedY := math.Sin(angle)*float64(point.x-center.x) + math.Cos(angle)*float64(point.y-center.y) + float64(center.y)
+// 	result.x = int(rotatedX)
+// 	result.y = int(rotatedY)
+// 	return result
+// }
 
 type deathable struct {
 	redScale     int
@@ -303,7 +327,8 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	placePlayer()
+	myLocalPlayer = &localPlayer{}
+	myLocalPlayer.placePlayer()
 }
 
 type Directions struct {

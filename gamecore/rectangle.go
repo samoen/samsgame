@@ -14,7 +14,7 @@ func (l *line) newLinePolar(loc location, length int, angle float64) {
 	xpos := int(float64(length)*math.Cos(angle)) + loc.x
 	ypos := int(float64(length)*math.Sin(angle)) + loc.y
 	l.p1 = loc
-	l.p2 = location{xpos,ypos}
+	l.p2 = location{xpos, ypos}
 }
 
 func (l line) intersects(l2 line) (int, int, bool) {
@@ -43,7 +43,8 @@ func (l line) intersects(l2 line) (int, int, bool) {
 type shape struct {
 	lines []line
 }
-func (s shape)collidesWith(os shape)bool{
+
+func (s shape) collidesWith(os shape) bool {
 	for _, slasheeLine := range s.lines {
 		for _, bladeLine := range os.lines {
 			if _, _, intersected := bladeLine.intersects(slasheeLine); intersected {
@@ -55,26 +56,26 @@ func (s shape)collidesWith(os shape)bool{
 }
 
 func normalcollides(checkcopy shape, exclude *shape) bool {
-	for _, obj := range wepBlockers {
-		if checkcopy.collidesWith(*obj){
+	for obj,_ := range wepBlockers {
+		if checkcopy.collidesWith(*obj) {
 			return true
 		}
 	}
 	for _, obj := range currentTShapes {
-		if checkcopy.collidesWith(obj){
+		if checkcopy.collidesWith(obj) {
 			return true
 		}
 	}
-	for _, obj := range slashers {
+	for obj, _ := range slashers {
 		if obj.locEnt.lSlasher.ent.rect.shape == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(*obj.locEnt.lSlasher.ent.rect.shape){
+		if checkcopy.collidesWith(*obj.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
 	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape != exclude {
-		if checkcopy.collidesWith(*myLocalPlayer.locEnt.lSlasher.ent.rect.shape){
+		if checkcopy.collidesWith(*myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
@@ -82,7 +83,7 @@ func normalcollides(checkcopy shape, exclude *shape) bool {
 		if obj.rSlasher.ent.rect.shape == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(*obj.rSlasher.ent.rect.shape){
+		if checkcopy.collidesWith(*obj.rSlasher.ent.rect.shape) {
 			return true
 		}
 	}

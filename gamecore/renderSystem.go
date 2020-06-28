@@ -43,12 +43,12 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 
-	for _, shape := range wepBlockers {
+	for shape,_ := range wepBlockers {
 		for _, l := range shape.lines {
 			l.samDrawLine(s)
 		}
 	}
-	for _, slshr := range slashers {
+	for slshr, _ := range slashers {
 		for _, l := range slshr.locEnt.lSlasher.ent.rect.shape.lines {
 			l.samDrawLine(s)
 		}

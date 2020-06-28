@@ -106,7 +106,7 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 		prett := ti.tiletyp
 
 		if _, ok := ttmap[prett]; !ok {
-			iwl :=images.sword
+			iwl := images.sword
 			ttmap[prett] = iwl
 			go func() {
 				var imstring string
@@ -175,7 +175,7 @@ func bgShapesWork() {
 	for i := -1; i <= 1; i++ {
 		for j := -1; j <= 1; j++ {
 			if upx == i || upy == j {
-				delete(currentTShapes, location{myCoordx+i, myCoordy+j})
+				delete(currentTShapes, location{myCoordx + i, myCoordy + j})
 			} else {
 				addTshape(myCoordx+i, myCoordy+j)
 			}
@@ -246,7 +246,7 @@ var offset location
 func updateSprites() {
 	toRender = nil
 
-	for _, bs := range slashers {
+	for bs, _ := range slashers {
 		updateSlasherSprite(bs.locEnt.lSlasher)
 
 	}

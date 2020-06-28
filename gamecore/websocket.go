@@ -115,8 +115,8 @@ func connectToServer() {
 }
 
 func clearEntities() {
-	wepBlockers = make(map[*entityid]*shape)
-	slashers = make(map[*entityid]*localAnimal)
+	wepBlockers = make(map[*shape]bool)
+	slashers = make(map[*localAnimal]bool)
 	remotePlayers = make(map[string]*remotePlayer)
 	myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP = -1
 	placeMap()
