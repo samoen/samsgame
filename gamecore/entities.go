@@ -16,22 +16,19 @@ import (
 const ScreenWidth = 700
 const ScreenHeight = 500
 const worldWidth = ScreenWidth * 4
-
 var bgTileWidth = ScreenWidth / 2
-
-type SamGame struct{}
-
 var pingFrames = 10
-
 var receiveCount = pingFrames
 var receiveDebug = ""
-
-type sockSelecter struct {
-	ll   LocationList
-	sock *websocket.Conn
-}
-
 var receiveChan = make(chan sockSelecter)
+var socketConnection *websocket.Conn
+var othersock *websocket.Conn
+var myLocalPlayer *localPlayer
+var slashers = make(map[*entityid]*localAnimal)
+var remotePlayers = make(map[string]*remotePlayer)
+var wepBlockers = make(map[*entityid]*shape)
+
+type SamGame struct{}
 
 func (g *SamGame) Update(screen *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -47,7 +44,9 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	myLocalPlayer.locEnt.lSlasher.handleSwing()
 	if myLocalPlayer.locEnt.lSlasher.swangin {
 		myLocalPlayer.locEnt.hitremotes()
-		myLocalPlayer.locEnt.HitAnimals()
+		for slasheeid, slashee := range slashers {
+			myLocalPlayer.locEnt.checkHitAnimal(slashee,slasheeid)
+		}
 	}
 	animalsWork()
 	remotePlayersWork()
@@ -89,64 +88,6 @@ func (g *SamGame) Layout(outsideWidth, outsideHeight int) (int, int) {
 	//magnification := outsideWidth/ScreenWidth
 	//return outsideWidth+outsideWidth-ScreenWidth, outsideHeight+outsideWidth-ScreenHeight
 	//return outsideWidth, outsideHeight
-}
-
-type ServerMessage struct {
-	Myloc    ServerLocation
-	Mymom    Momentum
-	Mydir    Directions
-	Myaxe    Weapon
-	Myhealth Hitpoints
-	MyPNum   string
-}
-
-type Weapon struct {
-	Swinging   bool
-	Startangle float64
-	IHit       []string
-	Dmg        int
-}
-
-type LocationList struct {
-	Locs     []ServerMessage
-	YourPNum string
-}
-
-type ServerLocation struct {
-	X int
-	Y int
-}
-
-var myLocalPlayer *localPlayer
-
-func (s *slasher) newSlasher() {
-	accelplayer := acceleratingEnt{}
-	accelplayer.rect = newRectangle(
-		location{50,50},
-		dimens{20, 40},
-	)
-	accelplayer.agility = 4
-	accelplayer.moveSpeed = 100
-	s.ent = accelplayer
-	s.cooldownCount = 0
-	s.pivShape = pivotingShape{}
-	s.pivShape.damage = 2
-	s.pivShape.pivoterShape = shape{}
-	pDeathable := deathable{}
-	pDeathable.hp = Hitpoints{6,6}
-	s.deth = pDeathable
-	hBarSprite := baseSprite{}
-	hBarSprite.bOps = &ebiten.DrawImageOptions{}
-	hBarSprite.sprite = images.empty
-	s.hbarsprit = hBarSprite
-	ps := baseSprite{}
-	ps.bOps = &ebiten.DrawImageOptions{}
-	ps.sprite = images.playerStand
-	s.bsprit = ps
-	bs := baseSprite{}
-	bs.bOps = &ebiten.DrawImageOptions{}
-	bs.sprite = images.sword
-	s.wepsprit = bs
 }
 
 func placePlayer() {

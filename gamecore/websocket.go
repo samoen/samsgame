@@ -8,8 +8,36 @@ import (
 	"nhooyr.io/websocket/wsjson"
 )
 
-var socketConnection *websocket.Conn
-var othersock *websocket.Conn
+type sockSelecter struct {
+	ll   LocationList
+	sock *websocket.Conn
+}
+
+type ServerMessage struct {
+	Myloc    ServerLocation
+	Mymom    Momentum
+	Mydir    Directions
+	Myaxe    Weapon
+	Myhealth Hitpoints
+	MyPNum   string
+}
+
+type Weapon struct {
+	Swinging   bool
+	Startangle float64
+	IHit       []string
+	Dmg        int
+}
+
+type LocationList struct {
+	Locs     []ServerMessage
+	YourPNum string
+}
+
+type ServerLocation struct {
+	X int
+	Y int
+}
 
 func closeConn() {
 	if socketConnection != nil {

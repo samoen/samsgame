@@ -1,9 +1,5 @@
 package gamecore
 
-import (
-	"math"
-)
-
 type entityid struct {
 	nothing bool
 }
@@ -17,13 +13,6 @@ type pivotingShape struct {
 	damage         int
 }
 
-var wepBlockers = make(map[*entityid]*shape)
-
-func newLinePolar(loc location, length int, angle float64) line {
-	xpos := int(float64(length)*math.Cos(angle)) + loc.x
-	ypos := int(float64(length)*math.Sin(angle)) + loc.y
-	return line{loc, location{xpos, ypos}}
-}
 
 // func rotateAround(center location, point location, angle float64) location {
 // 	result := location{}

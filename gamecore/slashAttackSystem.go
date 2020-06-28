@@ -20,6 +20,36 @@ type slasher struct {
 	pivShape       pivotingShape
 }
 
+func (s *slasher) newSlasher() {
+	accelplayer := acceleratingEnt{}
+	accelplayer.rect = newRectangle(
+		location{50, 50},
+		dimens{20, 40},
+	)
+	accelplayer.agility = 4
+	accelplayer.moveSpeed = 100
+	s.ent = accelplayer
+	s.cooldownCount = 0
+	s.pivShape = pivotingShape{}
+	s.pivShape.damage = 2
+	s.pivShape.pivoterShape = shape{}
+	pDeathable := deathable{}
+	pDeathable.hp = Hitpoints{6, 6}
+	s.deth = pDeathable
+	hBarSprite := baseSprite{}
+	hBarSprite.bOps = &ebiten.DrawImageOptions{}
+	hBarSprite.sprite = images.empty
+	s.hbarsprit = hBarSprite
+	ps := baseSprite{}
+	ps.bOps = &ebiten.DrawImageOptions{}
+	ps.sprite = images.playerStand
+	s.bsprit = ps
+	bs := baseSprite{}
+	bs.bOps = &ebiten.DrawImageOptions{}
+	bs.sprite = images.sword
+	s.wepsprit = bs
+}
+
 func (bot *slasher) hitPlayer() {
 	if _, ok := bot.pivShape.alreadyHit[myLocalPlayer.locEnt.lSlasher.ent.rect.shape]; ok {
 		return
@@ -63,10 +93,6 @@ type remotePlayer struct {
 	servId   string
 }
 
-var slashers = make(map[*entityid]*localAnimal)
-
-var remotePlayers = make(map[string]*remotePlayer)
-
 func (bot *slasher) handleSwing() {
 	if bot.cooldownCount > 0 {
 		bot.cooldownCount--
@@ -83,13 +109,15 @@ func (bot *slasher) handleSwing() {
 	}
 	if bot.swangin {
 		bot.pivShape.animationCount -= axeRotateSpeed
-		//bot.pivShape.makeAxe()
 		midPlayer := bot.ent.rect.location
 		midPlayer.x += bot.ent.rect.dimens.width / 2
 		midPlayer.y += bot.ent.rect.dimens.height / 2
-		rotLine := newLinePolar(midPlayer, bot.pivShape.bladeLength, bot.pivShape.animationCount)
-		crossLine := newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount+math.Pi/2)
-		frontCrossLine := newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount-math.Pi/2)
+		rotLine := line{}
+		rotLine.newLinePolar(midPlayer, bot.pivShape.bladeLength, bot.pivShape.animationCount)
+		crossLine := line{}
+		crossLine.newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount+math.Pi/2)
+		frontCrossLine := line{}
+		frontCrossLine.newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount-math.Pi/2)
 		bot.pivShape.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
 
 		for _, blocker := range wepBlockers {
@@ -200,11 +228,7 @@ func (bot *localEnt) hitremotes() {
 	}
 }
 
-func (bot *localEnt) HitAnimals() {
-	for slasheeid, slashee := range slashers {
-		if slashee.locEnt.lSlasher.ent == bot.lSlasher.ent {
-			return
-		}
+func (bot *localEnt) checkHitAnimal(slashee *localAnimal, slasheeid *entityid) {
 		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.rect.shape]; ok {
 			return
 		}
@@ -214,7 +238,6 @@ func (bot *localEnt) HitAnimals() {
 				delete(slashers, slasheeid)
 			}
 		}
-	}
 }
 
 func (slashee *slasher) getClapped(bot *slasher) {
@@ -245,7 +268,12 @@ func animalsWork() {
 		bot.locEnt.lSlasher.handleSwing()
 		if bot.locEnt.lSlasher.swangin {
 			bot.locEnt.hitremotes()
-			bot.locEnt.HitAnimals()
+			for slasheeid, slashee := range slashers {
+				if slashee.locEnt.lSlasher.ent.rect.shape == bot.locEnt.lSlasher.ent.rect.shape {
+					continue
+				}
+				bot.locEnt.checkHitAnimal(slashee,slasheeid)
+			}
 			bot.locEnt.lSlasher.hitPlayer()
 		}
 	}

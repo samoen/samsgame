@@ -1,11 +1,20 @@
 package gamecore
 
+import "math"
+
 type location struct {
 	x, y int
 }
 
 type line struct {
 	p1, p2 location
+}
+
+func (l *line) newLinePolar(loc location, length int, angle float64) {
+	xpos := int(float64(length)*math.Cos(angle)) + loc.x
+	ypos := int(float64(length)*math.Sin(angle)) + loc.y
+	l.p1 = loc
+	l.p2 = location{xpos,ypos}
 }
 
 func (l line) intersects(l2 line) (int, int, bool) {
