@@ -22,6 +22,8 @@ type slasher struct {
 
 func (s *slasher) newSlasher() {
 	accelplayer := acceleratingEnt{}
+	cId := false
+	accelplayer.collisionId = &cId
 	accelplayer.rect = newRectangle(
 		location{50, 50},
 		dimens{20, 40},
@@ -51,7 +53,7 @@ func (s *slasher) newSlasher() {
 }
 
 func (bot *slasher) hitPlayer() {
-	if _, ok := bot.pivShape.alreadyHit[myLocalPlayer.locEnt.lSlasher.ent.rect.shape]; ok {
+	if _, ok := bot.pivShape.alreadyHit[myLocalPlayer.locEnt.lSlasher.ent.collisionId]; ok {
 		return
 	}
 	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.pivShape.pivoterShape) {
@@ -113,7 +115,7 @@ func (bot *slasher) handleSwing() {
 	if bot.atkButton && bot.cooldownCount < 1 {
 		bot.pivShape.bladeLength = 5
 		bot.cooldownCount = 60
-		bot.pivShape.alreadyHit = make(map[*shape]bool)
+		bot.pivShape.alreadyHit = make(map[*bool]bool)
 		bot.pivShape.animationCount = bot.startangle + 2.1
 		bot.swangin = true
 		bot.swangSinceSend = true
@@ -183,7 +185,7 @@ func remotePlayersWork() {
 				newplace.y += diffy
 			}
 			checkrect := newRectangle(newplace, bot.rSlasher.ent.rect.dimens)
-			if !normalcollides(*checkrect.shape, bot.rSlasher.ent.rect.shape) {
+			if !normalcollides(checkrect.shape, bot.rSlasher.ent.collisionId) {
 				bot.rSlasher.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
@@ -227,21 +229,21 @@ func (s *slasher) updateAim() {
 
 func (bot *localEnt) hitremotes() {
 	for _, slashee := range remotePlayers {
-		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape]; ok {
+		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.collisionId]; ok {
 			continue
 		}
 		if slashee.rSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
 			slashee.rSlasher.deth.redScale = 10
 			slashee.rSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
 			slashee.rSlasher.deth.skipHpUpdate = 2
-			bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape] = true
+			bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.collisionId] = true
 			bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 		}
 	}
 }
 
 func (bot *localEnt) checkHitAnimal(slashee *localAnimal) {
-	if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.rect.shape]; ok {
+	if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.collisionId]; ok {
 		return
 	}
 	if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
@@ -255,7 +257,7 @@ func (bot *localEnt) checkHitAnimal(slashee *localAnimal) {
 func (slashee *slasher) getClapped(bot *slasher) {
 	slashee.deth.redScale = 10
 	slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-	bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
+	bot.pivShape.alreadyHit[slashee.ent.collisionId] = true
 }
 
 func (bot *localAnimal) AIControl() {
@@ -281,7 +283,7 @@ func animalsWork() {
 		if bot.locEnt.lSlasher.swangin {
 			bot.locEnt.hitremotes()
 			for slashee, _ := range slashers {
-				if slashee.locEnt.lSlasher.ent.rect.shape == bot.locEnt.lSlasher.ent.rect.shape {
+				if slashee.locEnt.lSlasher.ent.collisionId == bot.locEnt.lSlasher.ent.collisionId {
 					continue
 				}
 				bot.locEnt.checkHitAnimal(slashee)
@@ -293,7 +295,7 @@ func animalsWork() {
 type pivotingShape struct {
 	pivoterShape   shape
 	animationCount float64
-	alreadyHit     map[*shape]bool
+	alreadyHit     map[*bool]bool
 	startCount     float64
 	bladeLength    int
 	damage         int

@@ -10,6 +10,7 @@ type Momentum struct {
 }
 
 type acceleratingEnt struct {
+	collisionId *bool
 	rect        rectangle
 	moment      Momentum
 	agility     float64
@@ -21,7 +22,7 @@ type acceleratingEnt struct {
 
 func (a *acceleratingEnt) spawnSafe() {
 	for {
-		if normalcollides(*a.rect.shape, a.rect.shape) {
+		if normalcollides(a.rect.shape, a.collisionId) {
 			a.rect = newRectangle(
 				location{a.rect.location.x, a.rect.location.y + 20},
 				dimens{20, 40},
@@ -32,7 +33,7 @@ func (a *acceleratingEnt) spawnSafe() {
 	}
 }
 
-func (a *acceleratingEnt)calcMomentum(){
+func (a *acceleratingEnt) calcMomentum() {
 
 	xmov := 0
 	ymov := 0
@@ -110,42 +111,42 @@ func (a *acceleratingEnt)calcMomentum(){
 	//return a.moment
 }
 
-func (p *acceleratingEnt)moveCollide() {
-	p.calcMomentum()
+func (a *acceleratingEnt) moveCollide() {
+	a.calcMomentum()
 	unitmovex := 1
 	unitmovey := 1
 
-	if p.moment.Xaxis < 0 {
+	if a.moment.Xaxis < 0 {
 		unitmovex = -1
 	}
-	if p.moment.Yaxis < 0 {
+	if a.moment.Yaxis < 0 {
 		unitmovey = -1
 	}
 
-	absSpdx := int(math.Abs(float64(p.moment.Xaxis) / 10))
-	absSpdy := int(math.Abs(float64(p.moment.Yaxis) / 10))
+	absSpdx := int(math.Abs(float64(a.moment.Xaxis) / 10))
+	absSpdy := int(math.Abs(float64(a.moment.Yaxis) / 10))
 	maxSpd := absSpdx
 	if absSpdy > absSpdx {
 		maxSpd = absSpdy
 	}
 	for i := 1; i < maxSpd+1; i++ {
-		xcollided := directionalCollide(&absSpdx,p,unitmovex, 0, &p.moment.Xaxis)
-		ycollided := directionalCollide(&absSpdy,p,0,unitmovey,&p.moment.Yaxis)
+		xcollided := a.directionalCollide(&absSpdx, unitmovex, 0, &a.moment.Xaxis)
+		ycollided := a.directionalCollide(&absSpdy, 0, unitmovey, &a.moment.Yaxis)
 		if xcollided && ycollided {
 			break
 		}
 	}
 }
 
-func directionalCollide(absSpdx *int, p *acceleratingEnt, unitmovex int, unitmovey int, tozero *int)bool{
+func (a *acceleratingEnt) directionalCollide(absSpdx *int, unitmovex int, unitmovey int, tozero *int) bool {
 	if *absSpdx > 0 {
 		*absSpdx--
-		checklocx := p.rect.location
+		checklocx := a.rect.location
 		checklocx.x += unitmovex
 		checklocx.y += unitmovey
-		checkRect := newRectangle(checklocx, p.rect.dimens)
-		if !normalcollides(*checkRect.shape, p.rect.shape) {
-			p.rect.refreshShape(checklocx)
+		checkRect := newRectangle(checklocx, a.rect.dimens)
+		if !normalcollides(checkRect.shape, a.collisionId) {
+			a.rect.refreshShape(checklocx)
 		} else {
 			*absSpdx = 0
 			*tozero = 0
@@ -154,13 +155,3 @@ func directionalCollide(absSpdx *int, p *acceleratingEnt, unitmovex int, unitmov
 	}
 	return false
 }
-
-type remoteMoveState int
-
-const (
-	interpolating remoteMoveState = iota
-	deadreckoning
-	momentumOnly
-)
-const interpTime = 4
-const deathreckTime = 4

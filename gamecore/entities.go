@@ -21,7 +21,14 @@ const (
 	ScreenHeight   = 500
 	worldWidth     = ScreenWidth * 4
 	bgTileWidth    = ScreenWidth / 2
+	interpTime     = 4
+	deathreckTime  = 4
+	interpolating remoteMoveState = iota
+	deadreckoning
+	momentumOnly
 )
+
+type remoteMoveState int
 
 var pingFrames = 10
 var receiveCount = pingFrames
@@ -163,5 +170,5 @@ func placeMap() {
 		location{0, 0},
 		dimens{worldWidth, worldWidth},
 	)
-	wepBlockers[worldBoundRect.shape] = true
+	wepBlockers[&worldBoundRect.shape] = true
 }

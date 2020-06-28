@@ -55,7 +55,7 @@ func (s shape) collidesWith(os shape) bool {
 	return false
 }
 
-func normalcollides(checkcopy shape, exclude *shape) bool {
+func normalcollides(checkcopy shape, exclude *bool) bool {
 	for obj,_ := range wepBlockers {
 		if checkcopy.collidesWith(*obj) {
 			return true
@@ -67,23 +67,23 @@ func normalcollides(checkcopy shape, exclude *shape) bool {
 		}
 	}
 	for obj, _ := range slashers {
-		if obj.locEnt.lSlasher.ent.rect.shape == exclude {
+		if obj.locEnt.lSlasher.ent.collisionId == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(*obj.locEnt.lSlasher.ent.rect.shape) {
+		if checkcopy.collidesWith(obj.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
-	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape != exclude {
-		if checkcopy.collidesWith(*myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
+	if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
+		if checkcopy.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
 	for _, obj := range remotePlayers {
-		if obj.rSlasher.ent.rect.shape == exclude {
+		if obj.rSlasher.ent.collisionId == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(*obj.rSlasher.ent.rect.shape) {
+		if checkcopy.collidesWith(obj.rSlasher.ent.rect.shape) {
 			return true
 		}
 	}
@@ -97,13 +97,13 @@ type dimens struct {
 type rectangle struct {
 	location location
 	dimens   dimens
-	shape    *shape
+	shape    shape
 }
 
 func newRectangle(loc location, dims dimens) rectangle {
 	r := rectangle{}
 	r.dimens = dims
-	r.shape = &shape{}
+	r.shape = shape{}
 	r.refreshShape(loc)
 	return r
 }
