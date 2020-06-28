@@ -36,7 +36,7 @@ var receiveDebug = ""
 var receiveChan = make(chan sockSelecter)
 var socketConnection *websocket.Conn
 var othersock *websocket.Conn
-var myLocalPlayer *localPlayer
+var myLocalPlayer localPlayer
 var slashers = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
 var wepBlockers = make(map[*shape]bool)
@@ -110,12 +110,12 @@ func ClientInit() {
 	if err := images.empty.Fill(color.White); err != nil {
 		log.Fatal(err)
 	}
-	myLocalPlayer = &localPlayer{}
+	myLocalPlayer = localPlayer{}
 	myLocalPlayer.placePlayer()
 	//placePlayer()
 
 	for i := 1; i < 10; i++ {
-		animal := &slasher{}
+		animal := slasher{}
 		animal.newSlasher()
 		animal.ent.rect.refreshShape(location{i*50 + 50, i * 30})
 		la := &localAnimal{}

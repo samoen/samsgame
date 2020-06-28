@@ -247,21 +247,21 @@ func updateSprites() {
 	toRender = nil
 
 	for bs, _ := range slashers {
-		updateSlasherSprite(bs.locEnt.lSlasher)
+		bs.locEnt.lSlasher.updateSlasherSprite()
 
 	}
 	for _, bs := range remotePlayers {
-		updateSlasherSprite(bs.rSlasher)
+		bs.rSlasher.updateSlasherSprite()
 
 	}
-	updateSlasherSprite(myLocalPlayer.locEnt.lSlasher)
+	myLocalPlayer.locEnt.lSlasher.updateSlasherSprite()
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})
 
 }
 
-func updateSlasherSprite(bs *slasher) {
+func (bs *slasher)updateSlasherSprite() {
 	bs.bsprit.bOps.GeoM.Reset()
 	bs.bsprit.bOps.ColorM.Reset()
 	toRender = append(toRender, bs.bsprit)

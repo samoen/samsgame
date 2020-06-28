@@ -76,7 +76,7 @@ func (le *localEnt) hitbox(s *ebiten.Image) {
 }
 
 type localEnt struct {
-	lSlasher   *slasher
+	lSlasher   slasher
 	hitsToSend []string
 }
 
@@ -86,7 +86,7 @@ type localPlayer struct {
 }
 
 func (l *localPlayer) placePlayer() {
-	ps := &slasher{}
+	ps := slasher{}
 	ps.newSlasher()
 	ps.ent.rect.refreshShape(location{50, 50})
 	ps.deth.hp = Hitpoints{6, 6}
@@ -103,7 +103,7 @@ type localAnimal struct {
 }
 
 type remotePlayer struct {
-	rSlasher *slasher
+	rSlasher slasher
 	servId   string
 }
 
@@ -247,7 +247,7 @@ func (bot *localEnt) checkHitAnimal(slashee *localAnimal) {
 		return
 	}
 	if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
-		slashee.locEnt.lSlasher.getClapped(bot.lSlasher)
+		slashee.locEnt.lSlasher.getClapped(&bot.lSlasher)
 		if slashee.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 			delete(slashers, slashee)
 		}
@@ -329,7 +329,6 @@ func respawnsWork() {
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
 		return
 	}
-	myLocalPlayer = &localPlayer{}
 	myLocalPlayer.placePlayer()
 }
 

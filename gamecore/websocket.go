@@ -151,7 +151,7 @@ func socketReceive() {
 		for _, l := range msg.ll.Locs {
 			if _, ok := remotePlayers[l.MyPNum]; !ok {
 				log.Println("adding new player")
-				remoteSlasher := &slasher{}
+				remoteSlasher := slasher{}
 				remoteSlasher.newSlasher()
 				remoteSlasher.ent.rect.refreshShape(location{l.Myloc.X, l.Myloc.Y})
 				remoteSlasher.deth.hp = l.Myhealth
