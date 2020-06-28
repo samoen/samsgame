@@ -36,6 +36,8 @@ var receiveDebug = ""
 var receiveChan = make(chan sockSelecter)
 var socketConnection *websocket.Conn
 var othersock *websocket.Conn
+var toRender []baseSprite
+var offset location
 var myLocalPlayer localPlayer
 var slashers = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
@@ -51,7 +53,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	respawnsWork()
 	socketReceive()
-	updatePlayerControl()
+	myLocalPlayer.updatePlayerControl()
 	myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
 	myLocalPlayer.locEnt.lSlasher.updateAim()
 	myLocalPlayer.locEnt.lSlasher.handleSwing()
@@ -166,9 +168,9 @@ func ClientInit() {
 }
 
 func placeMap() {
-	worldBoundRect := newRectangle(
-		location{0, 0},
-		dimens{worldWidth, worldWidth},
-	)
+
+	worldBoundRect := rectangle{}
+	worldBoundRect.dimens = dimens{worldWidth, worldWidth}
+	worldBoundRect.refreshShape(location{0,0})
 	wepBlockers[&worldBoundRect.shape] = true
 }

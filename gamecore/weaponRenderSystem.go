@@ -240,8 +240,48 @@ func renderEntSprites(s *ebiten.Image) {
 	}
 }
 
-var toRender []baseSprite
-var offset location
+func drawHitboxes(s *ebiten.Image) {
+
+	for _, shape := range currentTShapes {
+		for _, l := range shape.lines {
+			l.samDrawLine(s)
+		}
+	}
+
+	for shape,_ := range wepBlockers {
+		for _, l := range shape.lines {
+			l.samDrawLine(s)
+		}
+	}
+	for slshr, _ := range slashers {
+		for _, l := range slshr.locEnt.lSlasher.ent.rect.shape.lines {
+			l.samDrawLine(s)
+		}
+		if slshr.locEnt.lSlasher.swangin {
+			for _, l := range slshr.locEnt.lSlasher.pivShape.pivoterShape.lines {
+				l.samDrawLine(s)
+			}
+		}
+	}
+	for _, l := range myLocalPlayer.locEnt.lSlasher.ent.rect.shape.lines {
+		l.samDrawLine(s)
+	}
+	if myLocalPlayer.locEnt.lSlasher.swangin {
+		for _, l := range myLocalPlayer.locEnt.lSlasher.pivShape.pivoterShape.lines {
+			l.samDrawLine(s)
+		}
+	}
+	for _, slshr := range remotePlayers {
+		for _, l := range slshr.rSlasher.ent.rect.shape.lines {
+			l.samDrawLine(s)
+		}
+		if slshr.rSlasher.swangin {
+			for _, l := range slshr.rSlasher.pivShape.pivoterShape.lines {
+				l.samDrawLine(s)
+			}
+		}
+	}
+}
 
 func updateSprites() {
 	toRender = nil

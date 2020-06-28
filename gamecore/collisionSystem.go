@@ -22,11 +22,8 @@ type acceleratingEnt struct {
 
 func (a *acceleratingEnt) spawnSafe() {
 	for {
-		if normalcollides(a.rect.shape, a.collisionId) {
-			a.rect = newRectangle(
-				location{a.rect.location.x, a.rect.location.y + 20},
-				dimens{20, 40},
-			)
+		if a.rect.shape.normalcollides(a.collisionId) {
+			a.rect.refreshShape(location{a.rect.location.x, a.rect.location.y + 20})
 		} else {
 			break
 		}
@@ -141,12 +138,13 @@ func (a *acceleratingEnt) moveCollide() {
 func (a *acceleratingEnt) directionalCollide(absSpdx *int, unitmovex int, unitmovey int, tozero *int) bool {
 	if *absSpdx > 0 {
 		*absSpdx--
-		checklocx := a.rect.location
-		checklocx.x += unitmovex
-		checklocx.y += unitmovey
-		checkRect := newRectangle(checklocx, a.rect.dimens)
-		if !normalcollides(checkRect.shape, a.collisionId) {
-			a.rect.refreshShape(checklocx)
+		checkloc := a.rect.location
+		checkloc.x += unitmovex
+		checkloc.y += unitmovey
+		checkRect := a.rect
+		checkRect.refreshShape(checkloc)
+		if !checkRect.shape.normalcollides(a.collisionId) {
+			a.rect.refreshShape(checkloc)
 		} else {
 			*absSpdx = 0
 			*tozero = 0

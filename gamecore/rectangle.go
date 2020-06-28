@@ -1,6 +1,10 @@
 package gamecore
 
-import "math"
+import (
+	"github.com/hajimehoshi/ebiten"
+	"log"
+	"math"
+)
 
 type location struct {
 	x, y int
@@ -40,6 +44,34 @@ func (l line) intersects(l2 line) (int, int, bool) {
 	return x, y, true
 }
 
+func (l line) samDrawLine(s *ebiten.Image) {
+	op := ebiten.DrawImageOptions{}
+	op.ColorM.Scale(0, 230, 64, 1)
+	l.p1.x += offset.x
+	l.p1.y += offset.y
+	l.p2.x += offset.x
+	l.p2.y += offset.y
+
+	x1 := float64(l.p1.x)
+	x2 := float64(l.p2.x)
+	y1 := float64(l.p1.y)
+	y2 := float64(l.p2.y)
+
+	imgToDraw := *images.empty
+	ew, eh := imgToDraw.Size()
+	length := math.Hypot(x2-x1, y2-y1)
+
+	op.GeoM.Scale(
+		length/float64(ew),
+		2/float64(eh),
+	)
+	op.GeoM.Rotate(math.Atan2(y2-y1, x2-x1))
+	op.GeoM.Translate(x1, y1)
+	if err := s.DrawImage(&imgToDraw, &op); err != nil {
+		log.Fatal(err)
+	}
+}
+
 type shape struct {
 	lines []line
 }
@@ -55,14 +87,14 @@ func (s shape) collidesWith(os shape) bool {
 	return false
 }
 
-func normalcollides(checkcopy shape, exclude *bool) bool {
-	for obj,_ := range wepBlockers {
-		if checkcopy.collidesWith(*obj) {
+func (s shape) normalcollides(exclude *bool) bool {
+	for obj, _ := range wepBlockers {
+		if s.collidesWith(*obj) {
 			return true
 		}
 	}
 	for _, obj := range currentTShapes {
-		if checkcopy.collidesWith(obj) {
+		if s.collidesWith(obj) {
 			return true
 		}
 	}
@@ -70,12 +102,12 @@ func normalcollides(checkcopy shape, exclude *bool) bool {
 		if obj.locEnt.lSlasher.ent.collisionId == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(obj.locEnt.lSlasher.ent.rect.shape) {
+		if s.collidesWith(obj.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
 	if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
-		if checkcopy.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
+		if s.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
 			return true
 		}
 	}
@@ -83,7 +115,7 @@ func normalcollides(checkcopy shape, exclude *bool) bool {
 		if obj.rSlasher.ent.collisionId == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(obj.rSlasher.ent.rect.shape) {
+		if s.collidesWith(obj.rSlasher.ent.rect.shape) {
 			return true
 		}
 	}
@@ -98,14 +130,6 @@ type rectangle struct {
 	location location
 	dimens   dimens
 	shape    shape
-}
-
-func newRectangle(loc location, dims dimens) rectangle {
-	r := rectangle{}
-	r.dimens = dims
-	r.shape = shape{}
-	r.refreshShape(loc)
-	return r
 }
 
 func (r *rectangle) refreshShape(newpoint location) {

@@ -21,16 +21,13 @@ type slasher struct {
 }
 
 func (s *slasher) newSlasher() {
-	accelplayer := acceleratingEnt{}
 	cId := false
-	accelplayer.collisionId = &cId
-	accelplayer.rect = newRectangle(
-		location{50, 50},
-		dimens{20, 40},
-	)
-	accelplayer.agility = 4
-	accelplayer.moveSpeed = 100
-	s.ent = accelplayer
+	s.ent.collisionId = &cId
+	s.ent.rect = rectangle{}
+	s.ent.rect.dimens = dimens{20, 40}
+	s.ent.rect.refreshShape(location{50, 50})
+	s.ent.agility = 4
+	s.ent.moveSpeed = 100
 	s.cooldownCount = 0
 	s.pivShape = pivotingShape{}
 	s.pivShape.damage = 2
@@ -184,8 +181,9 @@ func remotePlayersWork() {
 				newplace.x += diffx
 				newplace.y += diffy
 			}
-			checkrect := newRectangle(newplace, bot.rSlasher.ent.rect.dimens)
-			if !normalcollides(checkrect.shape, bot.rSlasher.ent.collisionId) {
+			checkrect := bot.rSlasher.ent.rect
+			checkrect.refreshShape(newplace)
+			if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
 				bot.rSlasher.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
@@ -339,10 +337,10 @@ type Directions struct {
 	Up    bool
 }
 
-func updatePlayerControl() {
-	myLocalPlayer.locEnt.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
-	myLocalPlayer.locEnt.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
-	myLocalPlayer.locEnt.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
-	myLocalPlayer.locEnt.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
-	myLocalPlayer.locEnt.lSlasher.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
+func (l *localPlayer) updatePlayerControl() {
+	l.locEnt.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
+	l.locEnt.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
+	l.locEnt.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
+	l.locEnt.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
+	l.locEnt.lSlasher.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }
