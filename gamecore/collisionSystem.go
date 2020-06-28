@@ -15,12 +15,11 @@ type acceleratingEnt struct {
 	agility     float64
 	moveSpeed   float64
 	directions  Directions
-	atkButton   bool
 	baseloc     location
 	endpoint    location
 }
 
-func calcMomentum(p acceleratingEnt) Momentum {
+func (p *acceleratingEnt)calcMomentum(){
 
 	xmov := 0
 	ymov := 0
@@ -95,10 +94,11 @@ func calcMomentum(p acceleratingEnt) Momentum {
 			p.moment.Yaxis = int(p.moveSpeed * 0.707 * float64(unitmovey))
 		}
 	}
-	return p.moment
+	//return p.moment
 }
 
-func moveCollide(p *acceleratingEnt) {
+func (p *acceleratingEnt)moveCollide() {
+	p.calcMomentum()
 	unitmovex := 1
 	unitmovey := 1
 

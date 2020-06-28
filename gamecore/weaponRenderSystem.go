@@ -177,7 +177,6 @@ func bgShapesWork() {
 		for j := -1; j <= 1; j++ {
 			if upx == i || upy == j {
 				delete(currentTShapes, location{myCoordx+i, myCoordy+j})
-				//checkbgshape(myCoordx+i, myCoordy+j)
 			} else {
 				addTshape(myCoordx+i, myCoordy+j)
 			}
@@ -211,9 +210,6 @@ func addTshape(i, j int) {
 		currentTShapes[location{i, j}] = transcoord
 	}
 }
-//func checkbgshape(i, j int) {
-//	delete(currentTShapes, location{i, j})
-//}
 
 type bgLoading struct {
 	ops     *ebiten.DrawImageOptions
@@ -252,13 +248,14 @@ func updateSprites() {
 	toRender = nil
 
 	for _, bs := range slashers {
-		updateSlasherSprite(bs.lSlasher)
+		updateSlasherSprite(bs.locEnt.lSlasher)
 
 	}
 	for _, bs := range remotePlayers {
 		updateSlasherSprite(bs.rSlasher)
 
 	}
+	updateSlasherSprite(myLocalPlayer.locEnt.lSlasher)
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})

@@ -14,10 +14,10 @@ import (
 )
 
 const ScreenWidth = 700
-const ScreenHeight = 400
+const ScreenHeight = 500
 const worldWidth = ScreenWidth * 4
 
-var bgTileWidth = ScreenWidth / 4
+var bgTileWidth = ScreenWidth / 2
 
 type SamGame struct{}
 
@@ -42,11 +42,17 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	respawnsWork()
 	socketReceive()
 	updatePlayerControl()
-	enemyControlWork()
-	slashersWork()
+	myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
+	myLocalPlayer.locEnt.lSlasher.updateAim()
+	myLocalPlayer.locEnt.lSlasher.handleSwing()
+	if myLocalPlayer.locEnt.lSlasher.swangin {
+		myLocalPlayer.locEnt.hitremotes()
+		myLocalPlayer.locEnt.HitAnimals()
+	}
+	animalsWork()
 	remotePlayersWork()
 
-	mycenterpoint = rectCenterPoint(*mySlasher.lSlasher.ent.rect)
+	mycenterpoint = rectCenterPoint(*myLocalPlayer.locEnt.lSlasher.ent.rect)
 	center := mycenterpoint
 	center.x *= -1
 	center.y *= -1
@@ -111,64 +117,63 @@ type ServerLocation struct {
 	Y int
 }
 
-var mySlasher *localEnt
-var myId *entityid
+var myLocalPlayer *localPlayer
 
-func newSlasher(startloc location, heath Hitpoints) *slasher {
+func (s *slasher) newSlasher(startloc location, heath Hitpoints) {
 	accelplayer := &acceleratingEnt{}
 	accelplayer.rect = newRectangle(
 		startloc,
 		dimens{20, 40},
 	)
+	accelplayer.agility = 4
+	accelplayer.moveSpeed = 100
+	s.ent = accelplayer
+	s.cooldownCount = 0
+	s.pivShape = &pivotingShape{}
+	s.pivShape.damage = 2
+	s.pivShape.pivoterShape = &shape{}
+	s.pivShape.pivotPoint = s.ent.rect
+	pDeathable := &deathable{}
+	pDeathable.hp = heath
+	pDeathable.deathableShape = accelplayer.rect
+	s.deth = pDeathable
+	hBarSprite := &baseSprite{}
+	hBarSprite.bOps = &ebiten.DrawImageOptions{}
+	hBarSprite.sprite = images.empty
+	s.hbarsprit = hBarSprite
+	ps := &baseSprite{}
+	ps.bOps = &ebiten.DrawImageOptions{}
+	ps.sprite = images.playerStand
+	s.bsprit = ps
+	bs := &baseSprite{}
+	bs.bOps = &ebiten.DrawImageOptions{}
+	bs.sprite = images.sword
+	s.wepsprit = bs
+}
+
+func placePlayer() {
+	ps := &slasher{}
+	ps.newSlasher(location{50, 50}, Hitpoints{6, 6})
+	mycenterpoint = rectCenterPoint(*ps.ent.rect)
+	myLocalEnt := localEnt{}
+	myLocalEnt.lSlasher = ps
+	locPlayer := localPlayer{}
+	locPlayer.locEnt = myLocalEnt
+	myLocalPlayer = &locPlayer
+	myLocalPlayer.locEnt.lSlasher.ent.spawnSafe()
+}
+
+func (accelplayer *acceleratingEnt) spawnSafe() {
 	for {
 		if normalcollides(*accelplayer.rect.shape, accelplayer.rect.shape) {
 			accelplayer.rect = newRectangle(
-				location{startloc.x, accelplayer.rect.location.y + 20},
+				location{accelplayer.rect.location.x, accelplayer.rect.location.y + 20},
 				dimens{20, 40},
 			)
 		} else {
 			break
 		}
 	}
-	accelplayer.agility = 4
-	accelplayer.moveSpeed = 100
-	playerSlasher := &slasher{}
-	playerSlasher.ent = accelplayer
-	playerSlasher.cooldownCount = 0
-	playerSlasher.pivShape = &pivotingShape{}
-	playerSlasher.pivShape.damage = 2
-	playerSlasher.pivShape.pivoterShape = &shape{}
-	playerSlasher.pivShape.pivotPoint = playerSlasher.ent.rect
-	pDeathable := &deathable{}
-	pDeathable.hp = heath
-	pDeathable.deathableShape = accelplayer.rect
-	playerSlasher.deth = pDeathable
-	hBarSprite := &baseSprite{}
-	hBarSprite.bOps = &ebiten.DrawImageOptions{}
-	hBarSprite.sprite = images.empty
-	playerSlasher.hbarsprit = hBarSprite
-	ps := &baseSprite{}
-	ps.bOps = &ebiten.DrawImageOptions{}
-	ps.sprite = images.playerStand
-	playerSlasher.bsprit = ps
-	bs := &baseSprite{}
-	bs.bOps = &ebiten.DrawImageOptions{}
-	bs.sprite = images.sword
-	playerSlasher.wepsprit = bs
-
-	return playerSlasher
-
-}
-
-func placePlayer() {
-	pid := &entityid{}
-	ps := newSlasher(location{50, 50}, Hitpoints{6, 6})
-	mycenterpoint = rectCenterPoint(*ps.ent.rect)
-	myLocalEnt := &localEnt{}
-	myLocalEnt.lSlasher = ps
-	mySlasher = myLocalEnt
-	myId = pid
-	slashers[pid] = myLocalEnt
 }
 
 func ClientInit() {
@@ -183,13 +188,11 @@ func ClientInit() {
 
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
-		animal := newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})
-		localAnimal := &localEnt{}
-		localAnimal.lSlasher = animal
-		slashers[enemyid] = localAnimal
-		eController := &enemyController{}
-		eController.aEnt = animal.ent
-		addEnemyController(eController, enemyid)
+		animal := &slasher{}
+		animal.newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})
+		la := &localAnimal{}
+		la.locEnt.lSlasher = animal
+		slashers[enemyid] = la
 	}
 
 	placeMap()

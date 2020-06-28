@@ -3,6 +3,7 @@ package gamecore
 import (
 	"github.com/hajimehoshi/ebiten"
 	"math"
+	"math/rand"
 )
 
 type slasher struct {
@@ -15,7 +16,31 @@ type slasher struct {
 	cooldownCount  int
 	swangin        bool
 	swangSinceSend bool
+	atkButton   bool
 	pivShape       *pivotingShape
+}
+
+func (bot *slasher)hitPlayer(){
+	if _, ok := bot.pivShape.alreadyHit[myLocalPlayer.locEnt.lSlasher.ent.rect.shape]; ok {
+		return
+	}
+	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape.collidesWith(*bot.pivShape.pivoterShape) {
+		myLocalPlayer.locEnt.lSlasher.getClapped(bot)
+		if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
+			myLocalPlayer.dead = true
+		}
+	}
+}
+
+func (le *localEnt)hitbox(s *ebiten.Image){
+	for _, l := range le.lSlasher.ent.rect.shape.lines {
+		l.samDrawLine(s)
+	}
+	if le.lSlasher.swangin {
+		for _, l := range le.lSlasher.pivShape.pivoterShape.lines {
+			l.samDrawLine(s)
+		}
+	}
 }
 
 type localEnt struct {
@@ -23,21 +48,31 @@ type localEnt struct {
 	hitsToSend     []string
 }
 
+type localPlayer struct{
+	locEnt localEnt
+	dead bool
+}
+
+type localAnimal struct{
+	locEnt localEnt
+	controlCount int
+}
+
 type remotePlayer struct {
 	rSlasher 		*slasher
 	servId         string
 }
 
-var slashers = make(map[*entityid]*localEnt)
+var slashers = make(map[*entityid]*localAnimal)
 
 var remotePlayers = make(map[string]*remotePlayer)
 
-func handleSwing(bot *slasher) {
+func (bot *slasher)handleSwing() {
 	if bot.cooldownCount > 0 {
 		bot.cooldownCount--
 	}
 
-	if bot.ent.atkButton && bot.cooldownCount < 1 {
+	if bot.atkButton && bot.cooldownCount < 1 {
 		bot.pivShape.bladeLength = 5
 		bot.cooldownCount = 60
 		bot.pivShape.alreadyHit = make(map[*shape]bool)
@@ -105,8 +140,7 @@ func remotePlayersWork() {
 				bot.rSlasher.ent.rect.refreshShape(newplace)
 			}
 		case deadreckoning:
-			bot.rSlasher.ent.moment = calcMomentum(*bot.rSlasher.ent)
-			moveCollide(bot.rSlasher.ent)
+			bot.rSlasher.ent.moveCollide()
 		case momentumOnly:
 			//if receiveCount > pingFrames {
 			bot.rSlasher.ent.directions.Down = false
@@ -114,73 +148,98 @@ func remotePlayersWork() {
 			bot.rSlasher.ent.directions.Right = false
 			bot.rSlasher.ent.directions.Up = false
 			//}
-			bot.rSlasher.ent.moment = calcMomentum(*bot.rSlasher.ent)
-			moveCollide(bot.rSlasher.ent)
+			bot.rSlasher.ent.moveCollide()
 		}
-		handleSwing(bot.rSlasher)
+		bot.rSlasher.handleSwing()
 	}
 }
-func slashersWork() {
-	for _, bot := range slashers {
-		bot.lSlasher.ent.moment = calcMomentum(*bot.lSlasher.ent)
-		moveCollide(bot.lSlasher.ent)
 
-		if !bot.lSlasher.swangin {
-			if bot.lSlasher.ent.directions.Down ||
-				bot.lSlasher.ent.directions.Up ||
-				bot.lSlasher.ent.directions.Right ||
-				bot.lSlasher.ent.directions.Left {
-				hitRange := 1
-				moveTipX := 0
-				if bot.lSlasher.ent.directions.Right {
-					moveTipX = hitRange
-				} else if bot.lSlasher.ent.directions.Left {
-					moveTipX = -hitRange
-				}
-				moveTipY := 0
-				if bot.lSlasher.ent.directions.Up {
-					moveTipY = -hitRange
-				} else if bot.lSlasher.ent.directions.Down {
-					moveTipY = hitRange
-				}
-				bot.lSlasher.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
+func (s *slasher) updateAim(){
+	if !s.swangin {
+		if s.ent.directions.Down ||
+			s.ent.directions.Up ||
+			s.ent.directions.Right ||
+			s.ent.directions.Left {
+			hitRange := 1
+			moveTipX := 0
+			if s.ent.directions.Right {
+				moveTipX = hitRange
+			} else if s.ent.directions.Left {
+				moveTipX = -hitRange
+			}
+			moveTipY := 0
+			if s.ent.directions.Up {
+				moveTipY = -hitRange
+			} else if s.ent.directions.Down {
+				moveTipY = hitRange
+			}
+			s.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
+		}
+	}
+}
+
+func (bot *localEnt) hitremotes(){
+	for _, slashee := range remotePlayers {
+		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape]; ok {
+			continue
+		}
+		if slashee.rSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
+			slashee.rSlasher.deth.redScale = 10
+			slashee.rSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
+			slashee.rSlasher.deth.skipHpUpdate = 2
+			bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape] = true
+			bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
+		}
+	}
+}
+
+func (bot *localEnt) HitAnimals(){
+	for slasheeid, slashee := range slashers {
+		if slashee.locEnt.lSlasher.ent == bot.lSlasher.ent {
+			return
+		}
+		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.rect.shape]; ok {
+			return
+		}
+		if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
+			slashee.locEnt.lSlasher.getClapped(bot.lSlasher)
+			if slashee.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
+				delete(slashers, slasheeid)
 			}
 		}
-		handleSwing(bot.lSlasher)
+	}
+}
 
-		if bot.lSlasher.swangin {
-			for _, slashee := range remotePlayers {
-				if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape]; ok {
-					continue
-				}
-				if slashee.rSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
-					slashee.rSlasher.deth.redScale = 10
-					slashee.rSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
-					slashee.rSlasher.deth.skipHpUpdate = 2
-					bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.rect.shape] = true
-					bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
-				}
-			}
+func (slashee *slasher)getClapped(bot *slasher){
+	slashee.deth.redScale = 10
+	slashee.deth.hp.CurrentHP -= bot.pivShape.damage
+	bot.pivShape.alreadyHit[slashee.ent.rect.shape] = true
+}
 
-			for slasheeid, slashee := range slashers {
-				if slashee.lSlasher.ent == bot.lSlasher.ent {
-					continue
-				}
-				if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.lSlasher.ent.rect.shape]; ok {
-					continue
-				}
-				if slashee.lSlasher.ent.rect.shape.collidesWith(*bot.lSlasher.pivShape.pivoterShape) {
-					slashee.lSlasher.deth.redScale = 10
-					slashee.lSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
-					bot.lSlasher.pivShape.alreadyHit[slashee.lSlasher.ent.rect.shape] = true
-					//bot.lSlasher.hitsToSend = append(bot.lSlasher.hitsToSend, slashee.lSlasher.servId)
+func (bot *localAnimal) AIControl(){
+	bot.controlCount--
+	if bot.controlCount < 1 {
+		bot.controlCount = rand.Intn(100)
+		bot.locEnt.lSlasher.ent.directions = Directions{
+			rand.Intn(2) == 0,
+			rand.Intn(2) == 0,
+			rand.Intn(2) == 0,
+			rand.Intn(2) == 0,
+		}
+		bot.locEnt.lSlasher.atkButton = rand.Intn(2) == 0
+	}
+}
 
-					if slashee.lSlasher.deth.hp.CurrentHP < 1 {
-						delete(slashers, slasheeid)
-						delete(enemyControllers, slasheeid)
-					}
-				}
-			}
+func animalsWork() {
+	for _, bot := range slashers {
+		bot.AIControl()
+		bot.locEnt.lSlasher.ent.moveCollide()
+		bot.locEnt.lSlasher.updateAim()
+		bot.locEnt.lSlasher.handleSwing()
+		if bot.locEnt.lSlasher.swangin {
+			bot.locEnt.hitremotes()
+			bot.locEnt.HitAnimals()
+			bot.locEnt.lSlasher.hitPlayer()
 		}
 	}
 }
@@ -204,7 +263,7 @@ type Hitpoints struct {
 }
 
 func respawnsWork() {
-	if mySlasher.lSlasher.deth.hp.CurrentHP > 0 {
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		return
 	}
 	if !ebiten.IsKeyPressed(ebiten.KeyX) {
@@ -221,9 +280,9 @@ type Directions struct {
 }
 
 func updatePlayerControl() {
-	mySlasher.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
-	mySlasher.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
-	mySlasher.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
-	mySlasher.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
-	mySlasher.lSlasher.ent.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
+	myLocalPlayer.locEnt.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
+	myLocalPlayer.locEnt.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
+	myLocalPlayer.locEnt.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
+	myLocalPlayer.locEnt.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
+	myLocalPlayer.locEnt.lSlasher.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }

@@ -57,10 +57,15 @@ func normalcollides(checkcopy shape, exclude *shape) bool {
 		}
 	}
 	for _, obj := range slashers {
-		if obj.lSlasher.ent.rect.shape == exclude {
+		if obj.locEnt.lSlasher.ent.rect.shape == exclude {
 			continue
 		}
-		if checkcopy.collidesWith(*obj.lSlasher.ent.rect.shape){
+		if checkcopy.collidesWith(*obj.locEnt.lSlasher.ent.rect.shape){
+			return true
+		}
+	}
+	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape != exclude {
+		if checkcopy.collidesWith(*myLocalPlayer.locEnt.lSlasher.ent.rect.shape){
 			return true
 		}
 	}
