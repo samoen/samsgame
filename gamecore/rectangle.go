@@ -90,12 +90,12 @@ type rectangle struct {
 	shape    *shape
 }
 
-func newRectangle(loc location, dims dimens) *rectangle {
+func newRectangle(loc location, dims dimens) rectangle {
 	r := rectangle{}
 	r.dimens = dims
 	r.shape = &shape{}
 	r.refreshShape(loc)
-	return &r
+	return r
 }
 
 func (r *rectangle) refreshShape(newpoint location) {

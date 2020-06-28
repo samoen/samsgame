@@ -52,7 +52,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	animalsWork()
 	remotePlayersWork()
 
-	mycenterpoint = rectCenterPoint(*myLocalPlayer.locEnt.lSlasher.ent.rect)
+	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.ent.rect)
 	center := mycenterpoint
 	center.x *= -1
 	center.y *= -1
@@ -119,33 +119,31 @@ type ServerLocation struct {
 
 var myLocalPlayer *localPlayer
 
-func (s *slasher) newSlasher(startloc location, heath Hitpoints) {
-	accelplayer := &acceleratingEnt{}
+func (s *slasher) newSlasher() {
+	accelplayer := acceleratingEnt{}
 	accelplayer.rect = newRectangle(
-		startloc,
+		location{50,50},
 		dimens{20, 40},
 	)
 	accelplayer.agility = 4
 	accelplayer.moveSpeed = 100
 	s.ent = accelplayer
 	s.cooldownCount = 0
-	s.pivShape = &pivotingShape{}
+	s.pivShape = pivotingShape{}
 	s.pivShape.damage = 2
-	s.pivShape.pivoterShape = &shape{}
-	s.pivShape.pivotPoint = s.ent.rect
-	pDeathable := &deathable{}
-	pDeathable.hp = heath
-	pDeathable.deathableShape = accelplayer.rect
+	s.pivShape.pivoterShape = shape{}
+	pDeathable := deathable{}
+	pDeathable.hp = Hitpoints{6,6}
 	s.deth = pDeathable
-	hBarSprite := &baseSprite{}
+	hBarSprite := baseSprite{}
 	hBarSprite.bOps = &ebiten.DrawImageOptions{}
 	hBarSprite.sprite = images.empty
 	s.hbarsprit = hBarSprite
-	ps := &baseSprite{}
+	ps := baseSprite{}
 	ps.bOps = &ebiten.DrawImageOptions{}
 	ps.sprite = images.playerStand
 	s.bsprit = ps
-	bs := &baseSprite{}
+	bs := baseSprite{}
 	bs.bOps = &ebiten.DrawImageOptions{}
 	bs.sprite = images.sword
 	s.wepsprit = bs
@@ -153,8 +151,10 @@ func (s *slasher) newSlasher(startloc location, heath Hitpoints) {
 
 func placePlayer() {
 	ps := &slasher{}
-	ps.newSlasher(location{50, 50}, Hitpoints{6, 6})
-	mycenterpoint = rectCenterPoint(*ps.ent.rect)
+	ps.newSlasher()
+	ps.ent.rect.refreshShape(location{50, 50})
+	ps.deth.hp = Hitpoints{6, 6}
+	mycenterpoint = rectCenterPoint(ps.ent.rect)
 	myLocalEnt := localEnt{}
 	myLocalEnt.lSlasher = ps
 	locPlayer := localPlayer{}
@@ -189,7 +189,8 @@ func ClientInit() {
 	for i := 1; i < 10; i++ {
 		enemyid := &entityid{}
 		animal := &slasher{}
-		animal.newSlasher(location{i*50 + 50, i * 30}, Hitpoints{3, 3})
+		animal.newSlasher()
+		animal.ent.rect.refreshShape(location{i*50 + 50, i * 30})
 		la := &localAnimal{}
 		la.locEnt.lSlasher = animal
 		slashers[enemyid] = la

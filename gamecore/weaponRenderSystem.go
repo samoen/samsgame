@@ -25,7 +25,6 @@ type imagesStruct struct {
 	playerSwing         *ebiten.Image
 	empty               *ebiten.Image
 	sword               *ebiten.Image
-	//bg                  *ebiten.Image
 }
 
 var assetsDir = "assets"
@@ -241,7 +240,7 @@ func renderEntSprites(s *ebiten.Image) {
 	}
 }
 
-var toRender []*baseSprite
+var toRender []baseSprite
 var offset location
 
 func updateSprites() {
@@ -280,13 +279,13 @@ func updateSlasherSprite(bs *slasher) {
 		bs.deth.redScale--
 	}
 	bs.bsprit.bOps.ColorM.Translate(float64(bs.deth.redScale), 0, 0, 0)
-	bs.hbarsprit.yaxis = rectCenterPoint(*bs.deth.deathableShape).y + 10
-	healthbarlocation := location{bs.deth.deathableShape.location.x, bs.deth.deathableShape.location.y - (bs.deth.deathableShape.dimens.height / 2) - 10}
-	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.deth.deathableShape.dimens.width / bs.deth.hp.MaxHP
+	bs.hbarsprit.yaxis = rectCenterPoint(bs.ent.rect).y + 10
+	healthbarlocation := location{bs.ent.rect.location.x, bs.ent.rect.location.y - (bs.ent.rect.dimens.height / 2) - 10}
+	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.ent.rect.dimens.width / bs.deth.hp.MaxHP
 	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps)
 	cameraShift(healthbarlocation, offset, bs.hbarsprit.bOps)
 
-	bs.bsprit.yaxis = rectCenterPoint(*bs.ent.rect).y
+	bs.bsprit.yaxis = rectCenterPoint(bs.ent.rect).y
 
 	spriteSelect := images.empty
 	tolerance := math.Pi / 9
@@ -340,7 +339,7 @@ func updateSlasherSprite(bs *slasher) {
 	if bs.swangin {
 		_, imH := bs.wepsprit.sprite.Size()
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
-		ownerCenter := rectCenterPoint(*bs.ent.rect)
+		ownerCenter := rectCenterPoint(bs.ent.rect)
 		cameraShift(ownerCenter, offset, bs.wepsprit.bOps)
 		addOp := ebiten.GeoM{}
 		hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)

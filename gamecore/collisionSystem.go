@@ -10,7 +10,7 @@ type Momentum struct {
 }
 
 type acceleratingEnt struct {
-	rect        *rectangle
+	rect        rectangle
 	moment      Momentum
 	agility     float64
 	moveSpeed   float64

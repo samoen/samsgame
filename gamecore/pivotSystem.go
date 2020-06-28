@@ -9,23 +9,12 @@ type entityid struct {
 }
 
 type pivotingShape struct {
-	pivoterShape   *shape
-	pivotPoint     *rectangle
+	pivoterShape   shape
 	animationCount float64
 	alreadyHit     map[*shape]bool
 	startCount     float64
 	bladeLength    int
 	damage         int
-}
-
-func (p *pivotingShape) makeAxe() {
-	midPlayer := p.pivotPoint.location
-	midPlayer.x += p.pivotPoint.dimens.width / 2
-	midPlayer.y += p.pivotPoint.dimens.height / 2
-	rotLine := newLinePolar(midPlayer, p.bladeLength, p.animationCount)
-	crossLine := newLinePolar(rotLine.p2, p.bladeLength/3, p.animationCount+math.Pi/2)
-	frontCrossLine := newLinePolar(rotLine.p2, p.bladeLength/3, p.animationCount-math.Pi/2)
-	p.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
 }
 
 var wepBlockers = make(map[*entityid]*shape)

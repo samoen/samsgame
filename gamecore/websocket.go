@@ -124,7 +124,9 @@ func socketReceive() {
 			if _, ok := remotePlayers[l.MyPNum]; !ok {
 				log.Println("adding new player")
 				remoteSlasher := &slasher{}
-				remoteSlasher.newSlasher(location{l.Myloc.X, l.Myloc.Y}, l.Myhealth)
+				remoteSlasher.newSlasher()
+				remoteSlasher.ent.rect.refreshShape(location{l.Myloc.X, l.Myloc.Y})
+				remoteSlasher.deth.hp = l.Myhealth
 				remoteP := &remotePlayer{}
 				remoteP.rSlasher = remoteSlasher
 				remoteP.servId = l.MyPNum
