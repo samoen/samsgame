@@ -138,12 +138,9 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 		if ttim, ok := ttmap[im.tiletyp]; ok {
 			if ttim != nil {
 				im.ops.GeoM.Reset()
-				im.ops.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
-				//im.ops.GeoM.Translate(float64(-centerOn.dimens.width/2), float64(-centerOn.dimens.height/2))
-				im.ops.GeoM.Translate(float64(ScreenWidth/2), float64(ScreenHeight/2))
+				im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
 				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops)
 				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-
 				if err := screen.DrawImage(ttim, im.ops); err != nil {
 					log.Fatal(err)
 				}
@@ -205,7 +202,7 @@ func addTshape(i, j int) {
 		}
 		transcoord.lines = newlines
 
-		log.Println("put bgshape ", transcoord)
+		//log.Println("put bgshape ", transcoord)
 		currentTShapes[location{i, j}] = transcoord
 	}
 }
@@ -295,11 +292,12 @@ func updateSprites() {
 		bs.rSlasher.updateSlasherSprite()
 
 	}
-	myLocalPlayer.locEnt.lSlasher.updateSlasherSprite()
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+		myLocalPlayer.locEnt.lSlasher.updateSlasherSprite()
+	}
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})
-
 }
 
 func (bs *slasher)updateSlasherSprite() {

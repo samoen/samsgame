@@ -33,6 +33,7 @@ var socketConnection *websocket.Conn
 var othersock *websocket.Conn
 var toRender []baseSprite
 var offset location
+var myPNum string
 var myLocalPlayer localPlayer
 var slashers = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
@@ -48,12 +49,13 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	respawnsWork()
 	socketReceive()
-
-	myLocalPlayer.updatePlayerControl()
-	myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
-	myLocalPlayer.locEnt.lSlasher.updateAim()
-	myLocalPlayer.locEnt.lSlasher.handleSwing()
-	myLocalPlayer.checkHitOthers()
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
+		myLocalPlayer.updatePlayerControl()
+		myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
+		myLocalPlayer.locEnt.lSlasher.updateAim()
+		myLocalPlayer.locEnt.lSlasher.handleSwing()
+		myLocalPlayer.checkHitOthers()
+	}
 
 	for l, _ := range slashers {
 		l.AIControl()
@@ -114,12 +116,13 @@ func ClientInit() {
 		log.Fatal(err)
 	}
 	myLocalPlayer = localPlayer{}
+	myLocalPlayer.locEnt.lSlasher.defaultStats()
 	myLocalPlayer.placePlayer()
-	//placePlayer()
 
 	for i := 1; i < 10; i++ {
 		animal := slasher{}
-		animal.newSlasher()
+		animal.defaultStats()
+		animal.ent.moveSpeed = 50
 		animal.ent.rect.refreshShape(location{i*50 + 50, i * 30})
 		la := &localAnimal{}
 		la.locEnt.lSlasher = animal
@@ -169,9 +172,8 @@ func ClientInit() {
 }
 
 func placeMap() {
-
 	worldBoundRect := rectangle{}
 	worldBoundRect.dimens = dimens{worldWidth, worldWidth}
-	worldBoundRect.refreshShape(location{0,0})
+	worldBoundRect.refreshShape(location{0, 0})
 	wepBlockers[&worldBoundRect.shape] = true
 }

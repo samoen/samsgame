@@ -20,33 +20,22 @@ type slasher struct {
 	pivShape       pivotingShape
 }
 
-func (s *slasher) newSlasher() {
+func (s *slasher) defaultStats() {
 	cId := false
 	s.ent.collisionId = &cId
-	s.ent.rect = rectangle{}
 	s.ent.rect.dimens = dimens{20, 40}
 	s.ent.rect.refreshShape(location{50, 50})
 	s.ent.agility = 4
 	s.ent.moveSpeed = 100
 	s.cooldownCount = 0
-	s.pivShape = pivotingShape{}
 	s.pivShape.damage = 2
-	s.pivShape.pivoterShape = shape{}
-	pDeathable := deathable{}
-	pDeathable.hp = Hitpoints{6, 6}
-	s.deth = pDeathable
-	hBarSprite := baseSprite{}
-	hBarSprite.bOps = &ebiten.DrawImageOptions{}
-	hBarSprite.sprite = images.empty
-	s.hbarsprit = hBarSprite
-	ps := baseSprite{}
-	ps.bOps = &ebiten.DrawImageOptions{}
-	ps.sprite = images.playerStand
-	s.bsprit = ps
-	bs := baseSprite{}
-	bs.bOps = &ebiten.DrawImageOptions{}
-	bs.sprite = images.sword
-	s.wepsprit = bs
+	s.deth.hp = Hitpoints{6, 6}
+	s.hbarsprit.bOps = &ebiten.DrawImageOptions{}
+	s.hbarsprit.sprite = images.empty
+	s.bsprit.bOps = &ebiten.DrawImageOptions{}
+	s.bsprit.sprite = images.playerStand
+	s.wepsprit.bOps = &ebiten.DrawImageOptions{}
+	s.wepsprit.sprite = images.sword
 }
 
 func (le *localEnt) hitbox(s *ebiten.Image) {
@@ -81,14 +70,8 @@ func (l *localPlayer)checkHitOthers(){
 }
 
 func (l *localPlayer) placePlayer() {
-	ps := slasher{}
-	ps.newSlasher()
-	ps.ent.rect.refreshShape(location{50, 50})
-	ps.deth.hp = Hitpoints{6, 6}
-	mycenterpoint = rectCenterPoint(ps.ent.rect)
-	myLocalEnt := localEnt{}
-	myLocalEnt.lSlasher = ps
-	l.locEnt = myLocalEnt
+	l.locEnt.lSlasher.ent.rect.refreshShape(location{50, 50})
+	l.locEnt.lSlasher.deth.hp = Hitpoints{6, 6}
 	l.locEnt.lSlasher.ent.spawnSafe()
 }
 

@@ -88,6 +88,7 @@ func connectToServer() {
 				log.Println(err1)
 				closeConn()
 				socketConnection = nil
+				othersock = nil
 				return
 			}
 			ss := sockSelecter{}
@@ -103,6 +104,7 @@ func connectToServer() {
 			if err1 != nil {
 				log.Println(err1)
 				closeConn()
+				socketConnection = nil
 				othersock = nil
 				return
 			}
@@ -121,8 +123,6 @@ func clearEntities() {
 	myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP = -1
 	placeMap()
 }
-
-var myPNum string
 
 func socketReceive() {
 
@@ -152,7 +152,7 @@ func socketReceive() {
 			if _, ok := remotePlayers[l.MyPNum]; !ok {
 				log.Println("adding new player")
 				remoteSlasher := slasher{}
-				remoteSlasher.newSlasher()
+				remoteSlasher.defaultStats()
 				remoteSlasher.ent.rect.refreshShape(location{l.Myloc.X, l.Myloc.Y})
 				remoteSlasher.deth.hp = l.Myhealth
 				remoteP := &remotePlayer{}
@@ -217,7 +217,7 @@ func socketReceive() {
 				msg.sock = nil
 				return
 			}
-			log.Printf("sent my pos %+v", message)
+			//log.Printf("sent my pos %+v", message)
 		}()
 	default:
 	}

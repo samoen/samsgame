@@ -106,9 +106,11 @@ func (s shape) normalcollides(exclude *bool) bool {
 			return true
 		}
 	}
-	if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
-		if s.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
-			return true
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+		if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
+			if s.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
+				return true
+			}
 		}
 	}
 	for _, obj := range remotePlayers {
