@@ -246,12 +246,12 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 
-	for shape,_ := range wepBlockers {
+	for shape := range wepBlockers {
 		for _, l := range shape.lines {
 			l.samDrawLine(s)
 		}
 	}
-	for slshr, _ := range slashers {
+	for slshr := range slashers {
 		for _, l := range slshr.locEnt.lSlasher.ent.rect.shape.lines {
 			l.samDrawLine(s)
 		}
@@ -284,7 +284,7 @@ func drawHitboxes(s *ebiten.Image) {
 func updateSprites() {
 	toRender = nil
 
-	for bs, _ := range slashers {
+	for bs := range slashers {
 		bs.locEnt.lSlasher.updateSlasherSprite()
 
 	}
@@ -292,7 +292,7 @@ func updateSprites() {
 		bs.rSlasher.updateSlasherSprite()
 
 	}
-	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		myLocalPlayer.locEnt.lSlasher.updateSlasherSprite()
 	}
 	sort.Slice(toRender, func(i, j int) bool {
@@ -300,7 +300,7 @@ func updateSprites() {
 	})
 }
 
-func (bs *slasher)updateSlasherSprite() {
+func (bs *slasher) updateSlasherSprite() {
 	bs.bsprit.bOps.GeoM.Reset()
 	bs.bsprit.bOps.ColorM.Reset()
 	toRender = append(toRender, bs.bsprit)
@@ -364,13 +364,13 @@ func (bs *slasher)updateSlasherSprite() {
 	scaleto.width += (bs.ent.rect.dimens.width / 2) * intverted
 
 	scaleto.height = bs.ent.rect.dimens.height
-	scaleto.height += (bs.ent.rect.dimens.height / 2)
+	scaleto.height += bs.ent.rect.dimens.height / 2
 
 	shiftto := location{}
 	shiftto.x = bs.ent.rect.location.x
-	shiftto.x -= (bs.ent.rect.dimens.width / 4)
+	shiftto.x -= bs.ent.rect.dimens.width / 4
 	shiftto.y = bs.ent.rect.location.y
-	shiftto.y -= (bs.ent.rect.dimens.height / 2)
+	shiftto.y -= bs.ent.rect.dimens.height / 2
 
 	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps)
 	cameraShift(shiftto, bs.bsprit.bOps)

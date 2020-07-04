@@ -128,7 +128,7 @@ func main() {
 			}
 			return
 		}
-		pingmeasure := time.Duration(500 * time.Millisecond)
+		pingmeasure := 500 * time.Millisecond
 		wg2 := sync.WaitGroup{}
 		exit1 := false
 		exit2 := false

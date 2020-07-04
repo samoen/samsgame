@@ -88,7 +88,7 @@ func (s shape) collidesWith(os shape) bool {
 }
 
 func (s shape) normalcollides(exclude *bool) bool {
-	for obj, _ := range wepBlockers {
+	for obj := range wepBlockers {
 		if s.collidesWith(*obj) {
 			return true
 		}
@@ -98,7 +98,7 @@ func (s shape) normalcollides(exclude *bool) bool {
 			return true
 		}
 	}
-	for obj, _ := range slashers {
+	for obj := range slashers {
 		if obj.locEnt.lSlasher.ent.collisionId == exclude {
 			continue
 		}
@@ -106,7 +106,7 @@ func (s shape) normalcollides(exclude *bool) bool {
 			return true
 		}
 	}
-	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
 			if s.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
 				return true

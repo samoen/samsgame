@@ -41,7 +41,7 @@ var wepBlockers = make(map[*shape]bool)
 
 type SamGame struct{}
 
-func (g *SamGame) Update(screen *ebiten.Image) error {
+func (g *SamGame) Update(_ *ebiten.Image) error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		closeConn()
 		return errors.New("SamGame ended by player")
@@ -57,7 +57,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		myLocalPlayer.checkHitOthers()
 	}
 
-	for l, _ := range slashers {
+	for l := range slashers {
 		l.AIControl()
 		l.locEnt.lSlasher.ent.moveCollide()
 		l.locEnt.lSlasher.updateAim()
@@ -147,8 +147,8 @@ func ClientInit() {
 		}
 	}
 
-	ttshapes[blank] = shape{lines: []line{line{location{180, 5}, location{140, 60}}}}
-	ttshapes[rocky] = shape{lines: []line{line{location{80, 20}, location{80, 120}}}}
+	ttshapes[blank] = shape{lines: []line{{location{180, 5}, location{140, 60}}}}
+	ttshapes[rocky] = shape{lines: []line{{location{80, 20}, location{80, 120}}}}
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
