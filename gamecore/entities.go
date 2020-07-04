@@ -23,12 +23,7 @@ const (
 	bgTileWidth    = ScreenWidth / 2
 	interpTime     = 4
 	deathreckTime  = 4
-	interpolating remoteMoveState = iota
-	deadreckoning
-	momentumOnly
 )
-
-type remoteMoveState int
 
 var pingFrames = 10
 var receiveCount = pingFrames
@@ -53,18 +48,24 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	respawnsWork()
 	socketReceive()
+
 	myLocalPlayer.updatePlayerControl()
 	myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
 	myLocalPlayer.locEnt.lSlasher.updateAim()
 	myLocalPlayer.locEnt.lSlasher.handleSwing()
-	if myLocalPlayer.locEnt.lSlasher.swangin {
-		myLocalPlayer.locEnt.hitremotes()
-		for slashee, _ := range slashers {
-			myLocalPlayer.locEnt.checkHitAnimal(slashee)
-		}
+	myLocalPlayer.checkHitOthers()
+
+	for l, _ := range slashers {
+		l.AIControl()
+		l.locEnt.lSlasher.ent.moveCollide()
+		l.locEnt.lSlasher.updateAim()
+		l.locEnt.lSlasher.handleSwing()
+		l.checkHitOthers()
 	}
-	animalsWork()
-	remotePlayersWork()
+	for _, r := range remotePlayers {
+		r.remoteMovement()
+		r.rSlasher.handleSwing()
+	}
 
 	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.ent.rect)
 	center := mycenterpoint

@@ -179,9 +179,6 @@ func socketReceive() {
 					if hitid == myPNum {
 						myLocalPlayer.locEnt.lSlasher.deth.redScale = 10
 						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
-						if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-							myLocalPlayer.dead = true
-						}
 						break
 					}
 				}

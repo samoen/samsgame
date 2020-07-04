@@ -49,18 +49,6 @@ func (s *slasher) newSlasher() {
 	s.wepsprit = bs
 }
 
-func (bot *slasher) hitPlayer() {
-	if _, ok := bot.pivShape.alreadyHit[myLocalPlayer.locEnt.lSlasher.ent.collisionId]; ok {
-		return
-	}
-	if myLocalPlayer.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.pivShape.pivoterShape) {
-		myLocalPlayer.locEnt.lSlasher.getClapped(bot)
-		if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-			myLocalPlayer.dead = true
-		}
-	}
-}
-
 func (le *localEnt) hitbox(s *ebiten.Image) {
 	for _, l := range le.lSlasher.ent.rect.shape.lines {
 		l.samDrawLine(s)
@@ -79,7 +67,17 @@ type localEnt struct {
 
 type localPlayer struct {
 	locEnt localEnt
-	dead   bool
+}
+
+func (l *localPlayer)checkHitOthers(){
+	if myLocalPlayer.locEnt.lSlasher.swangin {
+		myLocalPlayer.locEnt.hitremotes()
+		for slashee, _ := range slashers {
+			if myLocalPlayer.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher){
+				slashee.checkRemove()
+			}
+		}
+	}
 }
 
 func (l *localPlayer) placePlayer() {
@@ -99,9 +97,61 @@ type localAnimal struct {
 	controlCount int
 }
 
+func (la *localAnimal) checkRemove(){
+	if la.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
+		delete(slashers,la)
+	}
+}
+
+func (la *localAnimal)checkHitOthers(){
+	if la.locEnt.lSlasher.swangin {
+		la.locEnt.hitremotes()
+		for slashee, _ := range slashers {
+			if slashee.locEnt.lSlasher.ent.collisionId == la.locEnt.lSlasher.ent.collisionId {
+				continue
+			}
+			if la.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher){
+				slashee.checkRemove()
+			}
+		}
+		la.locEnt.lSlasher.pivShape.checkHitAnimal(&myLocalPlayer.locEnt.lSlasher)
+	}
+}
+
 type remotePlayer struct {
 	rSlasher slasher
 	servId   string
+}
+
+func (bot *remotePlayer)remoteMovement(){
+	switch {
+	case receiveCount > interpTime:
+		bot.rSlasher.ent.moveCollide()
+	case receiveCount > interpTime+deathreckTime:
+		//if receiveCount > pingFrames {
+		bot.rSlasher.ent.directions.Down = false
+		bot.rSlasher.ent.directions.Left = false
+		bot.rSlasher.ent.directions.Right = false
+		bot.rSlasher.ent.directions.Up = false
+		//}
+		bot.rSlasher.ent.moveCollide()
+	default:
+		var newplace location
+		if receiveCount == interpTime {
+			newplace = bot.rSlasher.ent.endpoint
+		} else {
+			diffx := (bot.rSlasher.ent.endpoint.x - bot.rSlasher.ent.baseloc.x) / interpTime
+			diffy := (bot.rSlasher.ent.endpoint.y - bot.rSlasher.ent.baseloc.y) / interpTime
+			newplace = bot.rSlasher.ent.rect.location
+			newplace.x += diffx
+			newplace.y += diffy
+		}
+		checkrect := bot.rSlasher.ent.rect
+		checkrect.refreshShape(newplace)
+		if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
+			bot.rSlasher.ent.rect.refreshShape(newplace)
+		}
+	}
 }
 
 func (bot *slasher) handleSwing() {
@@ -159,48 +209,6 @@ func (bot *slasher) handleSwing() {
 	}
 }
 
-func remotePlayersWork() {
-	rms := interpolating
-	if receiveCount > interpTime {
-		rms = deadreckoning
-	}
-	if receiveCount > interpTime+deathreckTime {
-		rms = momentumOnly
-	}
-	for _, bot := range remotePlayers {
-		bot := bot
-		switch rms {
-		case interpolating:
-			var newplace location
-			if receiveCount == interpTime {
-				newplace = bot.rSlasher.ent.endpoint
-			} else {
-				diffx := (bot.rSlasher.ent.endpoint.x - bot.rSlasher.ent.baseloc.x) / interpTime
-				diffy := (bot.rSlasher.ent.endpoint.y - bot.rSlasher.ent.baseloc.y) / interpTime
-				newplace = bot.rSlasher.ent.rect.location
-				newplace.x += diffx
-				newplace.y += diffy
-			}
-			checkrect := bot.rSlasher.ent.rect
-			checkrect.refreshShape(newplace)
-			if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
-				bot.rSlasher.ent.rect.refreshShape(newplace)
-			}
-		case deadreckoning:
-			bot.rSlasher.ent.moveCollide()
-		case momentumOnly:
-			//if receiveCount > pingFrames {
-			bot.rSlasher.ent.directions.Down = false
-			bot.rSlasher.ent.directions.Left = false
-			bot.rSlasher.ent.directions.Right = false
-			bot.rSlasher.ent.directions.Up = false
-			//}
-			bot.rSlasher.ent.moveCollide()
-		}
-		bot.rSlasher.handleSwing()
-	}
-}
-
 func (s *slasher) updateAim() {
 	if !s.swangin {
 		if s.ent.directions.Down ||
@@ -227,35 +235,24 @@ func (s *slasher) updateAim() {
 
 func (bot *localEnt) hitremotes() {
 	for _, slashee := range remotePlayers {
-		if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.collisionId]; ok {
-			continue
-		}
-		if slashee.rSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
-			slashee.rSlasher.deth.redScale = 10
-			slashee.rSlasher.deth.hp.CurrentHP -= bot.lSlasher.pivShape.damage
+		if bot.lSlasher.pivShape.checkHitAnimal(&slashee.rSlasher){
 			slashee.rSlasher.deth.skipHpUpdate = 2
-			bot.lSlasher.pivShape.alreadyHit[slashee.rSlasher.ent.collisionId] = true
 			bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 		}
 	}
 }
 
-func (bot *localEnt) checkHitAnimal(slashee *localAnimal) {
-	if _, ok := bot.lSlasher.pivShape.alreadyHit[slashee.locEnt.lSlasher.ent.collisionId]; ok {
-		return
+func (s *pivotingShape) checkHitAnimal(slashee *slasher)bool{
+	if _, ok := s.alreadyHit[slashee.ent.collisionId]; ok {
+		return false
 	}
-	if slashee.locEnt.lSlasher.ent.rect.shape.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
-		slashee.locEnt.lSlasher.getClapped(&bot.lSlasher)
-		if slashee.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-			delete(slashers, slashee)
-		}
+	if slashee.ent.rect.shape.collidesWith(s.pivoterShape) {
+		slashee.deth.redScale = 10
+		slashee.deth.hp.CurrentHP -= s.damage
+		s.alreadyHit[slashee.ent.collisionId] = true
+		return true
 	}
-}
-
-func (slashee *slasher) getClapped(bot *slasher) {
-	slashee.deth.redScale = 10
-	slashee.deth.hp.CurrentHP -= bot.pivShape.damage
-	bot.pivShape.alreadyHit[slashee.ent.collisionId] = true
+	return false
 }
 
 func (bot *localAnimal) AIControl() {
@@ -272,24 +269,6 @@ func (bot *localAnimal) AIControl() {
 	}
 }
 
-func animalsWork() {
-	for bot, _ := range slashers {
-		bot.AIControl()
-		bot.locEnt.lSlasher.ent.moveCollide()
-		bot.locEnt.lSlasher.updateAim()
-		bot.locEnt.lSlasher.handleSwing()
-		if bot.locEnt.lSlasher.swangin {
-			bot.locEnt.hitremotes()
-			for slashee, _ := range slashers {
-				if slashee.locEnt.lSlasher.ent.collisionId == bot.locEnt.lSlasher.ent.collisionId {
-					continue
-				}
-				bot.locEnt.checkHitAnimal(slashee)
-			}
-			bot.locEnt.lSlasher.hitPlayer()
-		}
-	}
-}
 type pivotingShape struct {
 	pivoterShape   shape
 	animationCount float64

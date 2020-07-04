@@ -224,7 +224,8 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 	ops.GeoM.Add(toAdd)
 }
 
-func cameraShift(loc location, pSpriteOffset location, ops *ebiten.DrawImageOptions) {
+func cameraShift(loc location, ops *ebiten.DrawImageOptions) {
+	pSpriteOffset := offset
 	pSpriteOffset.x += loc.x
 	pSpriteOffset.y += loc.y
 	addOp := ebiten.GeoM{}
@@ -323,7 +324,7 @@ func (bs *slasher)updateSlasherSprite() {
 	healthbarlocation := location{bs.ent.rect.location.x, bs.ent.rect.location.y - (bs.ent.rect.dimens.height / 2) - 10}
 	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.ent.rect.dimens.width / bs.deth.hp.MaxHP
 	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps)
-	cameraShift(healthbarlocation, offset, bs.hbarsprit.bOps)
+	cameraShift(healthbarlocation, bs.hbarsprit.bOps)
 
 	bs.bsprit.yaxis = rectCenterPoint(bs.ent.rect).y
 
@@ -374,13 +375,13 @@ func (bs *slasher)updateSlasherSprite() {
 	shiftto.y -= (bs.ent.rect.dimens.height / 2)
 
 	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps)
-	cameraShift(shiftto, offset, bs.bsprit.bOps)
+	cameraShift(shiftto, bs.bsprit.bOps)
 
 	if bs.swangin {
 		_, imH := bs.wepsprit.sprite.Size()
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
 		ownerCenter := rectCenterPoint(bs.ent.rect)
-		cameraShift(ownerCenter, offset, bs.wepsprit.bOps)
+		cameraShift(ownerCenter, bs.wepsprit.bOps)
 		addOp := ebiten.GeoM{}
 		hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)
 		addOp.Scale(hRatio, hRatio)
