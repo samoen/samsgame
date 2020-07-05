@@ -37,11 +37,10 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 		if loc.sm.Myloc.X == 0 {
 			continue
 		}
-		if loc.sm.Myhealth.CurrentHP < 1 {
-			continue
+		if loc.sm.Myhealth.CurrentHP > 0 {
+			locs = append(locs, loc.sm)
 		}
 
-		locs = append(locs, loc.sm)
 		for _,an := range loc.animals{
 			locs = append(locs, an)
 		}
