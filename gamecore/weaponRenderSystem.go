@@ -23,6 +23,9 @@ type imagesStruct struct {
 	playerWalkDownAngle *ebiten.Image
 	playerWalkUpAngle   *ebiten.Image
 	playerSwing         *ebiten.Image
+	playerfall0         *ebiten.Image
+	playerfall1         *ebiten.Image
+	playerfall2         *ebiten.Image
 	empty               *ebiten.Image
 	sword               *ebiten.Image
 }
@@ -49,6 +52,9 @@ func (is *imagesStruct) newImages() {
 	is.playerSwing = cacheImage("playerswing1")
 	is.empty = cacheImage("floor")
 	is.sword = cacheImage("axe")
+	is.playerfall0 = cacheImage("man1")
+	is.playerfall1 = cacheImage("man2")
+	is.playerfall2 = cacheImage("man3")
 }
 
 var mycenterpoint location
@@ -139,7 +145,7 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 			if ttim != nil {
 				im.ops.GeoM.Reset()
 				im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
-				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops)
+				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops,false)
 				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
 				if err := screen.DrawImage(ttim, im.ops); err != nil {
 					log.Fatal(err)
@@ -212,12 +218,17 @@ type bgLoading struct {
 	tiletyp tileType
 }
 
-func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions) {
+func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
 	imW, imH := img.Size()
 	wRatio := float64(dims.width) / float64(imW)
 	hRatio := float64(dims.height) / float64(imH)
 	toAdd := ebiten.GeoM{}
-	toAdd.Scale(wRatio, hRatio)
+	if flip{
+		toAdd.Scale(-wRatio,hRatio)
+		toAdd.Translate(float64(dims.width),0)
+	}else{
+		toAdd.Scale(wRatio, hRatio)
+	}
 	ops.GeoM.Add(toAdd)
 }
 
@@ -246,7 +257,7 @@ func drawHitboxes(s *ebiten.Image) {
 		}
 	}
 
-	for shape,_ := range wepBlockers {
+	for shape, _ := range wepBlockers {
 		for _, l := range shape.lines {
 			l.samDrawLine(s)
 		}
@@ -292,27 +303,45 @@ func updateSprites() {
 		bs.rSlasher.updateSlasherSprite()
 
 	}
-	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		myLocalPlayer.locEnt.lSlasher.updateSlasherSprite()
 	}
+
+	for bs, _ := range deathAnimations {
+		bs.animcount++
+		framesperswitch := 10
+		animframe := int(math.Floor(float64(bs.animcount) / float64(framesperswitch)))
+		if animframe >= len(bs.sprites) {
+			delete(deathAnimations, bs)
+			continue
+		}
+		toupdate := bs.sprites[animframe]
+		toupdate.bOps.GeoM.Reset()
+
+		scaleto := playerSpriteLargerScale(bs.rect)
+		scaleToDimension(scaleto, toupdate.sprite, toupdate.bOps,bs.inverted)
+
+		shiftto := playerSpriteLargerShift(bs.rect)
+		cameraShift(shiftto, toupdate.bOps)
+
+		toRender = append(toRender, toupdate)
+	}
+
 	sort.Slice(toRender, func(i, j int) bool {
 		return toRender[i].yaxis < toRender[j].yaxis
 	})
 }
 
-func (bs *slasher)updateSlasherSprite() {
+func (bs *slasher) updateSlasherSprite() {
 	bs.bsprit.bOps.GeoM.Reset()
 	bs.bsprit.bOps.ColorM.Reset()
-	toRender = append(toRender, bs.bsprit)
 
 	bs.hbarsprit.bOps.GeoM.Reset()
 	bs.hbarsprit.bOps.ColorM.Reset()
-	toRender = append(toRender, bs.hbarsprit)
 
 	if bs.swangin {
 		bs.wepsprit.bOps.GeoM.Reset()
 		bs.wepsprit.bOps.ColorM.Reset()
-		toRender = append(toRender, bs.wepsprit)
 	}
 	if bs.deth.redScale > 0 {
 		bs.deth.redScale--
@@ -321,7 +350,7 @@ func (bs *slasher)updateSlasherSprite() {
 	bs.hbarsprit.yaxis = rectCenterPoint(bs.ent.rect).y + 10
 	healthbarlocation := location{bs.ent.rect.location.x, bs.ent.rect.location.y - (bs.ent.rect.dimens.height / 2) - 10}
 	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.ent.rect.dimens.width / bs.deth.hp.MaxHP
-	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps)
+	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps,false)
 	cameraShift(healthbarlocation, bs.hbarsprit.bOps)
 
 	bs.bsprit.yaxis = rectCenterPoint(bs.ent.rect).y
@@ -350,29 +379,10 @@ func (bs *slasher)updateSlasherSprite() {
 
 	bs.bsprit.sprite = spriteSelect
 
-	intverted := 1
-	if math.Abs(bs.startangle) > math.Pi/2 {
-		intverted = -1
-		flipTrans := ebiten.GeoM{}
-		flipTrans.Translate(float64(-bs.ent.rect.dimens.width-(bs.ent.rect.dimens.width/2)), 0)
-		bs.bsprit.bOps.GeoM.Add(flipTrans)
-		bs.bsprit.bOps.GeoM.Scale(-1, 1)
-	}
-	scaleto := dimens{}
-
-	scaleto.width = bs.ent.rect.dimens.width
-	scaleto.width += (bs.ent.rect.dimens.width / 2) * intverted
-
-	scaleto.height = bs.ent.rect.dimens.height
-	scaleto.height += (bs.ent.rect.dimens.height / 2)
-
-	shiftto := location{}
-	shiftto.x = bs.ent.rect.location.x
-	shiftto.x -= (bs.ent.rect.dimens.width / 4)
-	shiftto.y = bs.ent.rect.location.y
-	shiftto.y -= (bs.ent.rect.dimens.height / 2)
-
-	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps)
+	invertbool := math.Abs(bs.startangle) > math.Pi/2
+	scaleto := playerSpriteLargerScale(bs.ent.rect)
+	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps,invertbool)
+	shiftto := playerSpriteLargerShift(bs.ent.rect)
 	cameraShift(shiftto, bs.bsprit.bOps)
 
 	if bs.swangin {
@@ -386,5 +396,26 @@ func (bs *slasher)updateSlasherSprite() {
 		addOp.Translate(-float64(bs.ent.rect.dimens.width)/2, 0)
 		addOp.Rotate(bs.pivShape.animationCount - (math.Pi / 2))
 		bs.wepsprit.bOps.GeoM.Add(addOp)
+		toRender = append(toRender, bs.wepsprit)
 	}
+	toRender = append(toRender, bs.bsprit)
+	toRender = append(toRender, bs.hbarsprit)
+}
+
+func playerSpriteLargerScale(rect rectangle) dimens {
+	scaleto := dimens{}
+	scaleto.width = rect.dimens.width
+	scaleto.width += (rect.dimens.width / 2)
+
+	scaleto.height = rect.dimens.height
+	scaleto.height += rect.dimens.height / 2
+	return scaleto
+}
+func playerSpriteLargerShift(rect rectangle) location {
+	shiftto := location{}
+	shiftto.x = rect.location.x
+	shiftto.x -= rect.dimens.width / 4
+	shiftto.y = rect.location.y
+	shiftto.y -= rect.dimens.height / 2
+	return shiftto
 }

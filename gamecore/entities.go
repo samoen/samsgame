@@ -20,7 +20,7 @@ const (
 	ScreenWidth    = 700
 	ScreenHeight   = 500
 	worldWidth     = ScreenWidth * 4
-	bgTileWidth    = ScreenWidth / 2
+	bgTileWidth    = ScreenWidth
 	interpTime     = 4
 	deathreckTime  = 4
 )
@@ -38,6 +38,14 @@ var myLocalPlayer localPlayer
 var slashers = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
 var wepBlockers = make(map[*shape]bool)
+var deathAnimations = make(map[*deathAnim]bool)
+
+type deathAnim struct {
+	sprites   []baseSprite
+	rect     rectangle
+	inverted  bool
+	animcount int
+}
 
 type SamGame struct{}
 

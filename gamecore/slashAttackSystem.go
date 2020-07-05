@@ -83,6 +83,27 @@ type localAnimal struct {
 func (la *localAnimal) checkRemove(){
 	if la.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 		delete(slashers,la)
+		bs0 := baseSprite{}
+		bs0.sprite = images.playerfall0
+		bs0.bOps = &ebiten.DrawImageOptions{}
+		bs0.yaxis = rectCenterPoint(la.locEnt.lSlasher.ent.rect).y
+		bs1 := baseSprite{}
+		bs1.sprite = images.playerfall1
+		bs1.bOps = &ebiten.DrawImageOptions{}
+		bs1.yaxis = rectCenterPoint(la.locEnt.lSlasher.ent.rect).y
+		bs2 := baseSprite{}
+		bs2.sprite = images.playerfall2
+		bs2.bOps = &ebiten.DrawImageOptions{}
+		bs2.yaxis = rectCenterPoint(la.locEnt.lSlasher.ent.rect).y
+
+
+		da := &deathAnim{}
+		da.sprites = append(da.sprites, bs0)
+		da.sprites = append(da.sprites, bs1)
+		da.sprites = append(da.sprites, bs2)
+		da.rect = la.locEnt.lSlasher.ent.rect
+		da.inverted = math.Abs(la.locEnt.lSlasher.startangle) > math.Pi/2
+		deathAnimations[da]=true
 	}
 }
 
@@ -242,7 +263,7 @@ func (bot *localAnimal) AIControl() {
 	if bot.controlCount < 1 {
 		bot.controlCount = rand.Intn(100)
 		bot.locEnt.lSlasher.ent.directions = Directions{
-			rand.Intn(2) == 0,
+			rand.Intn(9) == 0,
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
