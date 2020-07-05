@@ -21,6 +21,7 @@ type ServerEntity struct {
 	entconn   *websocket.Conn
 	otherconn *websocket.Conn
 	sm        gamecore.ServerMessage
+	animals []gamecore.ServerMessage
 	busy      bool
 	ping      time.Duration
 }
@@ -41,6 +42,9 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 		}
 
 		locs = append(locs, loc.sm)
+		for _,an := range loc.animals{
+			locs = append(locs, an)
+		}
 	}
 	conMutex.Unlock()
 	toSend := gamecore.LocationList{}
@@ -53,7 +57,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 	}
 	//log.Println("sent message: ", toSend)
 
-	var v gamecore.ServerMessage
+	var v gamecore.MessageToServer
 	err = wsjson.Read(context.Background(), conno, &v)
 	if err != nil {
 		log.Println(err)
@@ -62,7 +66,8 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 	//log.Println("received: ", v)
 	conMutex.Lock()
 	if se, ok := connections[mapid]; ok {
-		se.sm = v
+		se.sm = v.MyData
+		se.animals = v.MyAnimals
 	}
 	conMutex.Unlock()
 	<-timer1.C

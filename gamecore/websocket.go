@@ -22,6 +22,11 @@ type ServerMessage struct {
 	MyPNum   string
 }
 
+type MessageToServer struct{
+	MyData ServerMessage
+	MyAnimals []ServerMessage
+}
+
 type Weapon struct {
 	Swinging   bool
 	Startangle float64
@@ -122,6 +127,13 @@ func clearEntities() {
 	remotePlayers = make(map[string]*remotePlayer)
 	myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP = -1
 	placeMap()
+	animal := slasher{}
+	animal.defaultStats()
+	animal.ent.moveSpeed = 50
+	animal.ent.rect.refreshShape(location{70 + 50, 30})
+	la := &localAnimal{}
+	la.locEnt.lSlasher = animal
+	slashers[la] = true
 }
 
 func socketReceive() {
@@ -181,6 +193,13 @@ func socketReceive() {
 						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
 						break
 					}
+					for la,_:=range slashers{
+						if hitid == myPNum+fmt.Sprintf("%p", la){
+							la.locEnt.lSlasher.deth.redScale = 10
+							la.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+							la.checkRemove()
+						}
+					}
 				}
 			}
 		}
@@ -193,24 +212,38 @@ func socketReceive() {
 		messageWep.Dmg = myLocalPlayer.locEnt.lSlasher.pivShape.damage
 		messageWep.Swinging = myLocalPlayer.locEnt.lSlasher.swangSinceSend
 		messageWep.Startangle = myLocalPlayer.locEnt.lSlasher.startangle
-		var hitlist []string
-
-		for _, hitlocal := range myLocalPlayer.locEnt.hitsToSend {
-			for _, rp := range remotePlayers {
-				if rp.servId == hitlocal {
-					hitlist = append(hitlist, rp.servId)
-				}
-			}
-		}
-		messageWep.IHit = hitlist
+		messageWep.IHit = myLocalPlayer.locEnt.hitsToSend
 		message.Myaxe = messageWep
 		message.Myhealth = myLocalPlayer.locEnt.lSlasher.deth.hp
 
 		myLocalPlayer.locEnt.hitsToSend = nil
 		myLocalPlayer.locEnt.lSlasher.swangSinceSend = false
 
+		var animalsToSend []ServerMessage
+		for a,_:= range slashers{
+			animessage := ServerMessage{}
+			animessage.MyPNum = msg.ll.YourPNum+fmt.Sprintf("%p", a)
+			animessage.Myloc = ServerLocation{a.locEnt.lSlasher.ent.rect.location.x, a.locEnt.lSlasher.ent.rect.location.y}
+			animessage.Mymom = a.locEnt.lSlasher.ent.moment
+			animessage.Mydir = a.locEnt.lSlasher.ent.directions
+			messageWep := Weapon{}
+			messageWep.Dmg = a.locEnt.lSlasher.pivShape.damage
+			messageWep.Swinging = a.locEnt.lSlasher.swangSinceSend
+			messageWep.Startangle = a.locEnt.lSlasher.startangle
+			messageWep.IHit = a.locEnt.hitsToSend
+			animessage.Myaxe = messageWep
+			animessage.Myhealth = a.locEnt.lSlasher.deth.hp
+
+			a.locEnt.hitsToSend = nil
+			a.locEnt.lSlasher.swangSinceSend = false
+			animalsToSend = append(animalsToSend,animessage)
+		}
+		mts := MessageToServer{}
+		mts.MyData = message
+		mts.MyAnimals = animalsToSend
+
 		go func() {
-			writeErr := wsjson.Write(context.Background(), msg.sock, message)
+			writeErr := wsjson.Write(context.Background(), msg.sock, mts)
 			if writeErr != nil {
 				log.Println(writeErr)
 				closeConn()
