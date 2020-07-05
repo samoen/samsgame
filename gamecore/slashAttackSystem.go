@@ -107,18 +107,7 @@ type remotePlayer struct {
 }
 
 func (bot *remotePlayer)remoteMovement(){
-	switch {
-	case receiveCount > interpTime:
-		bot.rSlasher.ent.moveCollide()
-	case receiveCount > interpTime+deathreckTime:
-		//if receiveCount > pingFrames {
-		bot.rSlasher.ent.directions.Down = false
-		bot.rSlasher.ent.directions.Left = false
-		bot.rSlasher.ent.directions.Right = false
-		bot.rSlasher.ent.directions.Up = false
-		//}
-		bot.rSlasher.ent.moveCollide()
-	default:
+	if receiveCount < interpTime{
 		var newplace location
 		if receiveCount == interpTime {
 			newplace = bot.rSlasher.ent.endpoint
@@ -134,6 +123,16 @@ func (bot *remotePlayer)remoteMovement(){
 		if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
 			bot.rSlasher.ent.rect.refreshShape(newplace)
 		}
+	}else if receiveCount > interpTime+deathreckTime{
+		//if receiveCount > pingFrames {
+		bot.rSlasher.ent.directions.Down = false
+		bot.rSlasher.ent.directions.Left = false
+		bot.rSlasher.ent.directions.Right = false
+		bot.rSlasher.ent.directions.Up = false
+		//}
+		bot.rSlasher.ent.moveCollide()
+	} else{
+		bot.rSlasher.ent.moveCollide()
 	}
 }
 

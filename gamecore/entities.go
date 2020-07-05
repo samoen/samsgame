@@ -49,6 +49,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	respawnsWork()
 	socketReceive()
+
+	for _, r := range remotePlayers {
+		r.remoteMovement()
+		r.rSlasher.handleSwing()
+	}
+
 	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		myLocalPlayer.updatePlayerControl()
 		myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
@@ -64,10 +70,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		l.locEnt.lSlasher.handleSwing()
 		l.checkHitOthers()
 	}
-	for _, r := range remotePlayers {
-		r.remoteMovement()
-		r.rSlasher.handleSwing()
-	}
+
 
 	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.ent.rect)
 	center := mycenterpoint
