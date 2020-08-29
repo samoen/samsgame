@@ -58,10 +58,10 @@ func closeConn() {
 		}
 	}
 }
-
+var host = "localhost"
 func connectToServer() {
 
-	socketURL := "ws://localhost:8080/ws"
+	socketURL := "ws://"+host+":8080/ws"
 	var err error
 	socketConnection, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
@@ -79,7 +79,7 @@ func connectToServer() {
 	myPNum = v.YourPNum
 	clearEntities()
 
-	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s", myPNum)
+	socketURL = fmt.Sprintf("ws://"+host+":8080/ws?a=%s", myPNum)
 	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
@@ -158,6 +158,7 @@ func socketReceive() {
 				}
 			}
 			delete(remotePlayers, rpid)
+			rp.rSlasher.addDeathAnim()
 		}
 
 		for _, l := range msg.ll.Locs {
@@ -191,6 +192,9 @@ func socketReceive() {
 					if hitid == myPNum {
 						myLocalPlayer.locEnt.lSlasher.deth.redScale = 10
 						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+						if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP<1{
+							myLocalPlayer.locEnt.lSlasher.addDeathAnim()
+						}
 						break
 					}
 					for la,_:=range slashers{
