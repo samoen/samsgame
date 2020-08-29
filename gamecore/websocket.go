@@ -6,6 +6,7 @@ import (
 	"log"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
+	"os"
 )
 
 type sockSelecter struct {
@@ -22,8 +23,8 @@ type ServerMessage struct {
 	MyPNum   string
 }
 
-type MessageToServer struct{
-	MyData ServerMessage
+type MessageToServer struct {
+	MyData    ServerMessage
 	MyAnimals []ServerMessage
 }
 
@@ -58,10 +59,15 @@ func closeConn() {
 		}
 	}
 }
-var host = "localhost"
-func connectToServer() {
 
-	socketURL := "ws://"+host+":8080/ws"
+var host = "localhost"
+
+func connectToServer() {
+	args := os.Args
+	if len(args) > 1 {
+		host = args[1]
+	}
+	socketURL := "ws://" + host + ":8080/ws"
 	var err error
 	socketConnection, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
@@ -192,13 +198,13 @@ func socketReceive() {
 					if hitid == myPNum {
 						myLocalPlayer.locEnt.lSlasher.deth.redScale = 10
 						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
-						if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP<1{
+						if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 							myLocalPlayer.locEnt.lSlasher.addDeathAnim()
 						}
 						break
 					}
-					for la,_:=range slashers{
-						if hitid == myPNum+fmt.Sprintf("%p", la){
+					for la, _ := range slashers {
+						if hitid == myPNum+fmt.Sprintf("%p", la) {
 							la.locEnt.lSlasher.deth.redScale = 10
 							la.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
 							la.checkRemove()
@@ -224,9 +230,9 @@ func socketReceive() {
 		myLocalPlayer.locEnt.lSlasher.swangSinceSend = false
 
 		var animalsToSend []ServerMessage
-		for a,_:= range slashers{
+		for a, _ := range slashers {
 			animessage := ServerMessage{}
-			animessage.MyPNum = msg.ll.YourPNum+fmt.Sprintf("%p", a)
+			animessage.MyPNum = msg.ll.YourPNum + fmt.Sprintf("%p", a)
 			animessage.Myloc = ServerLocation{a.locEnt.lSlasher.ent.rect.location.x, a.locEnt.lSlasher.ent.rect.location.y}
 			animessage.Mymom = a.locEnt.lSlasher.ent.moment
 			animessage.Mydir = a.locEnt.lSlasher.ent.directions
@@ -240,7 +246,7 @@ func socketReceive() {
 
 			a.locEnt.hitsToSend = nil
 			a.locEnt.lSlasher.swangSinceSend = false
-			animalsToSend = append(animalsToSend,animessage)
+			animalsToSend = append(animalsToSend, animessage)
 		}
 		mts := MessageToServer{}
 		mts.MyData = message
