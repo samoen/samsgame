@@ -1,10 +1,10 @@
-package gamecore
+package main
 
 import (
 	"math"
 )
 
-type Momentum struct {
+type momentum struct {
 	Xaxis int
 	Yaxis int
 }
@@ -12,10 +12,10 @@ type Momentum struct {
 type acceleratingEnt struct {
 	collisionId *bool
 	rect        rectangle
-	moment      Momentum
+	moment      momentum
 	agility     float64
 	moveSpeed   float64
-	directions  Directions
+	directions  directions
 	baseloc     location
 	endpoint    location
 }

@@ -1,4 +1,4 @@
-package gamecore
+package main
 
 import (
 	"github.com/hajimehoshi/ebiten"

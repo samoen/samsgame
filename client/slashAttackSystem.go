@@ -1,7 +1,8 @@
-package gamecore
+package main
 
 import (
 	"github.com/hajimehoshi/ebiten"
+	"mahgame/gamecore"
 	"math"
 	"math/rand"
 )
@@ -29,7 +30,7 @@ func (s *slasher) defaultStats() {
 	s.ent.moveSpeed = 100
 	s.cooldownCount = 0
 	s.pivShape.damage = 2
-	s.deth.hp = Hitpoints{6, 6}
+	s.deth.hp = hitpoints{6, 6}
 	s.hbarsprit.bOps = &ebiten.DrawImageOptions{}
 	s.hbarsprit.sprite = images.empty
 	s.bsprit.bOps = &ebiten.DrawImageOptions{}
@@ -54,15 +55,37 @@ type localEnt struct {
 	hitsToSend []string
 }
 
+func (l *localEnt) toRemoteEnt(pnum string) gamecore.EntityData {
+	message := gamecore.EntityData{}
+	message.MyPNum = pnum
+	message.X = l.lSlasher.ent.rect.location.x
+	message.Y = l.lSlasher.ent.rect.location.y
+	message.Xaxis = l.lSlasher.ent.moment.Xaxis
+	message.Yaxis = l.lSlasher.ent.moment.Yaxis
+	message.Up = l.lSlasher.ent.directions.Up
+	message.Left = l.lSlasher.ent.directions.Left
+	message.Right = l.lSlasher.ent.directions.Right
+	message.Down = l.lSlasher.ent.directions.Down
+	message.Dmg = l.lSlasher.pivShape.damage
+	message.Swinging = l.lSlasher.swangSinceSend
+	message.Startangle = l.lSlasher.startangle
+	message.IHit = l.hitsToSend
+	message.CurrentHP = l.lSlasher.deth.hp.CurrentHP
+	message.MaxHP = l.lSlasher.deth.hp.MaxHP
+	l.hitsToSend = nil
+	l.lSlasher.swangSinceSend = false
+	return message
+}
+
 type localPlayer struct {
 	locEnt localEnt
 }
 
-func (l *localPlayer)checkHitOthers(){
+func (l *localPlayer) checkHitOthers() {
 	if myLocalPlayer.locEnt.lSlasher.swangin {
 		myLocalPlayer.locEnt.hitremotes()
 		for slashee, _ := range slashers {
-			if myLocalPlayer.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher){
+			if myLocalPlayer.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher) {
 				slashee.checkRemove()
 			}
 		}
@@ -71,7 +94,7 @@ func (l *localPlayer)checkHitOthers(){
 
 func (l *localPlayer) placePlayer() {
 	l.locEnt.lSlasher.ent.rect.refreshShape(location{50, 50})
-	l.locEnt.lSlasher.deth.hp = Hitpoints{6, 6}
+	l.locEnt.lSlasher.deth.hp = hitpoints{6, 6}
 	l.locEnt.lSlasher.ent.spawnSafe()
 }
 
@@ -80,14 +103,14 @@ type localAnimal struct {
 	controlCount int
 }
 
-func (la *localAnimal) checkRemove(){
+func (la *localAnimal) checkRemove() {
 	if la.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-		delete(slashers,la)
+		delete(slashers, la)
 		la.locEnt.lSlasher.addDeathAnim()
 	}
 }
 
-func (s *slasher)addDeathAnim(){
+func (s *slasher) addDeathAnim() {
 	bs0 := baseSprite{}
 	bs0.sprite = images.playerfall0
 	bs0.bOps = &ebiten.DrawImageOptions{}
@@ -101,29 +124,28 @@ func (s *slasher)addDeathAnim(){
 	bs2.bOps = &ebiten.DrawImageOptions{}
 	bs2.yaxis = rectCenterPoint(s.ent.rect).y
 
-
 	da := &deathAnim{}
 	da.sprites = append(da.sprites, bs0)
 	da.sprites = append(da.sprites, bs1)
 	da.sprites = append(da.sprites, bs2)
 	da.rect = s.ent.rect
 	da.inverted = math.Abs(s.startangle) > math.Pi/2
-	deathAnimations[da]=true
+	deathAnimations[da] = true
 }
 
-func (la *localAnimal)checkHitOthers(){
+func (la *localAnimal) checkHitOthers() {
 	if la.locEnt.lSlasher.swangin {
 		la.locEnt.hitremotes()
 		for slashee, _ := range slashers {
 			if slashee.locEnt.lSlasher.ent.collisionId == la.locEnt.lSlasher.ent.collisionId {
 				continue
 			}
-			if la.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher){
+			if la.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher) {
 				slashee.checkRemove()
 			}
 		}
-		if la.locEnt.lSlasher.pivShape.checkHitAnimal(&myLocalPlayer.locEnt.lSlasher){
-			if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP<1{
+		if la.locEnt.lSlasher.pivShape.checkHitAnimal(&myLocalPlayer.locEnt.lSlasher) {
+			if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 				myLocalPlayer.locEnt.lSlasher.addDeathAnim()
 			}
 		}
@@ -135,8 +157,8 @@ type remotePlayer struct {
 	servId   string
 }
 
-func (bot *remotePlayer)remoteMovement(){
-	if receiveCount < interpTime{
+func (bot *remotePlayer) remoteMovement() {
+	if receiveCount < interpTime {
 		var newplace location
 		if receiveCount == interpTime {
 			newplace = bot.rSlasher.ent.endpoint
@@ -152,7 +174,7 @@ func (bot *remotePlayer)remoteMovement(){
 		if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
 			bot.rSlasher.ent.rect.refreshShape(newplace)
 		}
-	}else if receiveCount > interpTime+deathreckTime{
+	} else if receiveCount > interpTime+deathreckTime {
 		//if receiveCount > pingFrames {
 		bot.rSlasher.ent.directions.Down = false
 		bot.rSlasher.ent.directions.Left = false
@@ -160,7 +182,7 @@ func (bot *remotePlayer)remoteMovement(){
 		bot.rSlasher.ent.directions.Up = false
 		//}
 		bot.rSlasher.ent.moveCollide()
-	} else{
+	} else {
 		bot.rSlasher.ent.moveCollide()
 	}
 }
@@ -246,14 +268,14 @@ func (s *slasher) updateAim() {
 
 func (bot *localEnt) hitremotes() {
 	for _, slashee := range remotePlayers {
-		if bot.lSlasher.pivShape.checkHitAnimal(&slashee.rSlasher){
+		if bot.lSlasher.pivShape.checkHitAnimal(&slashee.rSlasher) {
 			slashee.rSlasher.deth.skipHpUpdate = 2
 			bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 		}
 	}
 }
 
-func (s *pivotingShape) checkHitAnimal(slashee *slasher)bool{
+func (s *pivotingShape) checkHitAnimal(slashee *slasher) bool {
 	if _, ok := s.alreadyHit[slashee.ent.collisionId]; ok {
 		return false
 	}
@@ -270,7 +292,7 @@ func (bot *localAnimal) AIControl() {
 	bot.controlCount--
 	if bot.controlCount < 1 {
 		bot.controlCount = rand.Intn(100)
-		bot.locEnt.lSlasher.ent.directions = Directions{
+		bot.locEnt.lSlasher.ent.directions = directions{
 			rand.Intn(9) == 0,
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
@@ -289,7 +311,6 @@ type pivotingShape struct {
 	damage         int
 }
 
-
 // func rotateAround(center location, point location, angle float64) location {
 // 	result := location{}
 // 	rotatedX := math.Cos(angle)*float64(point.x-center.x) - math.Sin(angle)*float64(point.y-center.y) + float64(center.x)
@@ -301,11 +322,11 @@ type pivotingShape struct {
 
 type deathable struct {
 	redScale     int
-	hp           Hitpoints
+	hp           hitpoints
 	skipHpUpdate int
 }
 
-type Hitpoints struct {
+type hitpoints struct {
 	CurrentHP int
 	MaxHP     int
 }
@@ -320,7 +341,7 @@ func respawnsWork() {
 	myLocalPlayer.placePlayer()
 }
 
-type Directions struct {
+type directions struct {
 	Right bool
 	Down  bool
 	Left  bool

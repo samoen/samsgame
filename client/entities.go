@@ -1,4 +1,4 @@
-package gamecore
+package main
 
 import (
 	"errors"
@@ -42,7 +42,7 @@ var deathAnimations = make(map[*deathAnim]bool)
 
 type deathAnim struct {
 	sprites   []baseSprite
-	rect     rectangle
+	rect      rectangle
 	inverted  bool
 	animcount int
 }

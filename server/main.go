@@ -20,24 +20,24 @@ var connections = make(map[*bool]*ServerEntity)
 type ServerEntity struct {
 	entconn   *websocket.Conn
 	otherconn *websocket.Conn
-	sm        gamecore.ServerMessage
-	animals []gamecore.ServerMessage
+	sm        gamecore.EntityData
+	animals []gamecore.EntityData
 	busy      bool
 	ping      time.Duration
 }
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 	timer1 := time.NewTimer(300 * time.Millisecond)
-	var locs []gamecore.ServerMessage
+	var locs []gamecore.EntityData
 	conMutex.Lock()
 	for subcon, loc := range connections {
 		if subcon == mapid {
 			continue
 		}
-		if loc.sm.Myloc.X == 0 {
+		if loc.sm.X == 0 {
 			continue
 		}
-		if loc.sm.Myhealth.CurrentHP > 0 {
+		if loc.sm.CurrentHP > 0 {
 			locs = append(locs, loc.sm)
 		}
 
@@ -46,7 +46,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 		}
 	}
 	conMutex.Unlock()
-	toSend := gamecore.LocationList{}
+	toSend := gamecore.MessageToClient{}
 	toSend.Locs = locs
 	toSend.YourPNum = fmt.Sprintf("%p", mapid)
 	err := wsjson.Write(context.Background(), conno, toSend)
@@ -90,20 +90,20 @@ func main() {
 
 	hf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conno, err := websocket.Accept(w, r, nil)
-		q := r.URL.Query()
-		param := q.Get("a")
-		log.Println(param)
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
+		q := r.URL.Query()
+		param := q.Get("a")
+		log.Println(param)
 		found := false
 		var otherconn *websocket.Conn
 		var myid *bool
 		conMutex.Lock()
 		for id, serveEnt := range connections {
 			if fmt.Sprintf("%p", id) == param {
-				fmt.Println("found existing")
+				log.Println("found existing")
 				found = true
 				serveEnt.otherconn = conno
 				otherconn = serveEnt.entconn
@@ -119,12 +119,12 @@ func main() {
 			servEnt := &ServerEntity{}
 			servEnt.ping = 400
 			servEnt.entconn = conno
-			servEnt.sm.Myhealth.CurrentHP = -2
+			servEnt.sm.CurrentHP = -2
 			conMutex.Lock()
 			connections[mapid] = servEnt
 			conMutex.Unlock()
 
-			toSend := gamecore.LocationList{}
+			toSend := gamecore.MessageToClient{}
 			toSend.YourPNum = fmt.Sprintf("%p", mapid)
 			err := wsjson.Write(context.Background(), conno, toSend)
 			if err != nil {

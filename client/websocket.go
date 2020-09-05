@@ -1,49 +1,21 @@
-package gamecore
+package main
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"mahgame/gamecore"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 	"os"
 )
 
 type sockSelecter struct {
-	ll   LocationList
+	ll   gamecore.MessageToClient
 	sock *websocket.Conn
 }
 
-type ServerMessage struct {
-	Myloc    ServerLocation
-	Mymom    Momentum
-	Mydir    Directions
-	Myaxe    Weapon
-	Myhealth Hitpoints
-	MyPNum   string
-}
 
-type MessageToServer struct {
-	MyData    ServerMessage
-	MyAnimals []ServerMessage
-}
-
-type Weapon struct {
-	Swinging   bool
-	Startangle float64
-	IHit       []string
-	Dmg        int
-}
-
-type LocationList struct {
-	Locs     []ServerMessage
-	YourPNum string
-}
-
-type ServerLocation struct {
-	X int
-	Y int
-}
 
 func closeConn() {
 	if socketConnection != nil {
@@ -74,7 +46,7 @@ func connectToServer() {
 		log.Println(err)
 		return
 	}
-	var v LocationList
+	var v gamecore.MessageToClient
 	err1 := wsjson.Read(context.Background(), socketConnection, &v)
 	if err1 != nil {
 		log.Println(err1)
@@ -93,7 +65,7 @@ func connectToServer() {
 	}
 	go func() {
 		for {
-			var v LocationList
+			var v gamecore.MessageToClient
 			err1 := wsjson.Read(context.Background(), socketConnection, &v)
 			if err1 != nil {
 				log.Println(err1)
@@ -110,7 +82,7 @@ func connectToServer() {
 	}()
 	go func() {
 		for {
-			var v LocationList
+			var v gamecore.MessageToClient
 			err1 := wsjson.Read(context.Background(), othersock, &v)
 			if err1 != nil {
 				log.Println(err1)
@@ -172,32 +144,33 @@ func socketReceive() {
 				log.Println("adding new player")
 				remoteSlasher := slasher{}
 				remoteSlasher.defaultStats()
-				remoteSlasher.ent.rect.refreshShape(location{l.Myloc.X, l.Myloc.Y})
-				remoteSlasher.deth.hp = l.Myhealth
+				remoteSlasher.ent.rect.refreshShape(location{l.X, l.Y})
+				remoteSlasher.deth.hp = hitpoints{l.CurrentHP,l.MaxHP}
 				remoteP := &remotePlayer{}
 				remoteP.rSlasher = remoteSlasher
 				remoteP.servId = l.MyPNum
 				remotePlayers[l.MyPNum] = remoteP
 			}
+
 			if rp, ok := remotePlayers[l.MyPNum]; ok {
 				rp.rSlasher.ent.baseloc = rp.rSlasher.ent.rect.location
-				rp.rSlasher.ent.endpoint = location{l.Myloc.X, l.Myloc.Y}
-				rp.rSlasher.ent.directions = l.Mydir
-				rp.rSlasher.ent.moment = l.Mymom
-				rp.rSlasher.startangle = l.Myaxe.Startangle
-				rp.rSlasher.atkButton = l.Myaxe.Swinging
+				rp.rSlasher.ent.endpoint = location{l.X, l.Y}
+				rp.rSlasher.ent.directions = directions{l.Right,l.Down,l.Left,l.Up}
+				rp.rSlasher.ent.moment = momentum{l.Xaxis,l.Yaxis}
+				rp.rSlasher.startangle = l.Startangle
+				rp.rSlasher.atkButton = l.Swinging
 				if rp.rSlasher.deth.skipHpUpdate > 0 {
 					rp.rSlasher.deth.skipHpUpdate--
 				} else {
-					if l.Myhealth.CurrentHP < rp.rSlasher.deth.hp.CurrentHP {
+					if l.CurrentHP < rp.rSlasher.deth.hp.CurrentHP {
 						rp.rSlasher.deth.redScale = 10
 					}
-					rp.rSlasher.deth.hp = l.Myhealth
+					rp.rSlasher.deth.hp = hitpoints{l.CurrentHP,l.MaxHP}
 				}
-				for _, hitid := range l.Myaxe.IHit {
+				for _, hitid := range l.IHit {
 					if hitid == myPNum {
 						myLocalPlayer.locEnt.lSlasher.deth.redScale = 10
-						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+						myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP -= l.Dmg
 						if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 							myLocalPlayer.locEnt.lSlasher.addDeathAnim()
 						}
@@ -206,49 +179,21 @@ func socketReceive() {
 					for la, _ := range slashers {
 						if hitid == myPNum+fmt.Sprintf("%p", la) {
 							la.locEnt.lSlasher.deth.redScale = 10
-							la.locEnt.lSlasher.deth.hp.CurrentHP -= l.Myaxe.Dmg
+							la.locEnt.lSlasher.deth.hp.CurrentHP -= l.Dmg
 							la.checkRemove()
 						}
 					}
 				}
 			}
 		}
-		message := ServerMessage{}
-		message.MyPNum = msg.ll.YourPNum
-		message.Myloc = ServerLocation{myLocalPlayer.locEnt.lSlasher.ent.rect.location.x, myLocalPlayer.locEnt.lSlasher.ent.rect.location.y}
-		message.Mymom = myLocalPlayer.locEnt.lSlasher.ent.moment
-		message.Mydir = myLocalPlayer.locEnt.lSlasher.ent.directions
-		messageWep := Weapon{}
-		messageWep.Dmg = myLocalPlayer.locEnt.lSlasher.pivShape.damage
-		messageWep.Swinging = myLocalPlayer.locEnt.lSlasher.swangSinceSend
-		messageWep.Startangle = myLocalPlayer.locEnt.lSlasher.startangle
-		messageWep.IHit = myLocalPlayer.locEnt.hitsToSend
-		message.Myaxe = messageWep
-		message.Myhealth = myLocalPlayer.locEnt.lSlasher.deth.hp
+		message:=myLocalPlayer.locEnt.toRemoteEnt(msg.ll.YourPNum)
 
-		myLocalPlayer.locEnt.hitsToSend = nil
-		myLocalPlayer.locEnt.lSlasher.swangSinceSend = false
-
-		var animalsToSend []ServerMessage
+		var animalsToSend []gamecore.EntityData
 		for a, _ := range slashers {
-			animessage := ServerMessage{}
-			animessage.MyPNum = msg.ll.YourPNum + fmt.Sprintf("%p", a)
-			animessage.Myloc = ServerLocation{a.locEnt.lSlasher.ent.rect.location.x, a.locEnt.lSlasher.ent.rect.location.y}
-			animessage.Mymom = a.locEnt.lSlasher.ent.moment
-			animessage.Mydir = a.locEnt.lSlasher.ent.directions
-			messageWep := Weapon{}
-			messageWep.Dmg = a.locEnt.lSlasher.pivShape.damage
-			messageWep.Swinging = a.locEnt.lSlasher.swangSinceSend
-			messageWep.Startangle = a.locEnt.lSlasher.startangle
-			messageWep.IHit = a.locEnt.hitsToSend
-			animessage.Myaxe = messageWep
-			animessage.Myhealth = a.locEnt.lSlasher.deth.hp
-
-			a.locEnt.hitsToSend = nil
-			a.locEnt.lSlasher.swangSinceSend = false
+			animessage := a.locEnt.toRemoteEnt(msg.ll.YourPNum + fmt.Sprintf("%p", a))
 			animalsToSend = append(animalsToSend, animessage)
 		}
-		mts := MessageToServer{}
+		mts := gamecore.MessageToServer{}
 		mts.MyData = message
 		mts.MyAnimals = animalsToSend
 
