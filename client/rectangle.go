@@ -98,26 +98,26 @@ func (s shape) normalcollides(exclude *bool) bool {
 			return true
 		}
 	}
-	for obj, _ := range slashers {
-		if obj.locEnt.lSlasher.ent.collisionId == exclude {
+	for obj, _ := range localAnimals {
+		if obj.locEnt.lSlasher.collisionId == exclude {
 			continue
 		}
-		if s.collidesWith(obj.locEnt.lSlasher.ent.rect.shape) {
+		if s.collidesWith(obj.locEnt.lSlasher.rect.shape) {
 			return true
 		}
 	}
 	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
-		if myLocalPlayer.locEnt.lSlasher.ent.collisionId != exclude {
-			if s.collidesWith(myLocalPlayer.locEnt.lSlasher.ent.rect.shape) {
+		if myLocalPlayer.locEnt.lSlasher.collisionId != exclude {
+			if s.collidesWith(myLocalPlayer.locEnt.lSlasher.rect.shape) {
 				return true
 			}
 		}
 	}
 	for _, obj := range remotePlayers {
-		if obj.rSlasher.ent.collisionId == exclude {
+		if obj.rSlasher.collisionId == exclude {
 			continue
 		}
-		if s.collidesWith(obj.rSlasher.ent.rect.shape) {
+		if s.collidesWith(obj.rSlasher.rect.shape) {
 			return true
 		}
 	}

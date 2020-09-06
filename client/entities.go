@@ -19,7 +19,7 @@ const (
 	axeArc         = 3.9
 	ScreenWidth    = 700
 	ScreenHeight   = 500
-	worldWidth     = ScreenWidth * 4
+	worldWidth     = ScreenWidth * 2
 	bgTileWidth    = ScreenWidth
 	interpTime     = 4
 	deathreckTime  = 4
@@ -35,7 +35,7 @@ var toRender []baseSprite
 var offset location
 var myPNum string
 var myLocalPlayer localPlayer
-var slashers = make(map[*localAnimal]bool)
+var localAnimals = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
 var wepBlockers = make(map[*shape]bool)
 var deathAnimations = make(map[*deathAnim]bool)
@@ -58,29 +58,43 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	respawnsWork()
 	socketReceive()
 
+	if len(localAnimals) < 1 {
+		animal := slasher{}
+		animal.defaultStats()
+		animal.moveSpeed = 50
+		animal.rect.refreshShape(location{140, 30})
+		la := &localAnimal{}
+		la.locEnt.lSlasher = animal
+		localAnimals[la] = true
+	}
+
 	for _, r := range remotePlayers {
 		r.remoteMovement()
-		r.rSlasher.handleSwing()
+		if r.rSlasher.atkButton {
+			r.rSlasher.startSwing()
+		}
+		if r.rSlasher.swangin {
+			r.rSlasher.progressSwing()
+		}
 	}
 
 	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		myLocalPlayer.updatePlayerControl()
-		myLocalPlayer.locEnt.lSlasher.ent.moveCollide()
+		myLocalPlayer.locEnt.lSlasher.moveCollide()
 		myLocalPlayer.locEnt.lSlasher.updateAim()
-		myLocalPlayer.locEnt.lSlasher.handleSwing()
+		myLocalPlayer.locEnt.handleSwing()
 		myLocalPlayer.checkHitOthers()
 	}
 
-	for l, _ := range slashers {
+	for l, _ := range localAnimals {
 		l.AIControl()
-		l.locEnt.lSlasher.ent.moveCollide()
+		l.locEnt.lSlasher.moveCollide()
 		l.locEnt.lSlasher.updateAim()
-		l.locEnt.lSlasher.handleSwing()
+		l.locEnt.handleSwing()
 		l.checkHitOthers()
 	}
 
-
-	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.ent.rect)
+	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.rect)
 	center := mycenterpoint
 	center.x *= -1
 	center.y *= -1
@@ -133,11 +147,11 @@ func ClientInit() {
 	for i := 1; i < 10; i++ {
 		animal := slasher{}
 		animal.defaultStats()
-		animal.ent.moveSpeed = 50
-		animal.ent.rect.refreshShape(location{i*50 + 50, i * 30})
+		animal.moveSpeed = 50
+		animal.rect.refreshShape(location{i*50 + 50, i * 30})
 		la := &localAnimal{}
 		la.locEnt.lSlasher = animal
-		slashers[la] = true
+		localAnimals[la] = true
 	}
 
 	placeMap()

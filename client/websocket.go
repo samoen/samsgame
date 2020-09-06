@@ -15,8 +15,6 @@ type sockSelecter struct {
 	sock *websocket.Conn
 }
 
-
-
 func closeConn() {
 	if socketConnection != nil {
 		err := socketConnection.Close(websocket.StatusNormalClosure, "mainsock closeconn")
@@ -101,17 +99,10 @@ func connectToServer() {
 
 func clearEntities() {
 	wepBlockers = make(map[*shape]bool)
-	slashers = make(map[*localAnimal]bool)
+	localAnimals = make(map[*localAnimal]bool)
 	remotePlayers = make(map[string]*remotePlayer)
 	myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP = -1
 	placeMap()
-	animal := slasher{}
-	animal.defaultStats()
-	animal.ent.moveSpeed = 50
-	animal.ent.rect.refreshShape(location{70 + 50, 30})
-	la := &localAnimal{}
-	la.locEnt.lSlasher = animal
-	slashers[la] = true
 }
 
 func socketReceive() {
@@ -144,8 +135,8 @@ func socketReceive() {
 				log.Println("adding new player")
 				remoteSlasher := slasher{}
 				remoteSlasher.defaultStats()
-				remoteSlasher.ent.rect.refreshShape(location{l.X, l.Y})
-				remoteSlasher.deth.hp = hitpoints{l.CurrentHP,l.MaxHP}
+				remoteSlasher.rect.refreshShape(location{l.X, l.Y})
+				remoteSlasher.deth.hp = hitpoints{l.CurrentHP, l.MaxHP}
 				remoteP := &remotePlayer{}
 				remoteP.rSlasher = remoteSlasher
 				remoteP.servId = l.MyPNum
@@ -153,19 +144,24 @@ func socketReceive() {
 			}
 
 			if rp, ok := remotePlayers[l.MyPNum]; ok {
-				rp.rSlasher.ent.baseloc = rp.rSlasher.ent.rect.location
-				rp.rSlasher.ent.endpoint = location{l.X, l.Y}
-				rp.rSlasher.ent.directions = directions{l.Right,l.Down,l.Left,l.Up}
-				rp.rSlasher.ent.moment = momentum{l.Xaxis,l.Yaxis}
-				rp.rSlasher.startangle = l.Startangle
-				rp.rSlasher.atkButton = l.Swinging
+				rp.rSlasher.baseloc = rp.rSlasher.rect.location
+				rp.rSlasher.endpoint = location{l.X, l.Y}
+				rp.rSlasher.directions = directions{l.Right, l.Down, l.Left, l.Up}
+				rp.rSlasher.moment = momentum{l.Xaxis, l.Yaxis}
+				rp.rSlasher.atkButton = l.NewSwing
+				if l.NewSwing {
+					rp.rSlasher.startangle = l.NewSwingAngle
+				}else{
+					rp.rSlasher.startangle = l.Heading
+				}
+				rp.rSlasher.swangin = l.Swangin
 				if rp.rSlasher.deth.skipHpUpdate > 0 {
 					rp.rSlasher.deth.skipHpUpdate--
 				} else {
 					if l.CurrentHP < rp.rSlasher.deth.hp.CurrentHP {
 						rp.rSlasher.deth.redScale = 10
 					}
-					rp.rSlasher.deth.hp = hitpoints{l.CurrentHP,l.MaxHP}
+					rp.rSlasher.deth.hp = hitpoints{l.CurrentHP, l.MaxHP}
 				}
 				for _, hitid := range l.IHit {
 					if hitid == myPNum {
@@ -176,7 +172,7 @@ func socketReceive() {
 						}
 						break
 					}
-					for la, _ := range slashers {
+					for la, _ := range localAnimals {
 						if hitid == myPNum+fmt.Sprintf("%p", la) {
 							la.locEnt.lSlasher.deth.redScale = 10
 							la.locEnt.lSlasher.deth.hp.CurrentHP -= l.Dmg
@@ -186,10 +182,10 @@ func socketReceive() {
 				}
 			}
 		}
-		message:=myLocalPlayer.locEnt.toRemoteEnt(msg.ll.YourPNum)
+		message := myLocalPlayer.locEnt.toRemoteEnt(msg.ll.YourPNum)
 
 		var animalsToSend []gamecore.EntityData
-		for a, _ := range slashers {
+		for a, _ := range localAnimals {
 			animessage := a.locEnt.toRemoteEnt(msg.ll.YourPNum + fmt.Sprintf("%p", a))
 			animalsToSend = append(animalsToSend, animessage)
 		}

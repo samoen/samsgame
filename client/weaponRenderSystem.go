@@ -262,40 +262,23 @@ func drawHitboxes(s *ebiten.Image) {
 			l.samDrawLine(s)
 		}
 	}
-	for slshr, _ := range slashers {
-		for _, l := range slshr.locEnt.lSlasher.ent.rect.shape.lines {
-			l.samDrawLine(s)
-		}
-		if slshr.locEnt.lSlasher.swangin {
-			for _, l := range slshr.locEnt.lSlasher.pivShape.pivoterShape.lines {
-				l.samDrawLine(s)
-			}
-		}
+
+	for slshr, _ := range localAnimals {
+		slshr.locEnt.lSlasher.hitbox(s)
 	}
-	for _, l := range myLocalPlayer.locEnt.lSlasher.ent.rect.shape.lines {
-		l.samDrawLine(s)
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
+		myLocalPlayer.locEnt.lSlasher.hitbox(s)
 	}
-	if myLocalPlayer.locEnt.lSlasher.swangin {
-		for _, l := range myLocalPlayer.locEnt.lSlasher.pivShape.pivoterShape.lines {
-			l.samDrawLine(s)
-		}
-	}
+
 	for _, slshr := range remotePlayers {
-		for _, l := range slshr.rSlasher.ent.rect.shape.lines {
-			l.samDrawLine(s)
-		}
-		if slshr.rSlasher.swangin {
-			for _, l := range slshr.rSlasher.pivShape.pivoterShape.lines {
-				l.samDrawLine(s)
-			}
-		}
+		slshr.rSlasher.hitbox(s)
 	}
 }
 
 func updateSprites() {
 	toRender = nil
 
-	for bs, _ := range slashers {
+	for bs, _ := range localAnimals {
 		bs.locEnt.lSlasher.updateSlasherSprite()
 
 	}
@@ -347,13 +330,13 @@ func (bs *slasher) updateSlasherSprite() {
 		bs.deth.redScale--
 	}
 	bs.bsprit.bOps.ColorM.Translate(float64(bs.deth.redScale), 0, 0, 0)
-	bs.hbarsprit.yaxis = rectCenterPoint(bs.ent.rect).y + 10
-	healthbarlocation := location{bs.ent.rect.location.x, bs.ent.rect.location.y - (bs.ent.rect.dimens.height / 2) - 10}
-	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.ent.rect.dimens.width / bs.deth.hp.MaxHP
+	bs.hbarsprit.yaxis = rectCenterPoint(bs.rect).y + 10
+	healthbarlocation := location{bs.rect.location.x, bs.rect.location.y - (bs.rect.dimens.height / 2) - 10}
+	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.rect.dimens.width / bs.deth.hp.MaxHP
 	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps,false)
 	cameraShift(healthbarlocation, bs.hbarsprit.bOps)
 
-	bs.bsprit.yaxis = rectCenterPoint(bs.ent.rect).y
+	bs.bsprit.yaxis = rectCenterPoint(bs.rect).y
 
 	spriteSelect := images.empty
 	tolerance := math.Pi / 9
@@ -380,20 +363,20 @@ func (bs *slasher) updateSlasherSprite() {
 	bs.bsprit.sprite = spriteSelect
 
 	invertbool := math.Abs(bs.startangle) > math.Pi/2
-	scaleto := playerSpriteLargerScale(bs.ent.rect)
+	scaleto := playerSpriteLargerScale(bs.rect)
 	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps,invertbool)
-	shiftto := playerSpriteLargerShift(bs.ent.rect)
+	shiftto := playerSpriteLargerShift(bs.rect)
 	cameraShift(shiftto, bs.bsprit.bOps)
 
 	if bs.swangin {
 		_, imH := bs.wepsprit.sprite.Size()
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
-		ownerCenter := rectCenterPoint(bs.ent.rect)
+		ownerCenter := rectCenterPoint(bs.rect)
 		cameraShift(ownerCenter, bs.wepsprit.bOps)
 		addOp := ebiten.GeoM{}
 		hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)
 		addOp.Scale(hRatio, hRatio)
-		addOp.Translate(-float64(bs.ent.rect.dimens.width)/2, 0)
+		addOp.Translate(-float64(bs.rect.dimens.width)/2, 0)
 		addOp.Rotate(bs.pivShape.animationCount - (math.Pi / 2))
 		bs.wepsprit.bOps.GeoM.Add(addOp)
 		toRender = append(toRender, bs.wepsprit)

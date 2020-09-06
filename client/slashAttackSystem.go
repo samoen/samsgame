@@ -11,23 +11,29 @@ type slasher struct {
 	bsprit         baseSprite
 	wepsprit       baseSprite
 	hbarsprit      baseSprite
-	ent            acceleratingEnt
+	collisionId    *bool
+	rect           rectangle
+	moment         momentum
+	agility        float64
+	moveSpeed      float64
+	directions     directions
+	baseloc        location
+	endpoint       location
 	deth           deathable
 	startangle     float64
 	cooldownCount  int
 	swangin        bool
-	swangSinceSend bool
 	atkButton      bool
 	pivShape       pivotingShape
 }
 
 func (s *slasher) defaultStats() {
 	cId := false
-	s.ent.collisionId = &cId
-	s.ent.rect.dimens = dimens{20, 40}
-	s.ent.rect.refreshShape(location{50, 50})
-	s.ent.agility = 4
-	s.ent.moveSpeed = 100
+	s.collisionId = &cId
+	s.rect.dimens = dimens{20, 40}
+	s.rect.refreshShape(location{50, 50})
+	s.agility = 4
+	s.moveSpeed = 100
 	s.cooldownCount = 0
 	s.pivShape.damage = 2
 	s.deth.hp = hitpoints{6, 6}
@@ -39,12 +45,12 @@ func (s *slasher) defaultStats() {
 	s.wepsprit.sprite = images.sword
 }
 
-func (le *localEnt) hitbox(s *ebiten.Image) {
-	for _, l := range le.lSlasher.ent.rect.shape.lines {
+func (le *slasher) hitbox(s *ebiten.Image) {
+	for _, l := range le.rect.shape.lines {
 		l.samDrawLine(s)
 	}
-	if le.lSlasher.swangin {
-		for _, l := range le.lSlasher.pivShape.pivoterShape.lines {
+	if le.swangin {
+		for _, l := range le.pivShape.pivoterShape.lines {
 			l.samDrawLine(s)
 		}
 	}
@@ -53,27 +59,31 @@ func (le *localEnt) hitbox(s *ebiten.Image) {
 type localEnt struct {
 	lSlasher   slasher
 	hitsToSend []string
+	swangSinceSend bool
+	swangAngle float64
 }
 
 func (l *localEnt) toRemoteEnt(pnum string) gamecore.EntityData {
 	message := gamecore.EntityData{}
 	message.MyPNum = pnum
-	message.X = l.lSlasher.ent.rect.location.x
-	message.Y = l.lSlasher.ent.rect.location.y
-	message.Xaxis = l.lSlasher.ent.moment.Xaxis
-	message.Yaxis = l.lSlasher.ent.moment.Yaxis
-	message.Up = l.lSlasher.ent.directions.Up
-	message.Left = l.lSlasher.ent.directions.Left
-	message.Right = l.lSlasher.ent.directions.Right
-	message.Down = l.lSlasher.ent.directions.Down
+	message.X = l.lSlasher.rect.location.x
+	message.Y = l.lSlasher.rect.location.y
+	message.Xaxis = l.lSlasher.moment.Xaxis
+	message.Yaxis = l.lSlasher.moment.Yaxis
+	message.Up = l.lSlasher.directions.Up
+	message.Left = l.lSlasher.directions.Left
+	message.Right = l.lSlasher.directions.Right
+	message.Down = l.lSlasher.directions.Down
 	message.Dmg = l.lSlasher.pivShape.damage
-	message.Swinging = l.lSlasher.swangSinceSend
-	message.Startangle = l.lSlasher.startangle
+	message.NewSwing = l.swangSinceSend
+	message.NewSwingAngle = l.swangAngle
+	message.Heading = l.lSlasher.startangle
+	message.Swangin = l.lSlasher.swangin
 	message.IHit = l.hitsToSend
 	message.CurrentHP = l.lSlasher.deth.hp.CurrentHP
 	message.MaxHP = l.lSlasher.deth.hp.MaxHP
 	l.hitsToSend = nil
-	l.lSlasher.swangSinceSend = false
+	l.swangSinceSend = false
 	return message
 }
 
@@ -84,8 +94,8 @@ type localPlayer struct {
 func (l *localPlayer) checkHitOthers() {
 	if myLocalPlayer.locEnt.lSlasher.swangin {
 		myLocalPlayer.locEnt.hitremotes()
-		for slashee, _ := range slashers {
-			if myLocalPlayer.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher) {
+		for slashee, _ := range localAnimals {
+			if myLocalPlayer.locEnt.lSlasher.pivShape.hitConfirm(&slashee.locEnt.lSlasher) {
 				slashee.checkRemove()
 			}
 		}
@@ -93,9 +103,9 @@ func (l *localPlayer) checkHitOthers() {
 }
 
 func (l *localPlayer) placePlayer() {
-	l.locEnt.lSlasher.ent.rect.refreshShape(location{50, 50})
+	l.locEnt.lSlasher.rect.refreshShape(location{50, 50})
 	l.locEnt.lSlasher.deth.hp = hitpoints{6, 6}
-	l.locEnt.lSlasher.ent.spawnSafe()
+	l.locEnt.lSlasher.spawnSafe()
 }
 
 type localAnimal struct {
@@ -105,7 +115,7 @@ type localAnimal struct {
 
 func (la *localAnimal) checkRemove() {
 	if la.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
-		delete(slashers, la)
+		delete(localAnimals, la)
 		la.locEnt.lSlasher.addDeathAnim()
 	}
 }
@@ -114,21 +124,21 @@ func (s *slasher) addDeathAnim() {
 	bs0 := baseSprite{}
 	bs0.sprite = images.playerfall0
 	bs0.bOps = &ebiten.DrawImageOptions{}
-	bs0.yaxis = rectCenterPoint(s.ent.rect).y
+	bs0.yaxis = rectCenterPoint(s.rect).y
 	bs1 := baseSprite{}
 	bs1.sprite = images.playerfall1
 	bs1.bOps = &ebiten.DrawImageOptions{}
-	bs1.yaxis = rectCenterPoint(s.ent.rect).y
+	bs1.yaxis = rectCenterPoint(s.rect).y
 	bs2 := baseSprite{}
 	bs2.sprite = images.playerfall2
 	bs2.bOps = &ebiten.DrawImageOptions{}
-	bs2.yaxis = rectCenterPoint(s.ent.rect).y
+	bs2.yaxis = rectCenterPoint(s.rect).y
 
 	da := &deathAnim{}
 	da.sprites = append(da.sprites, bs0)
 	da.sprites = append(da.sprites, bs1)
 	da.sprites = append(da.sprites, bs2)
-	da.rect = s.ent.rect
+	da.rect = s.rect
 	da.inverted = math.Abs(s.startangle) > math.Pi/2
 	deathAnimations[da] = true
 }
@@ -136,15 +146,15 @@ func (s *slasher) addDeathAnim() {
 func (la *localAnimal) checkHitOthers() {
 	if la.locEnt.lSlasher.swangin {
 		la.locEnt.hitremotes()
-		for slashee, _ := range slashers {
-			if slashee.locEnt.lSlasher.ent.collisionId == la.locEnt.lSlasher.ent.collisionId {
+		for slashee, _ := range localAnimals {
+			if slashee.locEnt.lSlasher.collisionId == la.locEnt.lSlasher.collisionId {
 				continue
 			}
-			if la.locEnt.lSlasher.pivShape.checkHitAnimal(&slashee.locEnt.lSlasher) {
+			if la.locEnt.lSlasher.pivShape.hitConfirm(&slashee.locEnt.lSlasher) {
 				slashee.checkRemove()
 			}
 		}
-		if la.locEnt.lSlasher.pivShape.checkHitAnimal(&myLocalPlayer.locEnt.lSlasher) {
+		if la.locEnt.lSlasher.pivShape.hitConfirm(&myLocalPlayer.locEnt.lSlasher) {
 			if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP < 1 {
 				myLocalPlayer.locEnt.lSlasher.addDeathAnim()
 			}
@@ -161,104 +171,108 @@ func (bot *remotePlayer) remoteMovement() {
 	if receiveCount < interpTime {
 		var newplace location
 		if receiveCount == interpTime {
-			newplace = bot.rSlasher.ent.endpoint
+			newplace = bot.rSlasher.endpoint
 		} else {
-			diffx := (bot.rSlasher.ent.endpoint.x - bot.rSlasher.ent.baseloc.x) / interpTime
-			diffy := (bot.rSlasher.ent.endpoint.y - bot.rSlasher.ent.baseloc.y) / interpTime
-			newplace = bot.rSlasher.ent.rect.location
+			diffx := (bot.rSlasher.endpoint.x - bot.rSlasher.baseloc.x) / interpTime
+			diffy := (bot.rSlasher.endpoint.y - bot.rSlasher.baseloc.y) / interpTime
+			newplace = bot.rSlasher.rect.location
 			newplace.x += diffx
 			newplace.y += diffy
 		}
-		checkrect := bot.rSlasher.ent.rect
+		checkrect := bot.rSlasher.rect
 		checkrect.refreshShape(newplace)
-		if !checkrect.shape.normalcollides(bot.rSlasher.ent.collisionId) {
-			bot.rSlasher.ent.rect.refreshShape(newplace)
+		if !checkrect.shape.normalcollides(bot.rSlasher.collisionId) {
+			bot.rSlasher.rect.refreshShape(newplace)
 		}
 	} else if receiveCount > interpTime+deathreckTime {
 		//if receiveCount > pingFrames {
-		bot.rSlasher.ent.directions.Down = false
-		bot.rSlasher.ent.directions.Left = false
-		bot.rSlasher.ent.directions.Right = false
-		bot.rSlasher.ent.directions.Up = false
+		bot.rSlasher.directions.Down = false
+		bot.rSlasher.directions.Left = false
+		bot.rSlasher.directions.Right = false
+		bot.rSlasher.directions.Up = false
 		//}
-		bot.rSlasher.ent.moveCollide()
+		bot.rSlasher.moveCollide()
 	} else {
-		bot.rSlasher.ent.moveCollide()
+		bot.rSlasher.moveCollide()
 	}
 }
+func (s *slasher)startSwing(){
+	s.pivShape.bladeLength = 5
+	s.cooldownCount = 60
+	s.pivShape.alreadyHit = make(map[*bool]bool)
+	s.pivShape.animationCount = s.startangle + 2.1
+	s.swangin = true
+	s.pivShape.startCount = s.pivShape.animationCount
+}
+func(s *slasher)progressSwing(){
+	s.pivShape.animationCount -= axeRotateSpeed
+	midPlayer := s.rect.location
+	midPlayer.x += s.rect.dimens.width / 2
+	midPlayer.y += s.rect.dimens.height / 2
+	rotLine := line{}
+	rotLine.newLinePolar(midPlayer, s.pivShape.bladeLength, s.pivShape.animationCount)
+	crossLine := line{}
+	crossLine.newLinePolar(rotLine.p2, s.pivShape.bladeLength/3, s.pivShape.animationCount+math.Pi/2)
+	frontCrossLine := line{}
+	frontCrossLine.newLinePolar(rotLine.p2, s.pivShape.bladeLength/3, s.pivShape.animationCount-math.Pi/2)
+	s.pivShape.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
+	
+	arcProgress := math.Abs(s.pivShape.startCount - s.pivShape.animationCount)
 
-func (bot *slasher) handleSwing() {
-	if bot.cooldownCount > 0 {
-		bot.cooldownCount--
+	if arcProgress > axeArc {
+		s.swangin = false
+		return
+	} else if arcProgress < axeArc*0.3 {
+		s.pivShape.bladeLength += 4
+	} else if arcProgress > axeArc*0.8 {
+		s.pivShape.bladeLength -= 3
+	} else {
+		s.pivShape.bladeLength = maxAxeLength
 	}
-
-	if bot.atkButton && bot.cooldownCount < 1 {
-		bot.pivShape.bladeLength = 5
-		bot.cooldownCount = 60
-		bot.pivShape.alreadyHit = make(map[*bool]bool)
-		bot.pivShape.animationCount = bot.startangle + 2.1
-		bot.swangin = true
+}
+func (bot *localEnt) handleSwing() {
+	if bot.lSlasher.cooldownCount > 0 {
+		bot.lSlasher.cooldownCount--
+	}
+	if bot.lSlasher.atkButton && bot.lSlasher.cooldownCount < 1 {
+		bot.lSlasher.startSwing()
 		bot.swangSinceSend = true
-		bot.pivShape.startCount = bot.pivShape.animationCount
+		bot.swangAngle = bot.lSlasher.startangle
 	}
-	if bot.swangin {
-		bot.pivShape.animationCount -= axeRotateSpeed
-		midPlayer := bot.ent.rect.location
-		midPlayer.x += bot.ent.rect.dimens.width / 2
-		midPlayer.y += bot.ent.rect.dimens.height / 2
-		rotLine := line{}
-		rotLine.newLinePolar(midPlayer, bot.pivShape.bladeLength, bot.pivShape.animationCount)
-		crossLine := line{}
-		crossLine.newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount+math.Pi/2)
-		frontCrossLine := line{}
-		frontCrossLine.newLinePolar(rotLine.p2, bot.pivShape.bladeLength/3, bot.pivShape.animationCount-math.Pi/2)
-		bot.pivShape.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
-
+	if bot.lSlasher.swangin {
+		bot.lSlasher.progressSwing()
 		for blocker, _ := range wepBlockers {
-			if blocker.collidesWith(bot.pivShape.pivoterShape) {
-				bot.swangin = false
+			if blocker.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
+				bot.lSlasher.swangin = false
 				return
 			}
 		}
 		for _, blocker := range currentTShapes {
-			if blocker.collidesWith(bot.pivShape.pivoterShape) {
-				bot.swangin = false
+			if blocker.collidesWith(bot.lSlasher.pivShape.pivoterShape) {
+				bot.lSlasher.swangin = false
 				return
 			}
-		}
-
-		arcProgress := math.Abs(bot.pivShape.startCount - bot.pivShape.animationCount)
-
-		if arcProgress > axeArc {
-			bot.swangin = false
-			return
-		} else if arcProgress < axeArc*0.3 {
-			bot.pivShape.bladeLength += 4
-		} else if arcProgress > axeArc*0.8 {
-			bot.pivShape.bladeLength -= 3
-		} else {
-			bot.pivShape.bladeLength = maxAxeLength
 		}
 	}
 }
 
 func (s *slasher) updateAim() {
 	if !s.swangin {
-		if s.ent.directions.Down ||
-			s.ent.directions.Up ||
-			s.ent.directions.Right ||
-			s.ent.directions.Left {
+		if s.directions.Down ||
+			s.directions.Up ||
+			s.directions.Right ||
+			s.directions.Left {
 			hitRange := 1
 			moveTipX := 0
-			if s.ent.directions.Right {
+			if s.directions.Right {
 				moveTipX = hitRange
-			} else if s.ent.directions.Left {
+			} else if s.directions.Left {
 				moveTipX = -hitRange
 			}
 			moveTipY := 0
-			if s.ent.directions.Up {
+			if s.directions.Up {
 				moveTipY = -hitRange
-			} else if s.ent.directions.Down {
+			} else if s.directions.Down {
 				moveTipY = hitRange
 			}
 			s.startangle = math.Atan2(float64(moveTipY), float64(moveTipX))
@@ -268,21 +282,21 @@ func (s *slasher) updateAim() {
 
 func (bot *localEnt) hitremotes() {
 	for _, slashee := range remotePlayers {
-		if bot.lSlasher.pivShape.checkHitAnimal(&slashee.rSlasher) {
+		if bot.lSlasher.pivShape.hitConfirm(&slashee.rSlasher) {
 			slashee.rSlasher.deth.skipHpUpdate = 2
 			bot.hitsToSend = append(bot.hitsToSend, slashee.servId)
 		}
 	}
 }
 
-func (s *pivotingShape) checkHitAnimal(slashee *slasher) bool {
-	if _, ok := s.alreadyHit[slashee.ent.collisionId]; ok {
+func (s *pivotingShape) hitConfirm(slashee *slasher) bool {
+	if _, ok := s.alreadyHit[slashee.collisionId]; ok {
 		return false
 	}
-	if slashee.ent.rect.shape.collidesWith(s.pivoterShape) {
+	if slashee.rect.shape.collidesWith(s.pivoterShape) {
 		slashee.deth.redScale = 10
 		slashee.deth.hp.CurrentHP -= s.damage
-		s.alreadyHit[slashee.ent.collisionId] = true
+		s.alreadyHit[slashee.collisionId] = true
 		return true
 	}
 	return false
@@ -292,8 +306,8 @@ func (bot *localAnimal) AIControl() {
 	bot.controlCount--
 	if bot.controlCount < 1 {
 		bot.controlCount = rand.Intn(100)
-		bot.locEnt.lSlasher.ent.directions = directions{
-			rand.Intn(9) == 0,
+		bot.locEnt.lSlasher.directions = directions{
+			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
@@ -349,9 +363,9 @@ type directions struct {
 }
 
 func (l *localPlayer) updatePlayerControl() {
-	l.locEnt.lSlasher.ent.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
-	l.locEnt.lSlasher.ent.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
-	l.locEnt.lSlasher.ent.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
-	l.locEnt.lSlasher.ent.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
+	l.locEnt.lSlasher.directions.Right = ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight)
+	l.locEnt.lSlasher.directions.Down = ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown)
+	l.locEnt.lSlasher.directions.Left = ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft)
+	l.locEnt.lSlasher.directions.Up = ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp)
 	l.locEnt.lSlasher.atkButton = ebiten.IsKeyPressed(ebiten.KeyX)
 }

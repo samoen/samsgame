@@ -9,18 +9,7 @@ type momentum struct {
 	Yaxis int
 }
 
-type acceleratingEnt struct {
-	collisionId *bool
-	rect        rectangle
-	moment      momentum
-	agility     float64
-	moveSpeed   float64
-	directions  directions
-	baseloc     location
-	endpoint    location
-}
-
-func (a *acceleratingEnt) spawnSafe() {
+func (a *slasher) spawnSafe() {
 	for {
 		if a.rect.shape.normalcollides(a.collisionId) {
 			a.rect.refreshShape(location{a.rect.location.x, a.rect.location.y + 20})
@@ -30,7 +19,7 @@ func (a *acceleratingEnt) spawnSafe() {
 	}
 }
 
-func (a *acceleratingEnt) calcMomentum() {
+func (a *slasher) calcMomentum() {
 
 	xmov := 0
 	ymov := 0
@@ -108,7 +97,7 @@ func (a *acceleratingEnt) calcMomentum() {
 	//return a.moment
 }
 
-func (a *acceleratingEnt) moveCollide() {
+func (a *slasher) moveCollide() {
 	a.calcMomentum()
 	unitmovex := 1
 	unitmovey := 1
@@ -135,7 +124,7 @@ func (a *acceleratingEnt) moveCollide() {
 	}
 }
 
-func (a *acceleratingEnt) directionalCollide(absSpdx *int, unitmovex int, unitmovey int, tozero *int) bool {
+func (a *slasher) directionalCollide(absSpdx *int, unitmovex int, unitmovey int, tozero *int) bool {
 	if *absSpdx > 0 {
 		*absSpdx--
 		checkloc := a.rect.location

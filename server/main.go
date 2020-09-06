@@ -21,13 +21,12 @@ type ServerEntity struct {
 	entconn   *websocket.Conn
 	otherconn *websocket.Conn
 	sm        gamecore.EntityData
-	animals []gamecore.EntityData
-	busy      bool
+	animals   []gamecore.EntityData
 	ping      time.Duration
 }
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
-	timer1 := time.NewTimer(300 * time.Millisecond)
+	timer1 := time.NewTimer(200 * time.Millisecond)
 	var locs []gamecore.EntityData
 	conMutex.Lock()
 	for subcon, loc := range connections {
@@ -41,7 +40,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 			locs = append(locs, loc.sm)
 		}
 
-		for _,an := range loc.animals{
+		for _, an := range loc.animals {
 			locs = append(locs, an)
 		}
 	}
@@ -132,7 +131,7 @@ func main() {
 			}
 			return
 		}
-		pingmeasure := time.Duration(500 * time.Millisecond)
+		pingmeasure := time.Duration(200 * time.Millisecond)
 		wg2 := sync.WaitGroup{}
 		exit1 := false
 		exit2 := false
@@ -149,6 +148,7 @@ func main() {
 				wg.Done()
 			}()
 			halfping := pingmeasure / 2
+			log.Println("halfping: ", halfping)
 			time.Sleep(halfping)
 			wg2.Wait()
 			if exit2 == true {
