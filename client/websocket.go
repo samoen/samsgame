@@ -114,9 +114,7 @@ func socketReceive() {
 	receiveDebug = string(append([]byte(receiveDebug), '*'))
 	select {
 	case msg := <-receiveChan:
-		log.Printf("receiveChan: %+v", msg)
-
-		pingFrames = receiveCount
+		//log.Printf("receiveChan: %+v", msg)
 		receiveCount = 0
 		receiveDebug = ""
 	found:

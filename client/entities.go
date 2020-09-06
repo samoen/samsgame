@@ -25,8 +25,7 @@ const (
 	deathreckTime  = 4
 )
 
-var pingFrames = 10
-var receiveCount = pingFrames
+var receiveCount = 0
 var receiveDebug = ""
 var receiveChan = make(chan sockSelecter)
 var socketConnection *websocket.Conn
