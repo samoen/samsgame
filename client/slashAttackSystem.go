@@ -8,23 +8,23 @@ import (
 )
 
 type slasher struct {
-	bsprit         baseSprite
-	wepsprit       baseSprite
-	hbarsprit      baseSprite
-	collisionId    *bool
-	rect           rectangle
-	moment         momentum
-	agility        float64
-	moveSpeed      float64
-	directions     directions
-	baseloc        location
-	endpoint       location
-	deth           deathable
-	startangle     float64
-	cooldownCount  int
-	swangin        bool
-	atkButton      bool
-	pivShape       pivotingShape
+	bsprit        baseSprite
+	wepsprit      baseSprite
+	hbarsprit     baseSprite
+	collisionId   *bool
+	rect          rectangle
+	moment        momentum
+	agility       float64
+	moveSpeed     float64
+	directions    directions
+	baseloc       location
+	endpoint      location
+	deth          deathable
+	startangle    float64
+	cooldownCount int
+	swangin       bool
+	atkButton     bool
+	pivShape      pivotingShape
 }
 
 func (s *slasher) defaultStats() {
@@ -57,10 +57,10 @@ func (le *slasher) hitbox(s *ebiten.Image) {
 }
 
 type localEnt struct {
-	lSlasher   slasher
-	hitsToSend []string
+	lSlasher       slasher
+	hitsToSend     []string
 	swangSinceSend bool
-	swangAngle float64
+	swangAngle     float64
 }
 
 func (l *localEnt) toRemoteEnt(pnum string) gamecore.EntityData {
@@ -184,8 +184,12 @@ func (bot *remotePlayer) remoteMovement() {
 		if !checkrect.shape.normalcollides(bot.rSlasher.collisionId) {
 			bot.rSlasher.rect.refreshShape(newplace)
 		}
-	} else{
-		if receiveCount > interpTime+deathreckTime {
+	} else {
+		deadReckonFrames := interpTime / 2
+		if deadReckonFrames < 1 {
+			deadReckonFrames = 1
+		}
+		if receiveCount > interpTime+deadReckonFrames {
 			bot.rSlasher.directions.Down = false
 			bot.rSlasher.directions.Left = false
 			bot.rSlasher.directions.Right = false
@@ -195,7 +199,7 @@ func (bot *remotePlayer) remoteMovement() {
 	}
 }
 
-func (s *slasher)startSwing(){
+func (s *slasher) startSwing() {
 	s.pivShape.bladeLength = 5
 	s.cooldownCount = 60
 	s.pivShape.alreadyHit = make(map[*bool]bool)
@@ -203,7 +207,7 @@ func (s *slasher)startSwing(){
 	s.swangin = true
 	s.pivShape.startCount = s.pivShape.animationCount
 }
-func(s *slasher)progressSwing(){
+func (s *slasher) progressSwing() {
 	s.pivShape.animationCount -= axeRotateSpeed
 	midPlayer := s.rect.location
 	midPlayer.x += s.rect.dimens.width / 2

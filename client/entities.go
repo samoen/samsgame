@@ -21,11 +21,10 @@ const (
 	ScreenHeight   = 500
 	worldWidth     = ScreenWidth * 2
 	bgTileWidth    = ScreenWidth
-	interpTime     = 4
-	deathreckTime  = 4
 )
 
-var receiveCount = 0
+var interpTime = 1
+var receiveCount = 1
 var receiveDebug = ""
 var receiveChan = make(chan sockSelecter)
 var socketConnection *websocket.Conn
@@ -62,6 +61,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		animal.defaultStats()
 		animal.moveSpeed = 50
 		animal.rect.refreshShape(location{140, 30})
+		animal.spawnSafe()
 		la := &localAnimal{}
 		la.locEnt.lSlasher = animal
 		localAnimals[la] = true

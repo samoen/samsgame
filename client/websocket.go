@@ -107,15 +107,21 @@ func clearEntities() {
 
 func socketReceive() {
 
-	if socketConnection == nil {
+	if socketConnection == nil || othersock == nil {
 		return
 	}
+
 	receiveCount += 1
 	receiveDebug = string(append([]byte(receiveDebug), '*'))
 	select {
 	case msg := <-receiveChan:
 		//log.Printf("receiveChan: %+v", msg)
-		receiveCount = 0
+		interpTime = (receiveCount / 2)-1
+		if interpTime < 1 {
+			interpTime = 1
+		}
+		//log.Println(interpTime)
+		receiveCount = 1
 		receiveDebug = ""
 	found:
 		for rpid, rp := range remotePlayers {
