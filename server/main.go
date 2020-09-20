@@ -26,7 +26,7 @@ type ServerEntity struct {
 }
 
 func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
-	timer1 := time.NewTimer(200 * time.Millisecond)
+	rateLimit := time.NewTimer(150 * time.Millisecond)
 	var locs []gamecore.EntityData
 	conMutex.Lock()
 	for subcon, loc := range connections {
@@ -68,7 +68,7 @@ func updateServerEnt(mapid *bool, conno *websocket.Conn) error {
 		se.animals = v.MyAnimals
 	}
 	conMutex.Unlock()
-	<-timer1.C
+	<-rateLimit.C
 	return nil
 }
 

@@ -3,24 +3,20 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"image/color"
-	"log"
-	"nhooyr.io/websocket"
-	"time"
-
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
+	"nhooyr.io/websocket"
 )
 
 const (
 	maxAxeLength   = 45
 	axeRotateSpeed = 0.12
 	axeArc         = 3.9
-	ScreenWidth    = 700
-	ScreenHeight   = 500
-	worldWidth     = ScreenWidth * 2
-	bgTileWidth    = ScreenWidth
+	screenWidth    = 1600
+	screenHeight   = 1000
+	worldWidth     = screenWidth * 2
+	bgTileWidth    = screenWidth
 )
 
 var interpTime = 1
@@ -37,6 +33,13 @@ var localAnimals = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
 var wepBlockers = make(map[*shape]bool)
 var deathAnimations = make(map[*deathAnim]bool)
+var bgchan = make(chan ttwithIm)
+var bgtiles = make(map[location]*bgLoading)
+var ttmap = make(map[tileType]*ebiten.Image)
+var ttshapes = make(map[tileType]shape)
+var currentTShapes = make(map[location]shape)
+var mycenterpoint location
+var images imagesStruct
 
 type deathAnim struct {
 	sprites   []baseSprite
@@ -97,8 +100,8 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	center := mycenterpoint
 	center.x *= -1
 	center.y *= -1
-	center.x += ScreenWidth / 2
-	center.y += ScreenHeight / 2
+	center.x += screenWidth / 2
+	center.y += screenHeight / 2
 	offset = center
 
 	bgShapesWork()
@@ -124,75 +127,8 @@ func (g *SamGame) Draw(screen *ebiten.Image) {
 }
 
 func (g *SamGame) Layout(outsideWidth, outsideHeight int) (int, int) {
-	//ScreenWidth = outsideWidth
-	//ScreenHeight = outsideHeight
-	return ScreenWidth, ScreenHeight
-	//magnification := outsideWidth/ScreenWidth
-	//return outsideWidth+outsideWidth-ScreenWidth, outsideHeight+outsideWidth-ScreenHeight
 	//return outsideWidth, outsideHeight
-}
-
-func ClientInit() {
-	images = imagesStruct{}
-	images.newImages()
-
-	if err := images.empty.Fill(color.White); err != nil {
-		log.Fatal(err)
-	}
-	myLocalPlayer = localPlayer{}
-	myLocalPlayer.locEnt.lSlasher.defaultStats()
-	myLocalPlayer.placePlayer()
-
-	for i := 1; i < 10; i++ {
-		animal := slasher{}
-		animal.defaultStats()
-		animal.moveSpeed = 50
-		animal.rect.refreshShape(location{i*50 + 50, i * 30})
-		la := &localAnimal{}
-		la.locEnt.lSlasher = animal
-		localAnimals[la] = true
-	}
-
-	placeMap()
-
-	tilesAcross := worldWidth / bgTileWidth
-	for i := -1; i < tilesAcross+1; i++ {
-		for j := -1; j < tilesAcross+1; j++ {
-			ttype := blank
-			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
-				ttype = offworld
-			} else if j%3 == 0 || i%3 == 0 {
-				ttype = rocky
-			}
-			bgl := &bgLoading{}
-			bgl.tiletyp = ttype
-			bgl.ops = &ebiten.DrawImageOptions{}
-			bgtiles[location{i, j}] = bgl
-		}
-	}
-
-	ttshapes[blank] = shape{lines: []line{line{location{180, 5}, location{140, 60}}}}
-	ttshapes[rocky] = shape{lines: []line{line{location{80, 20}, location{80, 120}}}}
-
-	go func() {
-		time.Sleep(1500 * time.Millisecond)
-		connectToServer()
-	}()
-
-	ebiten.SetRunnableOnUnfocused(true)
-	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
-	ebiten.SetWindowTitle("sams cool game")
-	ebiten.SetWindowResizable(true)
-
-	samgame := &SamGame{}
-
-	if err := ebiten.RunGame(samgame); err != nil {
-		closeConn()
-		log.Fatal(err)
-		return
-	}
-	closeConn()
-	log.Println("exited main")
+	return screenWidth, screenHeight
 }
 
 func placeMap() {

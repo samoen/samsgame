@@ -14,8 +14,6 @@ type baseSprite struct {
 	yaxis  int
 }
 
-var images imagesStruct
-
 type imagesStruct struct {
 	playerStand         *ebiten.Image
 	playerWalkUp        *ebiten.Image
@@ -29,8 +27,6 @@ type imagesStruct struct {
 	empty               *ebiten.Image
 	sword               *ebiten.Image
 }
-
-var assetsDir = "assets"
 
 func cacheImage(name string) (img *ebiten.Image) {
 	img, _, err := ebitenutil.NewImageFromFile(
@@ -57,19 +53,11 @@ func (is *imagesStruct) newImages() {
 	is.playerfall2 = cacheImage("man3")
 }
 
-var mycenterpoint location
-
 func rectCenterPoint(r rectangle) location {
 	x := r.location.x + (r.dimens.width / 2)
 	y := r.location.y + (r.dimens.height / 2)
 	return location{x, y}
 }
-
-var bgchan = make(chan ttwithIm)
-var bgtiles = make(map[location]*bgLoading)
-var ttmap = make(map[tileType]*ebiten.Image)
-var ttshapes = make(map[tileType]shape)
-var currentTShapes = make(map[location]shape)
 
 type tileType int
 
@@ -115,16 +103,16 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 			iwl := images.sword
 			ttmap[prett] = iwl
 			go func() {
-				var imstring string
+				imstring := "assets"
 				switch prett {
 				case blank:
-					imstring = assetsDir + "/floor.png"
+					imstring = imstring + "/floor.png"
 				case rocky:
-					imstring = assetsDir + "/tile31.png"
+					imstring = imstring + "/tile31.png"
 				case offworld:
-					imstring = assetsDir + "/8000paint.png"
+					imstring = imstring + "/8000paint.png"
 				default:
-					imstring = assetsDir + "/sword.png"
+					imstring = imstring + "/sword.png"
 				}
 
 				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
