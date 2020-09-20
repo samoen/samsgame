@@ -16,7 +16,7 @@ const (
 	screenWidth    = 900
 	screenHeight   = 500
 	worldWidth     = screenWidth * 2
-	bgTileWidth    = screenWidth
+	bgTileWidth    = screenWidth/20
 )
 
 var interpTime = 1

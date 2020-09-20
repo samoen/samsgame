@@ -77,20 +77,20 @@ func drawBackground(screen *ebiten.Image) {
 
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
-	remx := mycenterpoint.x % bgTileWidth
-	remy := mycenterpoint.y % bgTileWidth
-	upx := 0
-	if remx < bgTileWidth/2 {
-		upx = -1
-	}
-	upy := 0
-	if remy < bgTileWidth/2 {
-		upy = -1
-	}
+	//remx := mycenterpoint.x % bgTileWidth
+	//remy := mycenterpoint.y % bgTileWidth
+	numsee := int(2+(zoom*9))
+	//if remx < bgTileWidth/2 {
+	//	upx = -1
+	//}
+	//upy := 0
+	//if remy < bgTileWidth/2 {
+	//	upy = -1
+	//}
 
-	for i := upx; i < 2+upx; i++ {
-		for j := upy; j < 2+upy; j++ {
-			handleBgtile(myCoordx+i, myCoordy+j, screen)
+	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
+		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+			handleBgtile(i, j, screen)
 		}
 	}
 }
@@ -131,22 +131,43 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 	if im, ok := bgtiles[location{i, j}]; ok {
 		if ttim, ok := ttmap[im.tiletyp]; ok {
 			if ttim != nil {
-				im.ops.GeoM.Reset()
-				im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
-				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops,false)
-				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-
-				xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
-				ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
-				ydiff = float64(ydiff) / zoom
-				xdiff = float64(xdiff) / zoom
-				im.ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
-
-				if err := screen.DrawImage(ttim, im.ops); err != nil {
-					log.Fatal(err)
-				}
+				tiledraw(im.ops,i,j,screen,ttim)
+				//im.ops.GeoM.Reset()
+				//im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
+				//scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops,false)
+				//im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+				//
+				//xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
+				//ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
+				//ydiff = float64(ydiff) / zoom
+				//xdiff = float64(xdiff) / zoom
+				//im.ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
+				//
+				//if err := screen.DrawImage(ttim, im.ops); err != nil {
+				//	log.Fatal(err)
+				//}
 			}
 		}
+	}else{
+
+		tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
+	}
+}
+
+func tiledraw(ops *ebiten.DrawImageOptions, i,j int, screen *ebiten.Image, tileim *ebiten.Image){
+	ops.GeoM.Reset()
+	ops.GeoM.Translate(float64(offset.x), float64(offset.y))
+	scaleToDimension(dimens{bgTileWidth, bgTileWidth}, tileim, ops,false)
+	ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+
+	xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
+	ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
+	ydiff = float64(ydiff) / zoom
+	xdiff = float64(xdiff) / zoom
+	ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
+
+	if err := screen.DrawImage(tileim, ops); err != nil {
+		log.Fatal(err)
 	}
 }
 
