@@ -13,8 +13,8 @@ const (
 	maxAxeLength   = 45
 	axeRotateSpeed = 0.12
 	axeArc         = 3.9
-	screenWidth    = 1600
-	screenHeight   = 1000
+	screenWidth    = 900
+	screenHeight   = 500
 	worldWidth     = screenWidth * 2
 	bgTileWidth    = screenWidth
 )
@@ -40,6 +40,7 @@ var ttshapes = make(map[tileType]shape)
 var currentTShapes = make(map[location]shape)
 var mycenterpoint location
 var images imagesStruct
+var zoom = 1.0
 
 type deathAnim struct {
 	sprites   []baseSprite
@@ -56,6 +57,11 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		return errors.New("SamGame ended by player")
 	}
 
+	zoom += float64(inpututil.KeyPressDuration(ebiten.KeyR))/200
+	zoom -= float64(inpututil.KeyPressDuration(ebiten.KeyF))/200
+	if zoom < 0.1 {
+		zoom = 0.1
+	}
 	respawnsWork()
 	socketReceive()
 
@@ -96,7 +102,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		l.checkHitOthers()
 	}
 
-	mycenterpoint = rectCenterPoint(myLocalPlayer.locEnt.lSlasher.rect)
+	mycenterpoint = myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint()
 	center := mycenterpoint
 	center.x *= -1
 	center.y *= -1

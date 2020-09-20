@@ -121,18 +121,19 @@ func (la *localAnimal) checkRemove() {
 }
 
 func (s *slasher) addDeathAnim() {
+	cent := s.rect.rectCenterPoint()
 	bs0 := baseSprite{}
 	bs0.sprite = images.playerfall0
 	bs0.bOps = &ebiten.DrawImageOptions{}
-	bs0.yaxis = rectCenterPoint(s.rect).y
+	bs0.yaxis = cent.y
 	bs1 := baseSprite{}
 	bs1.sprite = images.playerfall1
 	bs1.bOps = &ebiten.DrawImageOptions{}
-	bs1.yaxis = rectCenterPoint(s.rect).y
+	bs1.yaxis = cent.y
 	bs2 := baseSprite{}
 	bs2.sprite = images.playerfall2
 	bs2.bOps = &ebiten.DrawImageOptions{}
-	bs2.yaxis = rectCenterPoint(s.rect).y
+	bs2.yaxis = cent.y
 
 	da := &deathAnim{}
 	da.sprites = append(da.sprites, bs0)
@@ -315,7 +316,7 @@ func (bot *localAnimal) AIControl() {
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
 		}
-		bot.locEnt.lSlasher.atkButton = rand.Intn(2) == 0
+		//bot.locEnt.lSlasher.atkButton = rand.Intn(2) == 0
 	}
 }
 

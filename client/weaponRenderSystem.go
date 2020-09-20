@@ -53,7 +53,7 @@ func (is *imagesStruct) newImages() {
 	is.playerfall2 = cacheImage("man3")
 }
 
-func rectCenterPoint(r rectangle) location {
+func (r rectangle)rectCenterPoint() location {
 	x := r.location.x + (r.dimens.width / 2)
 	y := r.location.y + (r.dimens.height / 2)
 	return location{x, y}
@@ -135,6 +135,13 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 				im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
 				scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops,false)
 				im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+
+				xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
+				ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
+				ydiff = float64(ydiff) / zoom
+				xdiff = float64(xdiff) / zoom
+				im.ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
+
 				if err := screen.DrawImage(ttim, im.ops); err != nil {
 					log.Fatal(err)
 				}
@@ -208,15 +215,19 @@ type bgLoading struct {
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
 	imW, imH := img.Size()
-	wRatio := float64(dims.width) / float64(imW)
-	hRatio := float64(dims.height) / float64(imH)
+	dh := float64(dims.height)/zoom
+	dw := float64(dims.width)/zoom
+	wRatio := float64(dw) / float64(imW)
+	hRatio := float64(dh) / float64(imH)
+
 	toAdd := ebiten.GeoM{}
 	if flip{
 		toAdd.Scale(-wRatio,hRatio)
-		toAdd.Translate(float64(dims.width),0)
+		toAdd.Translate(float64(dw),0)
 	}else{
 		toAdd.Scale(wRatio, hRatio)
 	}
+	toAdd.Translate((1-zoom)*-float64(dw)/2,(1-zoom)*-float64(dh)/2)
 	ops.GeoM.Add(toAdd)
 }
 
@@ -292,6 +303,7 @@ func updateSprites() {
 		scaleto := playerSpriteLargerScale(bs.rect)
 		scaleToDimension(scaleto, toupdate.sprite, toupdate.bOps,bs.inverted)
 
+
 		shiftto := playerSpriteLargerShift(bs.rect)
 		cameraShift(shiftto, toupdate.bOps)
 
@@ -318,13 +330,13 @@ func (bs *slasher) updateSlasherSprite() {
 		bs.deth.redScale--
 	}
 	bs.bsprit.bOps.ColorM.Translate(float64(bs.deth.redScale), 0, 0, 0)
-	bs.hbarsprit.yaxis = rectCenterPoint(bs.rect).y + 10
+	bs.hbarsprit.yaxis = bs.rect.rectCenterPoint().y + 10
 	healthbarlocation := location{bs.rect.location.x, bs.rect.location.y - (bs.rect.dimens.height / 2) - 10}
 	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.rect.dimens.width / bs.deth.hp.MaxHP
 	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps,false)
 	cameraShift(healthbarlocation, bs.hbarsprit.bOps)
 
-	bs.bsprit.yaxis = rectCenterPoint(bs.rect).y
+	bs.bsprit.yaxis = bs.rect.rectCenterPoint().y
 
 	spriteSelect := images.empty
 	tolerance := math.Pi / 9
@@ -351,15 +363,26 @@ func (bs *slasher) updateSlasherSprite() {
 	bs.bsprit.sprite = spriteSelect
 
 	invertbool := math.Abs(bs.startangle) > math.Pi/2
-	scaleto := playerSpriteLargerScale(bs.rect)
+	//scaleto := playerSpriteLargerScale(bs.rect)
+	scaleto := bs.rect.dimens
 	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps,invertbool)
-	shiftto := playerSpriteLargerShift(bs.rect)
-	cameraShift(shiftto, bs.bsprit.bOps)
+	//shiftto := playerSpriteLargerShift(bs.rect)
+	//shiftto :=
+	cameraShift(bs.rect.location, bs.bsprit.bOps)
+
+	xdiff := float64(bs.rect.rectCenterPoint().x - myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
+	//xdiff = int(math.Abs(float64(xdiff)))
+	xdiff = float64(xdiff) / zoom
+
+	ydiff := float64(bs.rect.rectCenterPoint().y - myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
+	//ydiff = int(math.Abs(float64(ydiff)))
+	ydiff = float64(ydiff) / zoom
+	bs.bsprit.bOps.GeoM.Translate(float64(xdiff)*(1-zoom),float64(ydiff)*(1-zoom))
 
 	if bs.swangin {
 		_, imH := bs.wepsprit.sprite.Size()
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
-		ownerCenter := rectCenterPoint(bs.rect)
+		ownerCenter := bs.rect.rectCenterPoint()
 		cameraShift(ownerCenter, bs.wepsprit.bOps)
 		addOp := ebiten.GeoM{}
 		hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)
