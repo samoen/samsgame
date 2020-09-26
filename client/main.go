@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/hajimehoshi/ebiten"
-	"image/color"
 	_ "image/png"
 	"log"
 	"time"
@@ -12,9 +11,9 @@ func main() {
 	images = imagesStruct{}
 	images.newImages()
 
-	if err := images.empty.Fill(color.White); err != nil {
-		log.Fatal(err)
-	}
+	//if err := images.empty.Fill(color.White); err != nil {
+	//	log.Fatal(err)
+	//}
 	myLocalPlayer = localPlayer{}
 	myLocalPlayer.locEnt.lSlasher.defaultStats()
 	myLocalPlayer.placePlayer()
@@ -44,11 +43,14 @@ func main() {
 			bgl.tiletyp = ttype
 			bgl.ops = &ebiten.DrawImageOptions{}
 			bgtiles[location{i, j}] = bgl
+			bgtilesNew[location{i,j}] = &baseSprite{images.empty,&ebiten.DrawImageOptions{},0}
 		}
 	}
 
 	ttshapes[blank] = shape{lines: []line{line{location{180, 5}, location{140, 60}}}}
 	ttshapes[rocky] = shape{lines: []line{line{location{80, 20}, location{80, 120}}}}
+
+	tileRenderBuffer, _ = ebiten.NewImage(screenWidth,screenHeight,ebiten.FilterDefault)
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
@@ -59,7 +61,7 @@ func main() {
 	ebiten.SetWindowSize(700, 500)
 	ebiten.SetWindowTitle("sams cool game")
 	ebiten.SetWindowResizable(true)
-
+	ebiten.SetMaxTPS(30)
 	samgame := &SamGame{}
 
 	if err := ebiten.RunGame(samgame); err != nil {

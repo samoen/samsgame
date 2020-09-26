@@ -26,6 +26,7 @@ type imagesStruct struct {
 	playerfall2         *ebiten.Image
 	empty               *ebiten.Image
 	sword               *ebiten.Image
+	tile1 *ebiten.Image
 }
 
 func cacheImage(name string) (img *ebiten.Image) {
@@ -51,6 +52,7 @@ func (is *imagesStruct) newImages() {
 	is.playerfall0 = cacheImage("man1")
 	is.playerfall1 = cacheImage("man2")
 	is.playerfall2 = cacheImage("man3")
+	is.tile1 = cacheImage("tile31")
 }
 
 func (r rectangle)rectCenterPoint() location {
@@ -66,6 +68,65 @@ const (
 	rocky
 	offworld
 )
+
+func drawBgNew(screen *ebiten.Image){
+		for _, im := range tilesToDraw {
+				if err := screen.DrawImage(im.sprite, im.bOps); err != nil {
+					log.Fatal(err)
+				}
+		}
+}
+
+func drawBufferedTiles(screen *ebiten.Image){
+	ops := &ebiten.DrawImageOptions{}
+	//tiledraw(ops,0,0,tileRenderBuffer)
+	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func bufferTiles()  {
+	tileRenderBuffer.Clear()
+	myCoordx := mycenterpoint.x / bgTileWidth
+	myCoordy := mycenterpoint.y / bgTileWidth
+	numsee := int(2+(zoom*8))
+
+	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
+		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+			if im, ok := bgtilesNew[location{i, j}]; ok {
+				tiledraw(im.bOps,i,j,im.sprite)
+				if err:= tileRenderBuffer.DrawImage(im.sprite,im.bOps); err != nil{
+					log.Fatal(err)
+				}
+			}else{
+				ops := &ebiten.DrawImageOptions{}
+				tiledraw(ops,i,j,images.tile1)
+				if err:= tileRenderBuffer.DrawImage(images.tile1,ops); err != nil{
+					log.Fatal(err)
+				}
+			}
+		}
+	}
+}
+
+var tilesToDraw []*baseSprite
+var tileRenderBuffer *ebiten.Image
+
+func updateTilesNew(){
+	tilesToDraw = nil
+	myCoordx := mycenterpoint.x / bgTileWidth
+	myCoordy := mycenterpoint.y / bgTileWidth
+	numsee := int(2+(zoom*bgTileWidth/1.5))
+
+	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
+		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+			if im, ok := bgtilesNew[location{i, j}]; ok {
+				tiledraw(im.bOps,i,j,im.sprite)
+				tilesToDraw = append(tilesToDraw,im)
+			}
+		}
+	}
+}
 
 func drawBackground(screen *ebiten.Image) {
 
@@ -90,9 +151,16 @@ func drawBackground(screen *ebiten.Image) {
 
 	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
-			handleBgtile(i, j, screen)
+			if im, ok := bgtiles[location{i, j}]; ok {
+				if ttim, ok := ttmap[im.tiletyp]; ok {
+					if ttim != nil {
+						handleBgtile(i,j,screen)
+					}
+				}
+			}
 		}
 	}
+
 }
 
 func handleBgtile(i int, j int, screen *ebiten.Image) {
@@ -131,30 +199,22 @@ func handleBgtile(i int, j int, screen *ebiten.Image) {
 	if im, ok := bgtiles[location{i, j}]; ok {
 		if ttim, ok := ttmap[im.tiletyp]; ok {
 			if ttim != nil {
-				tiledraw(im.ops,i,j,screen,ttim)
-				//im.ops.GeoM.Reset()
-				//im.ops.GeoM.Translate(float64(offset.x), float64(offset.y))
-				//scaleToDimension(dimens{bgTileWidth, bgTileWidth}, ttim, im.ops,false)
-				//im.ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-				//
-				//xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
-				//ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
-				//ydiff = float64(ydiff) / zoom
-				//xdiff = float64(xdiff) / zoom
-				//im.ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
-				//
-				//if err := screen.DrawImage(ttim, im.ops); err != nil {
-				//	log.Fatal(err)
-				//}
+				tiledraw(im.ops,i,j,ttim)
+				if err := screen.DrawImage(ttim, im.ops); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
-	}else{
-
-		tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
 	}
+
+	//else{
+	//
+	//	tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
+	//}
 }
 
-func tiledraw(ops *ebiten.DrawImageOptions, i,j int, screen *ebiten.Image, tileim *ebiten.Image){
+
+func tiledraw(ops *ebiten.DrawImageOptions, i,j int, tileim *ebiten.Image){
 	ops.GeoM.Reset()
 	ops.GeoM.Translate(float64(offset.x), float64(offset.y))
 	scaleToDimension(dimens{bgTileWidth, bgTileWidth}, tileim, ops,false)
@@ -166,9 +226,6 @@ func tiledraw(ops *ebiten.DrawImageOptions, i,j int, screen *ebiten.Image, tilei
 	xdiff = float64(xdiff) / zoom
 	ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
 
-	if err := screen.DrawImage(tileim, ops); err != nil {
-		log.Fatal(err)
-	}
 }
 
 type ttwithIm struct {

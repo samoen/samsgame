@@ -15,8 +15,8 @@ const (
 	axeArc         = 3.9
 	screenWidth    = 900
 	screenHeight   = 500
-	worldWidth     = screenWidth * 2
-	bgTileWidth    = screenWidth/20
+	worldWidth     = screenWidth * 10
+	bgTileWidth    = screenWidth/40
 )
 
 var interpTime = 1
@@ -35,6 +35,7 @@ var wepBlockers = make(map[*shape]bool)
 var deathAnimations = make(map[*deathAnim]bool)
 var bgchan = make(chan ttwithIm)
 var bgtiles = make(map[location]*bgLoading)
+var bgtilesNew = make(map[location]*baseSprite)
 var ttmap = make(map[tileType]*ebiten.Image)
 var ttshapes = make(map[tileType]shape)
 var currentTShapes = make(map[location]shape)
@@ -110,12 +111,20 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	center.y += screenHeight / 2
 	offset = center
 
-	bgShapesWork()
+
+	//bgShapesWork()
+
+	//bufferTiles()
+	updateTilesNew()
+
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
-	drawBackground(screen)
+	//drawBackground(screen)
+	drawBgNew(screen)
+	//drawBufferedTiles(screen)
+
 	updateSprites()
 	renderEntSprites(screen)
 	drawHitboxes(screen)
