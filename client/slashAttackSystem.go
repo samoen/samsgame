@@ -32,7 +32,7 @@ func (s *slasher) defaultStats() {
 	s.collisionId = &cId
 	s.rect.dimens = dimens{20, 40}
 	s.rect.refreshShape(location{50, 50})
-	s.agility = 4
+	s.agility = 8
 	s.moveSpeed = 100
 	s.cooldownCount = 0
 	s.pivShape.damage = 2
@@ -103,7 +103,7 @@ func (l *localPlayer) checkHitOthers() {
 }
 
 func (l *localPlayer) placePlayer() {
-	l.locEnt.lSlasher.rect.refreshShape(location{50, 50})
+	l.locEnt.lSlasher.rect.refreshShape(location{worldWidth/8, worldWidth/8})
 	l.locEnt.lSlasher.deth.hp = hitpoints{6, 6}
 	l.locEnt.lSlasher.spawnSafe()
 }
@@ -316,7 +316,7 @@ func (bot *localAnimal) AIControl() {
 			rand.Intn(2) == 0,
 			rand.Intn(2) == 0,
 		}
-		//bot.locEnt.lSlasher.atkButton = rand.Intn(2) == 0
+		bot.locEnt.lSlasher.atkButton = rand.Intn(2) == 0
 	}
 }
 

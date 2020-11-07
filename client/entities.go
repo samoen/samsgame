@@ -11,12 +11,12 @@ import (
 
 const (
 	maxAxeLength   = 45
-	axeRotateSpeed = 0.12
+	axeRotateSpeed = 0.19
 	axeArc         = 3.9
 	screenWidth    = 900
 	screenHeight   = 500
-	worldWidth     = screenWidth * 10
-	bgTileWidth    = screenWidth/40
+	worldWidth     = 5000
+	bgTileWidth    = 20
 )
 
 var interpTime = 1
@@ -58,10 +58,20 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 		return errors.New("SamGame ended by player")
 	}
 
-	zoom += float64(inpututil.KeyPressDuration(ebiten.KeyR))/200
-	zoom -= float64(inpututil.KeyPressDuration(ebiten.KeyF))/200
-	if zoom < 0.1 {
-		zoom = 0.1
+	//zoom += float64(inpututil.KeyPressDuration(ebiten.KeyR))/200
+	//zoom -= float64(inpututil.KeyPressDuration(ebiten.KeyF))/200
+	//if zoom < 0.1 {
+	//	zoom = 0.1
+	//}
+	if ebiten.IsKeyPressed(ebiten.KeyR) {
+		if zoom > -240 {
+			zoom -= 2
+		}
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyF) {
+		if zoom < 240 {
+			zoom += 2
+		}
 	}
 	respawnsWork()
 	socketReceive()
@@ -114,16 +124,16 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	//bgShapesWork()
 
-	//bufferTiles()
-	updateTilesNew()
+	bufferTiles()
+	//updateTilesNew()
 
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	//drawBackground(screen)
-	drawBgNew(screen)
-	//drawBufferedTiles(screen)
+	drawBufferedTiles(screen)
+	//drawBgNew(screen)
 
 	updateSprites()
 	renderEntSprites(screen)

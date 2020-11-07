@@ -26,7 +26,7 @@ type imagesStruct struct {
 	playerfall2         *ebiten.Image
 	empty               *ebiten.Image
 	sword               *ebiten.Image
-	tile1 *ebiten.Image
+	tile1               *ebiten.Image
 }
 
 func cacheImage(name string) (img *ebiten.Image) {
@@ -55,7 +55,7 @@ func (is *imagesStruct) newImages() {
 	is.tile1 = cacheImage("tile31")
 }
 
-func (r rectangle)rectCenterPoint() location {
+func (r rectangle) rectCenterPoint() location {
 	x := r.location.x + (r.dimens.width / 2)
 	y := r.location.y + (r.dimens.height / 2)
 	return location{x, y}
@@ -69,15 +69,15 @@ const (
 	offworld
 )
 
-func drawBgNew(screen *ebiten.Image){
-		for _, im := range tilesToDraw {
-				if err := screen.DrawImage(im.sprite, im.bOps); err != nil {
-					log.Fatal(err)
-				}
-		}
-}
+//func drawBgNew(screen *ebiten.Image){
+//		for _, im := range tilesToDraw {
+//				if err := screen.DrawImage(im.sprite, im.bOps); err != nil {
+//					log.Fatal(err)
+//				}
+//		}
+//}
 
-func drawBufferedTiles(screen *ebiten.Image){
+func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
 	//tiledraw(ops,0,0,tileRenderBuffer)
 	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
@@ -85,26 +85,68 @@ func drawBufferedTiles(screen *ebiten.Image){
 	}
 }
 
-func bufferTiles()  {
+func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot float64, rotoffset int) {
+	im.bOps.GeoM.Reset()
+	im.bOps.GeoM.Translate(float64(loc.x), float64(loc.y))
+	im.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
+	scaleToDimension(scaleto, im.sprite, im.bOps, flip)
+	im.bOps.GeoM.Scale(
+		math.Pow(1.01, float64(zoom)),
+		math.Pow(1.01, float64(zoom)),
+	)
+	im.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
+
+	//im.bOps.GeoM.Reset()
+	//
+	//scaleToDimension(scaleto, im.sprite, im.bOps, false)
+	//im.bOps.GeoM.Scale(
+	//	math.Pow(1.01, float64(zoom)),
+	//	math.Pow(1.01, float64(zoom)),
+	//)
+	//
+	//im.bOps.GeoM.Translate(-float64(rotoffset), 0)
+	//im.bOps.GeoM.Rotate(rot)
+	//
+	//im.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
+	//ownerCenter := bs.rect.rectCenterPoint()
+	//im.bOps.GeoM.Translate(float64(ownerCenter.x), float64(ownerCenter.y))
+	//im.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
+}
+
+func bufferTiles() {
 	tileRenderBuffer.Clear()
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
-	numsee := int(2+(zoom*8))
-
-	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
-		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+	//numsee := int(2+(zoom*8))
+	//numsee := 10
+	//if zoom < 0 {
+	correctedZoom := zoom
+	if correctedZoom > 0 {
+		correctedZoom = 1 / correctedZoom
+	}
+	correctedZoom *= -1
+	//numsee := int((math.Sqrt((math.Abs(correctedZoom)+3)*1)*5)+1)
+	//numsee := int((correctedZoom+10)*0.7)+ int(math.Sqrt(correctedZoom+80))
+	numsee := int(correctedZoom/2.7) + 20
+	//}
+	log.Println("numsee: ", numsee)
+	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
+		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
-				tiledraw(im.bOps,i,j,im.sprite)
-				if err:= tileRenderBuffer.DrawImage(im.sprite,im.bOps); err != nil{
-					log.Fatal(err)
-				}
-			}else{
-				ops := &ebiten.DrawImageOptions{}
-				tiledraw(ops,i,j,images.tile1)
-				if err:= tileRenderBuffer.DrawImage(images.tile1,ops); err != nil{
+				fullRenderOp(im, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth, bgTileWidth}, 0, 0)
+				if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
 					log.Fatal(err)
 				}
 			}
+			//else{
+			//	ops := &ebiten.DrawImageOptions{}
+			//	//tiledraw(ops,i,j,images.tile1)
+			//	bs := &baseSprite{images.tile1,ops,0}
+			//	fullRenderOp(bs,location{i*bgTileWidth,j*bgTileWidth},false,dimens{bgTileWidth,bgTileWidth})
+			//	if err:= tileRenderBuffer.DrawImage(bs.sprite,bs.bOps); err != nil{
+			//		log.Fatal(err)
+			//	}
+			//}
 		}
 	}
 }
@@ -112,121 +154,120 @@ func bufferTiles()  {
 var tilesToDraw []*baseSprite
 var tileRenderBuffer *ebiten.Image
 
-func updateTilesNew(){
-	tilesToDraw = nil
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-	numsee := int(2+(zoom*bgTileWidth/1.5))
+//func updateTilesNew(){
+//	tilesToDraw = nil
+//	myCoordx := mycenterpoint.x / bgTileWidth
+//	myCoordy := mycenterpoint.y / bgTileWidth
+//	numsee := int(2+(zoom*bgTileWidth/1.5))
+//
+//	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
+//		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+//			if im, ok := bgtilesNew[location{i, j}]; ok {
+//				tiledraw(im.bOps,i,j,im.sprite)
+//				tilesToDraw = append(tilesToDraw,im)
+//			}
+//		}
+//	}
+//}
+//
+//func drawBackground(screen *ebiten.Image) {
+//
+//	select {
+//	case bgl := <-bgchan:
+//		ttmap[bgl.tyti] = bgl.imim
+//	default:
+//	}
+//
+//	myCoordx := mycenterpoint.x / bgTileWidth
+//	myCoordy := mycenterpoint.y / bgTileWidth
+//	//remx := mycenterpoint.x % bgTileWidth
+//	//remy := mycenterpoint.y % bgTileWidth
+//	numsee := int(2+(zoom*9))
+//	//if remx < bgTileWidth/2 {
+//	//	upx = -1
+//	//}
+//	//upy := 0
+//	//if remy < bgTileWidth/2 {
+//	//	upy = -1
+//	//}
+//
+//	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
+//		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
+//			if im, ok := bgtiles[location{i, j}]; ok {
+//				if ttim, ok := ttmap[im.tiletyp]; ok {
+//					if ttim != nil {
+//						handleBgtile(i,j,screen)
+//					}
+//				}
+//			}
+//		}
+//	}
+//
+//}
+//
+//func handleBgtile(i int, j int, screen *ebiten.Image) {
+//	if ti, ok := bgtiles[location{i, j}]; ok {
+//		prett := ti.tiletyp
+//
+//		if _, ok := ttmap[prett]; !ok {
+//			iwl := images.sword
+//			ttmap[prett] = iwl
+//			go func() {
+//				imstring := "assets"
+//				switch prett {
+//				case blank:
+//					imstring = imstring + "/floor.png"
+//				case rocky:
+//					imstring = imstring + "/tile31.png"
+//				case offworld:
+//					imstring = imstring + "/8000paint.png"
+//				default:
+//					imstring = imstring + "/sword.png"
+//				}
+//
+//				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
+//				//time.Sleep(500*time.Millisecond)
+//				if err != nil {
+//					panic(err)
+//				}
+//				bgl := ttwithIm{}
+//				bgl.imim = im
+//				bgl.tyti = prett
+//				bgchan <- bgl
+//			}()
+//		}
+//	}
+//
+//	if im, ok := bgtiles[location{i, j}]; ok {
+//		if ttim, ok := ttmap[im.tiletyp]; ok {
+//			if ttim != nil {
+//				tiledraw(im.ops,i,j,ttim)
+//				if err := screen.DrawImage(ttim, im.ops); err != nil {
+//					log.Fatal(err)
+//				}
+//			}
+//		}
+//	}
+//
+//	//else{
+//	//
+//	//	tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
+//	//}
+//}
 
-	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
-		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
-			if im, ok := bgtilesNew[location{i, j}]; ok {
-				tiledraw(im.bOps,i,j,im.sprite)
-				tilesToDraw = append(tilesToDraw,im)
-			}
-		}
-	}
-}
-
-func drawBackground(screen *ebiten.Image) {
-
-	select {
-	case bgl := <-bgchan:
-		ttmap[bgl.tyti] = bgl.imim
-	default:
-	}
-
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-	//remx := mycenterpoint.x % bgTileWidth
-	//remy := mycenterpoint.y % bgTileWidth
-	numsee := int(2+(zoom*9))
-	//if remx < bgTileWidth/2 {
-	//	upx = -1
-	//}
-	//upy := 0
-	//if remy < bgTileWidth/2 {
-	//	upy = -1
-	//}
-
-	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
-		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
-			if im, ok := bgtiles[location{i, j}]; ok {
-				if ttim, ok := ttmap[im.tiletyp]; ok {
-					if ttim != nil {
-						handleBgtile(i,j,screen)
-					}
-				}
-			}
-		}
-	}
-
-}
-
-func handleBgtile(i int, j int, screen *ebiten.Image) {
-	if ti, ok := bgtiles[location{i, j}]; ok {
-		prett := ti.tiletyp
-
-		if _, ok := ttmap[prett]; !ok {
-			iwl := images.sword
-			ttmap[prett] = iwl
-			go func() {
-				imstring := "assets"
-				switch prett {
-				case blank:
-					imstring = imstring + "/floor.png"
-				case rocky:
-					imstring = imstring + "/tile31.png"
-				case offworld:
-					imstring = imstring + "/8000paint.png"
-				default:
-					imstring = imstring + "/sword.png"
-				}
-
-				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
-				//time.Sleep(500*time.Millisecond)
-				if err != nil {
-					panic(err)
-				}
-				bgl := ttwithIm{}
-				bgl.imim = im
-				bgl.tyti = prett
-				bgchan <- bgl
-			}()
-		}
-	}
-
-	if im, ok := bgtiles[location{i, j}]; ok {
-		if ttim, ok := ttmap[im.tiletyp]; ok {
-			if ttim != nil {
-				tiledraw(im.ops,i,j,ttim)
-				if err := screen.DrawImage(ttim, im.ops); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-	}
-
-	//else{
-	//
-	//	tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
-	//}
-}
-
-
-func tiledraw(ops *ebiten.DrawImageOptions, i,j int, tileim *ebiten.Image){
-	ops.GeoM.Reset()
-	ops.GeoM.Translate(float64(offset.x), float64(offset.y))
-	scaleToDimension(dimens{bgTileWidth, bgTileWidth}, tileim, ops,false)
-	ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-
-	xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
-	ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
-	ydiff = float64(ydiff) / zoom
-	xdiff = float64(xdiff) / zoom
-	ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
-
-}
+//func tiledraw(ops *ebiten.DrawImageOptions, i,j int, tileim *ebiten.Image){
+//	ops.GeoM.Reset()
+//	ops.GeoM.Translate(float64(offset.x), float64(offset.y))
+//	scaleToDimension(dimens{bgTileWidth, bgTileWidth}, tileim, ops,false)
+//	ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+//
+//	//xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
+//	//ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
+//	//ydiff = float64(ydiff) / zoom
+//	//xdiff = float64(xdiff) / zoom
+//	//ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
+//
+//}
 
 type ttwithIm struct {
 	tyti tileType
@@ -293,19 +334,18 @@ type bgLoading struct {
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
 	imW, imH := img.Size()
-	dh := float64(dims.height)/zoom
-	dw := float64(dims.width)/zoom
+	dh := float64(dims.height + 1)
+	dw := float64(dims.width + 1)
 	wRatio := float64(dw) / float64(imW)
 	hRatio := float64(dh) / float64(imH)
 
 	toAdd := ebiten.GeoM{}
-	if flip{
-		toAdd.Scale(-wRatio,hRatio)
-		toAdd.Translate(float64(dw),0)
-	}else{
+	if flip {
+		toAdd.Scale(-wRatio, hRatio)
+		toAdd.Translate(float64(dw), 0)
+	} else {
 		toAdd.Scale(wRatio, hRatio)
 	}
-	toAdd.Translate((1-zoom)*-float64(dw)/2,(1-zoom)*-float64(dh)/2)
 	ops.GeoM.Add(toAdd)
 }
 
@@ -376,15 +416,7 @@ func updateSprites() {
 			continue
 		}
 		toupdate := bs.sprites[animframe]
-		toupdate.bOps.GeoM.Reset()
-
-		scaleto := playerSpriteLargerScale(bs.rect)
-		scaleToDimension(scaleto, toupdate.sprite, toupdate.bOps,bs.inverted)
-
-
-		shiftto := playerSpriteLargerShift(bs.rect)
-		cameraShift(shiftto, toupdate.bOps)
-
+		fullRenderOp(&toupdate, bs.rect.location, bs.inverted, bs.rect.dimens, 0, 0)
 		toRender = append(toRender, toupdate)
 	}
 
@@ -411,8 +443,9 @@ func (bs *slasher) updateSlasherSprite() {
 	bs.hbarsprit.yaxis = bs.rect.rectCenterPoint().y + 10
 	healthbarlocation := location{bs.rect.location.x, bs.rect.location.y - (bs.rect.dimens.height / 2) - 10}
 	healthbardimenswidth := bs.deth.hp.CurrentHP * bs.rect.dimens.width / bs.deth.hp.MaxHP
-	scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps,false)
-	cameraShift(healthbarlocation, bs.hbarsprit.bOps)
+	fullRenderOp(&bs.hbarsprit, healthbarlocation, false, dimens{healthbardimenswidth, 5}, 0, 0)
+	//scaleToDimension(dimens{healthbardimenswidth, 5}, images.empty, bs.hbarsprit.bOps,false)
+	//cameraShift(healthbarlocation, bs.hbarsprit.bOps)
 
 	bs.bsprit.yaxis = bs.rect.rectCenterPoint().y
 
@@ -439,35 +472,32 @@ func (bs *slasher) updateSlasherSprite() {
 	}
 
 	bs.bsprit.sprite = spriteSelect
-
 	invertbool := math.Abs(bs.startangle) > math.Pi/2
-	//scaleto := playerSpriteLargerScale(bs.rect)
-	scaleto := bs.rect.dimens
-	scaleToDimension(scaleto, bs.bsprit.sprite, bs.bsprit.bOps,invertbool)
-	//shiftto := playerSpriteLargerShift(bs.rect)
-	//shiftto :=
-	cameraShift(bs.rect.location, bs.bsprit.bOps)
-
-	xdiff := float64(bs.rect.rectCenterPoint().x - myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
-	//xdiff = int(math.Abs(float64(xdiff)))
-	xdiff = float64(xdiff) / zoom
-
-	ydiff := float64(bs.rect.rectCenterPoint().y - myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
-	//ydiff = int(math.Abs(float64(ydiff)))
-	ydiff = float64(ydiff) / zoom
-	bs.bsprit.bOps.GeoM.Translate(float64(xdiff)*(1-zoom),float64(ydiff)*(1-zoom))
+	fullRenderOp(&bs.bsprit, bs.rect.location, invertbool, bs.rect.dimens, 0, 0)
 
 	if bs.swangin {
-		_, imH := bs.wepsprit.sprite.Size()
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
+
+		bs.wepsprit.bOps.GeoM.Reset()
+
+		wepSprightLen := bs.pivShape.bladeLength + bs.pivShape.bladeLength/4
+		scaleto := dimens{int(wepSprightLen / 2), int(wepSprightLen)}
+		scaleToDimension(scaleto, bs.wepsprit.sprite, bs.wepsprit.bOps, false)
+		bs.wepsprit.bOps.GeoM.Scale(
+			math.Pow(1.01, zoom),
+			math.Pow(1.01, zoom),
+		)
+
+		bs.wepsprit.bOps.GeoM.Translate(-float64(wepSprightLen/2)/2, 0)
+
+		rot := bs.pivShape.animationCount - (math.Pi / 2)
+		bs.wepsprit.bOps.GeoM.Rotate(rot)
+
+		bs.wepsprit.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
 		ownerCenter := bs.rect.rectCenterPoint()
-		cameraShift(ownerCenter, bs.wepsprit.bOps)
-		addOp := ebiten.GeoM{}
-		hRatio := float64(bs.pivShape.bladeLength+bs.pivShape.bladeLength/4) / float64(imH)
-		addOp.Scale(hRatio, hRatio)
-		addOp.Translate(-float64(bs.rect.dimens.width)/2, 0)
-		addOp.Rotate(bs.pivShape.animationCount - (math.Pi / 2))
-		bs.wepsprit.bOps.GeoM.Add(addOp)
+		bs.wepsprit.bOps.GeoM.Translate(float64(ownerCenter.x), float64(ownerCenter.y))
+		bs.wepsprit.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
+
 		toRender = append(toRender, bs.wepsprit)
 	}
 	toRender = append(toRender, bs.bsprit)

@@ -117,8 +117,8 @@ func socketReceive() {
 	case msg := <-receiveChan:
 		//log.Printf("receiveChan: %+v", msg)
 		interpTime = (receiveCount / 2)-1
-		if interpTime < 1 {
-			interpTime = 1
+		if interpTime < 0 {
+			interpTime = 0
 		}
 		//log.Println(interpTime)
 		receiveCount = 1
