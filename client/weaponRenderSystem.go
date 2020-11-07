@@ -91,26 +91,28 @@ func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot f
 	im.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
 	scaleToDimension(scaleto, im.sprite, im.bOps, flip)
 	im.bOps.GeoM.Scale(
-		math.Pow(1.01, float64(zoom)),
-		math.Pow(1.01, float64(zoom)),
+		math.Pow(1.01, zoom),
+		math.Pow(1.01, zoom),
 	)
 	im.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
 
+
 	//im.bOps.GeoM.Reset()
+	////im.bOps.GeoM.Translate(-float64(rotoffset), 0)
+	////im.bOps.GeoM.Rotate(rot)
+	//im.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
+	//ownerCenterx := loc.x
+	////- (scaleto.width/2)
+	//ownerCentery := loc.y
+	////- (scaleto.height/2)
+	//im.bOps.GeoM.Translate(float64(ownerCenterx), float64(ownerCentery))
+	//im.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
 	//
-	//scaleToDimension(scaleto, im.sprite, im.bOps, false)
+	//scaleToDimension(scaleto, im.sprite, im.bOps, flip)
 	//im.bOps.GeoM.Scale(
 	//	math.Pow(1.01, float64(zoom)),
 	//	math.Pow(1.01, float64(zoom)),
 	//)
-	//
-	//im.bOps.GeoM.Translate(-float64(rotoffset), 0)
-	//im.bOps.GeoM.Rotate(rot)
-	//
-	//im.bOps.GeoM.Translate(float64(screenWidth)/2, float64(screenHeight)/2)
-	//ownerCenter := bs.rect.rectCenterPoint()
-	//im.bOps.GeoM.Translate(float64(ownerCenter.x), float64(ownerCenter.y))
-	//im.bOps.GeoM.Translate(float64(-mycenterpoint.x), float64(-mycenterpoint.y))
 }
 
 func bufferTiles() {
@@ -481,14 +483,15 @@ func (bs *slasher) updateSlasherSprite() {
 		bs.wepsprit.bOps.GeoM.Reset()
 
 		wepSprightLen := bs.pivShape.bladeLength + bs.pivShape.bladeLength/4
+
+		bs.wepsprit.bOps.GeoM.Translate(-float64(wepSprightLen/2)/2, 0)
+
 		scaleto := dimens{int(wepSprightLen / 2), int(wepSprightLen)}
 		scaleToDimension(scaleto, bs.wepsprit.sprite, bs.wepsprit.bOps, false)
 		bs.wepsprit.bOps.GeoM.Scale(
 			math.Pow(1.01, zoom),
 			math.Pow(1.01, zoom),
 		)
-
-		bs.wepsprit.bOps.GeoM.Translate(-float64(wepSprightLen/2)/2, 0)
 
 		rot := bs.pivShape.animationCount - (math.Pi / 2)
 		bs.wepsprit.bOps.GeoM.Rotate(rot)
