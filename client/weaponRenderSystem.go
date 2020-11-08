@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -64,7 +63,6 @@ func (r rectangle) rectCenterPoint() location {
 	return location{x, y}
 }
 
-
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
 
@@ -88,8 +86,8 @@ func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot f
 
 	im.bOps.GeoM.Translate(float64(int(float64(screenWidth)/2)), float64(int(float64(screenHeight)/2)))
 
-	tx := im.bOps.GeoM.Element(0,2)
-	ty := im.bOps.GeoM.Element(1,2)
+	tx := im.bOps.GeoM.Element(0, 2)
+	ty := im.bOps.GeoM.Element(1, 2)
 	im.bOps.GeoM.Translate(-tx, -ty)
 	im.bOps.GeoM.Translate(-zoomScale*rotOffsetx, 0)
 	im.bOps.GeoM.Rotate(rot)
@@ -116,15 +114,15 @@ func bufferTiles() {
 	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
-				fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth+1, bgTileWidth+1}, 0, 0)
+				fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
 				if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
 					log.Fatal(err)
 				}
-			} else{
+			} else {
 				ops := &ebiten.DrawImageOptions{}
-				bs := &baseSprite{images.tile1,ops,0}
-				fullRenderOp(bs,location{i*bgTileWidth,j*bgTileWidth},false,dimens{bgTileWidth+1,bgTileWidth+1},0,0)
-				if err:= tileRenderBuffer.DrawImage(bs.sprite,bs.bOps); err != nil{
+				bs := &baseSprite{images.tile1, ops, 0}
+				fullRenderOp(bs, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
+				if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
 					log.Fatal(err)
 				}
 			}
@@ -139,50 +137,18 @@ func bgShapesWork() {
 	currentTShapes = make(map[location]shape)
 	for i := -3; i <= 3; i++ {
 		for j := -3; j <= 3; j++ {
-			if v,ok := bgtilesNew[location{myCoordx+i, myCoordy+j}];ok{
-				if !v.passable{
-					fmt.Println("adding t shape",myCoordx+i, myCoordy+j)
-					addTshape(myCoordx+i, myCoordy+j)
+			if v, ok := bgtilesNew[location{myCoordx + i, myCoordy + j}]; ok {
+				if !v.passable {
+					impassShapeX :=myCoordx+i
+					impassShapeY :=myCoordy+j
+					r := rectangle{}
+					r.dimens = dimens{bgTileWidth, bgTileWidth}
+					r.refreshShape(location{impassShapeX * bgTileWidth, impassShapeY * bgTileWidth})
+					currentTShapes[location{i, j}] = r.shape
 				}
 			}
 		}
 	}
-}
-
-func addTshape(i, j int) {
-	//loc := location{i, j}
-	//if _, ok := bgtilesNew[loc]; ok {
-		//transcoord := ttshapes[ti.tiletyp]
-		//var newlines []line
-		//for _, l := range transcoord.lines {
-		//	newlines = append(
-		//		newlines,
-		//		line{
-		//			location{
-		//				l.p1.x + (loc.x * bgTileWidth),
-		//				l.p1.y + (loc.y * bgTileWidth),
-		//			},
-		//			location{
-		//				l.p2.x + (loc.x * bgTileWidth),
-		//				l.p2.y + (loc.y * bgTileWidth),
-		//			},
-		//		},
-		//	)
-		//}
-		//transcoord.lines = newlines
-
-		//log.Println("put bgshape ", transcoord)
-	lineo := line{location{0,0},location{10,10}}
-	lineo.p1.x += i*bgTileWidth
-	lineo.p1.y += j*bgTileWidth
-	lineo.p2.x += i*bgTileWidth
-	lineo.p2.y += j*bgTileWidth
-
-
-		sqrshape := shape{}
-		sqrshape.lines = append(sqrshape.lines,lineo)
-		currentTShapes[location{i, j}] = sqrshape
-	//}
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
@@ -201,15 +167,6 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 		toAdd.Scale(wRatio, hRatio)
 	}
 	ops.GeoM.Add(toAdd)
-}
-
-func cameraShift(loc location, ops *ebiten.DrawImageOptions) {
-	pSpriteOffset := offset
-	pSpriteOffset.x += loc.x
-	pSpriteOffset.y += loc.y
-	addOp := ebiten.GeoM{}
-	addOp.Translate(float64(pSpriteOffset.x), float64(pSpriteOffset.y))
-	ops.GeoM.Add(addOp)
 }
 
 func renderEntSprites(s *ebiten.Image) {
@@ -331,10 +288,10 @@ func (bs *slasher) updateSlasherSprite() {
 
 	if bs.swangin {
 		bs.wepsprit.yaxis = bs.pivShape.pivoterShape.lines[0].p2.y
-		wepSprightLen := bs.pivShape.bladeLength+ bs.pivShape.bladeLength/6
+		wepSprightLen := bs.pivShape.bladeLength + bs.pivShape.bladeLength/6
 		ownerCenter := bs.rect.rectCenterPoint()
 		scaleto := dimens{int(wepSprightLen / 2), int(wepSprightLen)}
-		fullRenderOp(&bs.wepsprit,ownerCenter,false,scaleto,bs.pivShape.animationCount - (math.Pi / 2),float64(wepSprightLen/2)/2)
+		fullRenderOp(&bs.wepsprit, ownerCenter, false, scaleto, bs.pivShape.animationCount-(math.Pi/2), float64(wepSprightLen/2)/2)
 		toRender = append(toRender, bs.wepsprit)
 	}
 	toRender = append(toRender, bs.bsprit)

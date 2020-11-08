@@ -202,7 +202,7 @@ func (bot *remotePlayer) remoteMovement() {
 
 func (s *slasher) startSwing() {
 	s.pivShape.bladeLength = 5
-	s.cooldownCount = 60
+	s.cooldownCount = 35
 	s.pivShape.alreadyHit = make(map[*bool]bool)
 	s.pivShape.animationCount = s.startangle + 2.1
 	s.swangin = true
