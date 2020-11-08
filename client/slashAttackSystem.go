@@ -228,7 +228,7 @@ func (s *slasher) progressSwing() {
 		return
 	} else if arcProgress < axeArc*0.3 {
 		s.pivShape.bladeLength += 4
-	} else if arcProgress > axeArc*0.8 {
+	} else if arcProgress > axeArc*0.7 {
 		s.pivShape.bladeLength -= 3
 	} else {
 		s.pivShape.bladeLength = maxAxeLength
