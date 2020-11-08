@@ -37,24 +37,18 @@ func main() {
 	for i := -1; i < tilesAcross+1; i++ {
 		for j := -1; j < tilesAcross+1; j++ {
 			tileImage:=images.tile1
-			ttype := blank
+			passable := true
 			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
-				ttype = offworld
-				tileImage = images.empty
-			} else if 90 < rand.Intn(100) {
-				ttype = rocky
+				tileImage = images.tile2
+			} else if 98 < rand.Intn(100) {
+				passable = false
 				tileImage = images.tile2
 			}
-			bgl := &bgLoading{}
-			bgl.tiletyp = ttype
-			bgl.ops = &ebiten.DrawImageOptions{}
-			bgtiles[location{i, j}] = bgl
-			bgtilesNew[location{i,j}] = &baseSprite{tileImage,&ebiten.DrawImageOptions{},0}
+
+			bgBs := baseSprite{tileImage,&ebiten.DrawImageOptions{},0}
+			bgtilesNew[location{i,j}] = &backgroundTile{bgBs,passable}
 		}
 	}
-
-	ttshapes[blank] = shape{lines: []line{line{location{180, 5}, location{140, 60}}}}
-	ttshapes[rocky] = shape{lines: []line{line{location{80, 20}, location{80, 120}}}}
 
 	tileRenderBuffer, _ = ebiten.NewImage(screenWidth,screenHeight,ebiten.FilterDefault)
 

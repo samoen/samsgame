@@ -33,15 +33,17 @@ var localAnimals = make(map[*localAnimal]bool)
 var remotePlayers = make(map[string]*remotePlayer)
 var wepBlockers = make(map[*shape]bool)
 var deathAnimations = make(map[*deathAnim]bool)
-var bgchan = make(chan ttwithIm)
-var bgtiles = make(map[location]*bgLoading)
-var bgtilesNew = make(map[location]*baseSprite)
-var ttmap = make(map[tileType]*ebiten.Image)
-var ttshapes = make(map[tileType]shape)
+var bgtilesNew = make(map[location]*backgroundTile)
+var tileRenderBuffer *ebiten.Image
 var currentTShapes = make(map[location]shape)
 var mycenterpoint location
 var images imagesStruct
 var zoom = 1.0
+
+type backgroundTile struct {
+	baseSprite
+	passable bool
+}
 
 type deathAnim struct {
 	sprites   []baseSprite
@@ -121,7 +123,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	center.y += screenHeight / 2
 	offset = center
 
-	//bgShapesWork()
+	bgShapesWork()
 
 	//bufferTiles()
 

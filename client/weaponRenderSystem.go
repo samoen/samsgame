@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"log"
@@ -63,18 +64,9 @@ func (r rectangle) rectCenterPoint() location {
 	return location{x, y}
 }
 
-type tileType int
-
-const (
-	blank tileType = iota
-	rocky
-	offworld
-)
-
 
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
-	//tiledraw(ops,0,0,tileRenderBuffer)
 
 	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
 		log.Fatal(err)
@@ -124,87 +116,73 @@ func bufferTiles() {
 	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
-				fullRenderOp(im, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth+1, bgTileWidth+1}, 0, 0)
+				fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth+1, bgTileWidth+1}, 0, 0)
 				if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
 					log.Fatal(err)
 				}
+			} else{
+				ops := &ebiten.DrawImageOptions{}
+				bs := &baseSprite{images.tile1,ops,0}
+				fullRenderOp(bs,location{i*bgTileWidth,j*bgTileWidth},false,dimens{bgTileWidth+1,bgTileWidth+1},0,0)
+				if err:= tileRenderBuffer.DrawImage(bs.sprite,bs.bOps); err != nil{
+					log.Fatal(err)
+				}
 			}
-			//else{
-			//	ops := &ebiten.DrawImageOptions{}
-			//	//tiledraw(ops,i,j,images.tile1)
-			//	bs := &baseSprite{images.tile1,ops,0}
-			//	fullRenderOp(bs,location{i*bgTileWidth,j*bgTileWidth},false,dimens{bgTileWidth,bgTileWidth})
-			//	if err:= tileRenderBuffer.DrawImage(bs.sprite,bs.bOps); err != nil{
-			//		log.Fatal(err)
-			//	}
-			//}
 		}
 	}
-}
-
-var tileRenderBuffer *ebiten.Image
-
-type ttwithIm struct {
-	tyti tileType
-	imim *ebiten.Image
 }
 
 func bgShapesWork() {
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
 
-	remx := mycenterpoint.x % bgTileWidth
-	remy := mycenterpoint.y % bgTileWidth
-	upx := -1
-	if remx < bgTileWidth/2 {
-		upx = 1
-	}
-	upy := -1
-	if remy < bgTileWidth/2 {
-		upy = 1
-	}
-
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			if upx == i || upy == j {
-				delete(currentTShapes, location{myCoordx + i, myCoordy + j})
-			} else {
-				addTshape(myCoordx+i, myCoordy+j)
+	currentTShapes = make(map[location]shape)
+	for i := -3; i <= 3; i++ {
+		for j := -3; j <= 3; j++ {
+			if v,ok := bgtilesNew[location{myCoordx+i, myCoordy+j}];ok{
+				if !v.passable{
+					fmt.Println("adding t shape",myCoordx+i, myCoordy+j)
+					addTshape(myCoordx+i, myCoordy+j)
+				}
 			}
 		}
 	}
 }
 
 func addTshape(i, j int) {
-	loc := location{i, j}
-	if ti, ok := bgtiles[loc]; ok {
-		transcoord := ttshapes[ti.tiletyp]
-		var newlines []line
-		for _, l := range transcoord.lines {
-			newlines = append(
-				newlines,
-				line{
-					location{
-						l.p1.x + (loc.x * bgTileWidth),
-						l.p1.y + (loc.y * bgTileWidth),
-					},
-					location{
-						l.p2.x + (loc.x * bgTileWidth),
-						l.p2.y + (loc.y * bgTileWidth),
-					},
-				},
-			)
-		}
-		transcoord.lines = newlines
+	//loc := location{i, j}
+	//if _, ok := bgtilesNew[loc]; ok {
+		//transcoord := ttshapes[ti.tiletyp]
+		//var newlines []line
+		//for _, l := range transcoord.lines {
+		//	newlines = append(
+		//		newlines,
+		//		line{
+		//			location{
+		//				l.p1.x + (loc.x * bgTileWidth),
+		//				l.p1.y + (loc.y * bgTileWidth),
+		//			},
+		//			location{
+		//				l.p2.x + (loc.x * bgTileWidth),
+		//				l.p2.y + (loc.y * bgTileWidth),
+		//			},
+		//		},
+		//	)
+		//}
+		//transcoord.lines = newlines
 
 		//log.Println("put bgshape ", transcoord)
-		currentTShapes[location{i, j}] = transcoord
-	}
-}
+	lineo := line{location{0,0},location{10,10}}
+	lineo.p1.x += i*bgTileWidth
+	lineo.p1.y += j*bgTileWidth
+	lineo.p2.x += i*bgTileWidth
+	lineo.p2.y += j*bgTileWidth
 
-type bgLoading struct {
-	ops     *ebiten.DrawImageOptions
-	tiletyp tileType
+
+		sqrshape := shape{}
+		sqrshape.lines = append(sqrshape.lines,lineo)
+		currentTShapes[location{i, j}] = sqrshape
+	//}
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
