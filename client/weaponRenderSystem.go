@@ -27,6 +27,7 @@ type imagesStruct struct {
 	empty               *ebiten.Image
 	sword               *ebiten.Image
 	tile1               *ebiten.Image
+	tile2               *ebiten.Image
 }
 
 func cacheImage(name string) (img *ebiten.Image) {
@@ -53,6 +54,7 @@ func (is *imagesStruct) newImages() {
 	is.playerfall1 = cacheImage("man2")
 	is.playerfall2 = cacheImage("man3")
 	is.tile1 = cacheImage("tile31")
+	is.tile2 = cacheImage("tile2")
 }
 
 func (r rectangle) rectCenterPoint() location {
@@ -69,13 +71,6 @@ const (
 	offworld
 )
 
-//func drawBgNew(screen *ebiten.Image){
-//		for _, im := range tilesToDraw {
-//				if err := screen.DrawImage(im.sprite, im.bOps); err != nil {
-//					log.Fatal(err)
-//				}
-//		}
-//}
 
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
@@ -147,123 +142,7 @@ func bufferTiles() {
 	}
 }
 
-var tilesToDraw []*baseSprite
 var tileRenderBuffer *ebiten.Image
-
-//func updateTilesNew(){
-//	tilesToDraw = nil
-//	myCoordx := mycenterpoint.x / bgTileWidth
-//	myCoordy := mycenterpoint.y / bgTileWidth
-//	numsee := int(2+(zoom*bgTileWidth/1.5))
-//
-//	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
-//		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
-//			if im, ok := bgtilesNew[location{i, j}]; ok {
-//				tiledraw(im.bOps,i,j,im.sprite)
-//				tilesToDraw = append(tilesToDraw,im)
-//			}
-//		}
-//	}
-//}
-//
-//func drawBackground(screen *ebiten.Image) {
-//
-//	select {
-//	case bgl := <-bgchan:
-//		ttmap[bgl.tyti] = bgl.imim
-//	default:
-//	}
-//
-//	myCoordx := mycenterpoint.x / bgTileWidth
-//	myCoordy := mycenterpoint.y / bgTileWidth
-//	//remx := mycenterpoint.x % bgTileWidth
-//	//remy := mycenterpoint.y % bgTileWidth
-//	numsee := int(2+(zoom*9))
-//	//if remx < bgTileWidth/2 {
-//	//	upx = -1
-//	//}
-//	//upy := 0
-//	//if remy < bgTileWidth/2 {
-//	//	upy = -1
-//	//}
-//
-//	for i := myCoordx-numsee; i < myCoordx+numsee; i++ {
-//		for j := myCoordy-numsee; j < myCoordy+numsee; j++ {
-//			if im, ok := bgtiles[location{i, j}]; ok {
-//				if ttim, ok := ttmap[im.tiletyp]; ok {
-//					if ttim != nil {
-//						handleBgtile(i,j,screen)
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//}
-//
-//func handleBgtile(i int, j int, screen *ebiten.Image) {
-//	if ti, ok := bgtiles[location{i, j}]; ok {
-//		prett := ti.tiletyp
-//
-//		if _, ok := ttmap[prett]; !ok {
-//			iwl := images.sword
-//			ttmap[prett] = iwl
-//			go func() {
-//				imstring := "assets"
-//				switch prett {
-//				case blank:
-//					imstring = imstring + "/floor.png"
-//				case rocky:
-//					imstring = imstring + "/tile31.png"
-//				case offworld:
-//					imstring = imstring + "/8000paint.png"
-//				default:
-//					imstring = imstring + "/sword.png"
-//				}
-//
-//				im, _, err := ebitenutil.NewImageFromFile(imstring, ebiten.FilterDefault)
-//				//time.Sleep(500*time.Millisecond)
-//				if err != nil {
-//					panic(err)
-//				}
-//				bgl := ttwithIm{}
-//				bgl.imim = im
-//				bgl.tyti = prett
-//				bgchan <- bgl
-//			}()
-//		}
-//	}
-//
-//	if im, ok := bgtiles[location{i, j}]; ok {
-//		if ttim, ok := ttmap[im.tiletyp]; ok {
-//			if ttim != nil {
-//				tiledraw(im.ops,i,j,ttim)
-//				if err := screen.DrawImage(ttim, im.ops); err != nil {
-//					log.Fatal(err)
-//				}
-//			}
-//		}
-//	}
-//
-//	//else{
-//	//
-//	//	tiledraw(&ebiten.DrawImageOptions{},i,j,screen,images.empty)
-//	//}
-//}
-
-//func tiledraw(ops *ebiten.DrawImageOptions, i,j int, tileim *ebiten.Image){
-//	ops.GeoM.Reset()
-//	ops.GeoM.Translate(float64(offset.x), float64(offset.y))
-//	scaleToDimension(dimens{bgTileWidth, bgTileWidth}, tileim, ops,false)
-//	ops.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-//
-//	//xdiff := (float64(i)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().x)
-//	//ydiff := (float64(j)*float64(bgTileWidth))+(float64(bgTileWidth)/2) - float64(myLocalPlayer.locEnt.lSlasher.rect.rectCenterPoint().y)
-//	//ydiff = float64(ydiff) / zoom
-//	//xdiff = float64(xdiff) / zoom
-//	//ops.GeoM.Translate(float64(xdiff)*(1.0-zoom),float64(ydiff)*(1.0-zoom))
-//
-//}
 
 type ttwithIm struct {
 	tyti tileType
@@ -344,10 +223,6 @@ func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptio
 		toAdd.Scale(wRatio, hRatio)
 	}
 	ops.GeoM.Add(toAdd)
-	//ops.GeoM.Scale(
-	//	math.Pow(1.01, zoom),
-	//	math.Pow(1.01, zoom),
-	//)
 }
 
 func cameraShift(loc location, ops *ebiten.DrawImageOptions) {

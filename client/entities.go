@@ -121,10 +121,10 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 	center.y += screenHeight / 2
 	offset = center
 
-
 	//bgShapesWork()
 
-	bufferTiles()
+	//bufferTiles()
+
 	//updateTilesNew()
 
 	return nil
@@ -132,7 +132,9 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
 	//drawBackground(screen)
+	bufferTiles()
 	drawBufferedTiles(screen)
+
 	//drawBgNew(screen)
 
 	updateSprites()

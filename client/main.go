@@ -5,6 +5,7 @@ import (
 	"image/color"
 	_ "image/png"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -35,17 +36,20 @@ func main() {
 	tilesAcross := worldWidth / bgTileWidth
 	for i := -1; i < tilesAcross+1; i++ {
 		for j := -1; j < tilesAcross+1; j++ {
+			tileImage:=images.tile1
 			ttype := blank
 			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
 				ttype = offworld
-			} else if j%3 == 0 || i%3 == 0 {
+				tileImage = images.empty
+			} else if 90 < rand.Intn(100) {
 				ttype = rocky
+				tileImage = images.tile2
 			}
 			bgl := &bgLoading{}
 			bgl.tiletyp = ttype
 			bgl.ops = &ebiten.DrawImageOptions{}
 			bgtiles[location{i, j}] = bgl
-			bgtilesNew[location{i,j}] = &baseSprite{images.tile1,&ebiten.DrawImageOptions{},0}
+			bgtilesNew[location{i,j}] = &baseSprite{tileImage,&ebiten.DrawImageOptions{},0}
 		}
 	}
 
@@ -63,7 +67,7 @@ func main() {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("sams cool game")
 	ebiten.SetWindowResizable(true)
-	ebiten.SetMaxTPS(35)
+	//ebiten.SetMaxTPS(35)
 	samgame := &SamGame{}
 
 	if err := ebiten.RunGame(samgame); err != nil {
