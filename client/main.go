@@ -61,7 +61,7 @@ func main() {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("sams cool game")
 	ebiten.SetWindowResizable(true)
-	ebiten.SetMaxTPS(35)
+	ebiten.SetMaxTPS(45)
 	samgame := &SamGame{}
 
 	if err := ebiten.RunGame(samgame); err != nil {
