@@ -98,19 +98,8 @@ func bufferTiles() {
 	tileRenderBuffer.Clear()
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
-	//numsee := int(2+(zoom*8))
-	//numsee := 10
-	//if zoom < 0 {
-	correctedZoom := zoom
-	if correctedZoom > 0 {
-		correctedZoom = 1 / correctedZoom
-	}
-	correctedZoom *= -1
-	//numsee := int((math.Sqrt((math.Abs(correctedZoom)+3)*1)*5)+1)
-	//numsee := int((correctedZoom+10)*0.7)+ int(math.Sqrt(correctedZoom+80))
-	numsee := int(correctedZoom/2.7) + 20
-	//}
-	log.Println("numsee: ", numsee)
+	correctedZoom := 1/math.Pow(1.01, zoom)
+	numsee := int((23) * correctedZoom)+2
 	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
