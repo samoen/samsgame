@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"golang.org/x/image/colornames"
 	"log"
 	"math"
 	"sort"
@@ -28,6 +29,8 @@ type imagesStruct struct {
 	sword               *ebiten.Image
 	tile1               *ebiten.Image
 	tile2               *ebiten.Image
+	bigBackground       *ebiten.Image
+	water       *ebiten.Image
 }
 
 func cacheImage(name string) (img *ebiten.Image) {
@@ -55,6 +58,8 @@ func (is *imagesStruct) newImages() {
 	is.playerfall2 = cacheImage("man3")
 	is.tile1 = cacheImage("tile31")
 	is.tile2 = cacheImage("tile2")
+	is.bigBackground = cacheImage("bigbg")
+	is.water = cacheImage("water")
 }
 
 func (r rectangle) rectCenterPoint() location {
@@ -98,8 +103,21 @@ func bufferTiles() {
 	tileRenderBuffer.Clear()
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
-	correctedZoom := 1/math.Pow(1.01, zoom)
-	numsee := int((23) * correctedZoom)+2
+	correctedZoom := 1 / math.Pow(1.01, zoom)
+	numsee := int((23)*correctedZoom) + 2
+
+	if zoom < -50{
+		tileRenderBuffer.Fill(colornames.Blue)
+
+		ops := &ebiten.DrawImageOptions{}
+		bs := &baseSprite{images.bigBackground, ops, 0}
+		fullRenderOp(bs, location{0, 0}, false, dimens{worldWidth, worldWidth}, 0, 0)
+		if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
 	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
@@ -109,7 +127,7 @@ func bufferTiles() {
 				}
 			} else {
 				ops := &ebiten.DrawImageOptions{}
-				bs := &baseSprite{images.tile1, ops, 0}
+				bs := &baseSprite{images.water, ops, 0}
 				fullRenderOp(bs, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
 				if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
 					log.Fatal(err)
@@ -128,8 +146,8 @@ func bgShapesWork() {
 		for j := -3; j <= 3; j++ {
 			if v, ok := bgtilesNew[location{myCoordx + i, myCoordy + j}]; ok {
 				if !v.passable {
-					impassShapeX :=myCoordx+i
-					impassShapeY :=myCoordy+j
+					impassShapeX := myCoordx + i
+					impassShapeY := myCoordy + j
 					r := rectangle{}
 					r.dimens = dimens{bgTileWidth, bgTileWidth}
 					r.refreshShape(location{impassShapeX * bgTileWidth, impassShapeY * bgTileWidth})

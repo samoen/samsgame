@@ -125,19 +125,12 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 
 	bgShapesWork()
 
-	//bufferTiles()
-
-	//updateTilesNew()
-
 	return nil
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
-	//drawBackground(screen)
 	bufferTiles()
 	drawBufferedTiles(screen)
-
-	//drawBgNew(screen)
 
 	updateSprites()
 	renderEntSprites(screen)
