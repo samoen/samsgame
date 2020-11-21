@@ -103,7 +103,7 @@ func (l *localPlayer) checkHitOthers() {
 }
 
 func (l *localPlayer) placePlayer() {
-	l.locEnt.lSlasher.rect.refreshShape(location{worldWidth/8, worldWidth/8})
+	l.locEnt.lSlasher.rect.refreshShape(location{worldWidth / 8, worldWidth / 8})
 	l.locEnt.lSlasher.deth.hp = hitpoints{6, 6}
 	l.locEnt.lSlasher.spawnSafe()
 }
@@ -220,7 +220,7 @@ func (s *slasher) progressSwing() {
 	frontCrossLine := line{}
 	frontCrossLine.newLinePolar(rotLine.p2, s.pivShape.bladeLength/3, s.pivShape.animationCount-math.Pi/2)
 	s.pivShape.pivoterShape.lines = []line{rotLine, crossLine, frontCrossLine}
-	
+
 	arcProgress := math.Abs(s.pivShape.startCount - s.pivShape.animationCount)
 
 	if arcProgress > axeArc {

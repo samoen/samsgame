@@ -6,10 +6,12 @@ import (
 	"log"
 	"math"
 )
+
 type backgroundTile struct {
 	baseSprite
 	passable bool
 }
+
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
 
@@ -32,7 +34,7 @@ func bufferTiles() {
 	correctedZoom := 1 / math.Pow(1.01, zoom)
 	numsee := int((23)*correctedZoom) + 2
 
-	if zoom < -50{
+	if zoom < -50 {
 		tileRenderBuffer.Fill(colornames.Blue)
 
 		ops := &ebiten.DrawImageOptions{}

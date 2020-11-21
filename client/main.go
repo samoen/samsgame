@@ -36,7 +36,7 @@ func main() {
 	tilesAcross := worldWidth / bgTileWidth
 	for i := -1; i < tilesAcross+1; i++ {
 		for j := -1; j < tilesAcross+1; j++ {
-			tileImage:=images.tile1
+			tileImage := images.tile1
 			passable := true
 			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
 				tileImage = images.tile2
@@ -45,12 +45,12 @@ func main() {
 				tileImage = images.tile2
 			}
 
-			bgBs := baseSprite{tileImage,&ebiten.DrawImageOptions{},0}
-			bgtilesNew[location{i,j}] = &backgroundTile{bgBs,passable}
+			bgBs := baseSprite{tileImage, &ebiten.DrawImageOptions{}, 0}
+			bgtilesNew[location{i, j}] = &backgroundTile{bgBs, passable}
 		}
 	}
 
-	tileRenderBuffer, _ = ebiten.NewImage(screenWidth,screenHeight,ebiten.FilterDefault)
+	tileRenderBuffer, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)

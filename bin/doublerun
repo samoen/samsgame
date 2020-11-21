@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+go run ./server &
+go run ./client &
+go run ./client
