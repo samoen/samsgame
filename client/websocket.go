@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mahgame/gamecore"
+	"net/url"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 	"os"
@@ -55,7 +56,7 @@ func connectToServer() {
 	myPNum = v.YourPNum
 	clearEntities()
 
-	socketURL = fmt.Sprintf("ws://"+host+":8080/ws?a=%s", myPNum)
+	socketURL = fmt.Sprintf("ws://"+host+":8080/ws?a=%s", url.QueryEscape(myPNum))
 	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
@@ -116,7 +117,7 @@ func socketReceive() {
 	select {
 	case msg := <-receiveChan:
 		//log.Printf("receiveChan: %+v", msg)
-		interpTime = (receiveCount / 2)-1
+		interpTime = (receiveCount / 2) - 1
 		if interpTime < 0 {
 			interpTime = 0
 		}
@@ -155,7 +156,7 @@ func socketReceive() {
 				rp.rSlasher.atkButton = l.NewSwing
 				if l.NewSwing {
 					rp.rSlasher.startangle = l.NewSwingAngle
-				}else{
+				} else {
 					rp.rSlasher.startangle = l.Heading
 				}
 				rp.rSlasher.swangin = l.Swangin
