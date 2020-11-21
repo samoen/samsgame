@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
@@ -74,7 +75,7 @@ func connectToServer() {
 	myPNum = v.YourPNum
 	clearEntities()
 
-	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s", myPNum)
+	socketURL = fmt.Sprintf("ws://localhost:8080/ws?a=%s", url.QueryEscape(myPNum))
 	othersock, _, err = websocket.Dial(context.Background(), socketURL, nil)
 	if err != nil {
 		log.Println(err)
