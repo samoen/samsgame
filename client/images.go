@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"golang.org/x/image/colornames"
 	"log"
 	"math"
 	"sort"
@@ -62,20 +61,6 @@ func (is *imagesStruct) newImages() {
 	is.water = cacheImage("water")
 }
 
-func (r rectangle) rectCenterPoint() location {
-	x := r.location.x + (r.dimens.width / 2)
-	y := r.location.y + (r.dimens.height / 2)
-	return location{x, y}
-}
-
-func drawBufferedTiles(screen *ebiten.Image) {
-	ops := &ebiten.DrawImageOptions{}
-
-	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
-		log.Fatal(err)
-	}
-}
-
 func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot float64, rotOffsetx float64) {
 	im.bOps.GeoM.Reset()
 
@@ -97,65 +82,6 @@ func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot f
 	im.bOps.GeoM.Translate(-zoomScale*rotOffsetx, 0)
 	im.bOps.GeoM.Rotate(rot)
 	im.bOps.GeoM.Translate(tx, ty)
-}
-
-func bufferTiles() {
-	tileRenderBuffer.Clear()
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-	correctedZoom := 1 / math.Pow(1.01, zoom)
-	numsee := int((23)*correctedZoom) + 2
-
-	if zoom < -50{
-		tileRenderBuffer.Fill(colornames.Blue)
-
-		ops := &ebiten.DrawImageOptions{}
-		bs := &baseSprite{images.bigBackground, ops, 0}
-		fullRenderOp(bs, location{0, 0}, false, dimens{worldWidth, worldWidth}, 0, 0)
-		if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
-	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
-		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
-			if im, ok := bgtilesNew[location{i, j}]; ok {
-				fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
-				if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				ops := &ebiten.DrawImageOptions{}
-				bs := &baseSprite{images.water, ops, 0}
-				fullRenderOp(bs, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
-				if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-	}
-}
-
-func bgShapesWork() {
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-
-	currentTShapes = make(map[location]shape)
-	for i := -3; i <= 3; i++ {
-		for j := -3; j <= 3; j++ {
-			if v, ok := bgtilesNew[location{myCoordx + i, myCoordy + j}]; ok {
-				if !v.passable {
-					impassShapeX := myCoordx + i
-					impassShapeY := myCoordy + j
-					r := rectangle{}
-					r.dimens = dimens{bgTileWidth, bgTileWidth}
-					r.refreshShape(location{impassShapeX * bgTileWidth, impassShapeY * bgTileWidth})
-					currentTShapes[location{i, j}] = r.shape
-				}
-			}
-		}
-	}
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {

@@ -106,7 +106,7 @@ func (s shape) normalcollides(exclude *bool) bool {
 			return true
 		}
 	}
-	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP>0{
+	if myLocalPlayer.locEnt.lSlasher.deth.hp.CurrentHP > 0 {
 		if myLocalPlayer.locEnt.lSlasher.collisionId != exclude {
 			if s.collidesWith(myLocalPlayer.locEnt.lSlasher.rect.shape) {
 				return true
@@ -134,6 +134,11 @@ type rectangle struct {
 	shape    shape
 }
 
+func (r rectangle) rectCenterPoint() location {
+	x := r.location.x + (r.dimens.width / 2)
+	y := r.location.y + (r.dimens.height / 2)
+	return location{x, y}
+}
 func (r *rectangle) refreshShape(newpoint location) {
 	r.location = newpoint
 	left := line{location{r.location.x, r.location.y}, location{r.location.x, r.location.y + r.dimens.height}}
