@@ -14,7 +14,12 @@ type backgroundTile struct {
 
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
-
+	if zoom < -50 {
+		if err := screen.DrawImage(images.minimap, ops); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
 		log.Fatal(err)
 	}
@@ -29,22 +34,36 @@ func placeMap() {
 
 func bufferTiles() {
 	tileRenderBuffer.Clear()
+
+	if zoom < -50 {
+		mychunkx := mycenterpoint.x / chunkWidth
+		mychunky := mycenterpoint.y / chunkWidth
+		correctedZoom := 1 / math.Pow(1.01, zoom)
+		numsee := int(correctedZoom/4) + 1
+
+		images.minimap.Fill(colornames.Blue)
+		for i := mychunkx - numsee; i <= mychunkx+numsee; i++ {
+			for j := mychunky - numsee; j <= mychunky+numsee; j++ {
+				k := location{i, j}
+				v, ok := mapChunks[location{i, j}]
+				if !ok {
+					continue
+				}
+				ops := &ebiten.DrawImageOptions{}
+				bs := &baseSprite{v, ops, 0}
+				fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
+				if err := images.minimap.DrawImage(v, bs.bOps); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+		return
+	}
+
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
 	correctedZoom := 1 / math.Pow(1.01, zoom)
 	numsee := int((23)*correctedZoom) + 2
-
-	if zoom < -50 {
-		tileRenderBuffer.Fill(colornames.Blue)
-
-		ops := &ebiten.DrawImageOptions{}
-		bs := &baseSprite{images.bigBackground, ops, 0}
-		fullRenderOp(bs, location{0, 0}, false, dimens{worldWidth, worldWidth}, 0, 0)
-		if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
 
 	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
 		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {

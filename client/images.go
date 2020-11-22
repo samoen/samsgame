@@ -30,6 +30,7 @@ type imagesStruct struct {
 	tile2               *ebiten.Image
 	bigBackground       *ebiten.Image
 	water               *ebiten.Image
+	minimap             *ebiten.Image
 }
 
 func cacheImage(name string) (img *ebiten.Image) {

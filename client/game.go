@@ -17,6 +17,8 @@ const (
 	screenHeight   = 500
 	worldWidth     = 5000
 	bgTileWidth    = 20
+	tilesperChunk  = 50
+	chunkWidth     = tilesperChunk * bgTileWidth
 )
 
 var interpTime = 1
@@ -35,6 +37,7 @@ var wepBlockers = make(map[*shape]bool)
 var deathAnimations = make(map[*deathAnim]bool)
 var bgtilesNew = make(map[location]*backgroundTile)
 var tileRenderBuffer *ebiten.Image
+var mapChunks = make(map[location]*ebiten.Image)
 var currentTShapes = make(map[location]shape)
 var mycenterpoint location
 var images imagesStruct
