@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/hajimehoshi/ebiten"
-	"golang.org/x/image/colornames"
 	"log"
 	"math"
 )
@@ -12,9 +11,43 @@ type backgroundTile struct {
 	passable bool
 }
 
+func chuckStuff(screen *ebiten.Image) {
+	mychunkx := mycenterpoint.x / chunkWidth
+	mychunky := mycenterpoint.y / chunkWidth
+	correctedZoom := 1 / math.Pow(1.01, zoom)
+	numsee := int(correctedZoom/4) + 1
+
+	for i := mychunkx - numsee; i <= mychunkx+numsee; i++ {
+		for j := mychunky - numsee; j <= mychunky+numsee; j++ {
+			k := location{i, j}
+			v, ok := mapChunks[location{i, j}]
+			if !ok {
+				continue
+			}
+			ops := &ebiten.DrawImageOptions{}
+			bs := &baseSprite{v, ops, 0}
+			fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
+			if err := screen.DrawImage(v, bs.bOps); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
 	if zoom < -50 {
+
+		//images.minimap.Fill(colornames.Blue)
+
+		//minx := mycenterpoint.x-(screenWidth/2)
+		//miny := mycenterpoint.y-(screenHeight/2)
+		//maxx := mycenterpoint.x+(screenWidth/2)
+		//maxy := mycenterpoint.y+(screenHeight/2)
+		//window := images.minimap.SubImage(image.Rect(minx/downscale,miny/downscale,maxx/downscale,maxy/downscale)).(*ebiten.Image)
+		bs := &baseSprite{images.minimap, ops, 0}
+		fullRenderOp(bs, location{0, 0}, false, dimens{worldWidth, worldWidth}, 0, 0)
+		//scaleToDimension(dimens{worldWidth,worldWidth},window,ops,false)
 		if err := screen.DrawImage(images.minimap, ops); err != nil {
 			log.Fatal(err)
 		}
@@ -36,27 +69,7 @@ func bufferTiles() {
 	tileRenderBuffer.Clear()
 
 	if zoom < -50 {
-		mychunkx := mycenterpoint.x / chunkWidth
-		mychunky := mycenterpoint.y / chunkWidth
-		correctedZoom := 1 / math.Pow(1.01, zoom)
-		numsee := int(correctedZoom/4) + 1
 
-		images.minimap.Fill(colornames.Blue)
-		for i := mychunkx - numsee; i <= mychunkx+numsee; i++ {
-			for j := mychunky - numsee; j <= mychunky+numsee; j++ {
-				k := location{i, j}
-				v, ok := mapChunks[location{i, j}]
-				if !ok {
-					continue
-				}
-				ops := &ebiten.DrawImageOptions{}
-				bs := &baseSprite{v, ops, 0}
-				fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
-				if err := images.minimap.DrawImage(v, bs.bOps); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
 		return
 	}
 

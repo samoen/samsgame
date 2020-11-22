@@ -33,7 +33,6 @@ func main() {
 
 	placeMap()
 
-	tilesAcross := worldWidth / bgTileWidth
 	for i := -1; i < tilesAcross+1; i++ {
 		for j := -1; j < tilesAcross+1; j++ {
 			tileImage := images.tile1
@@ -52,27 +51,21 @@ func main() {
 
 	tileRenderBuffer, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
 
-	images.minimap, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
+	images.minimap, _ = ebiten.NewImage(worldWidth/downscale, worldWidth/downscale, ebiten.FilterDefault)
+	for i := 0; i <= tilesAcross; i++ {
+		for j := 0; j <= tilesAcross; j++ {
+			if im, ok := bgtilesNew[location{i, j}]; ok {
+				opies := &ebiten.DrawImageOptions{}
+				opies.GeoM.Translate(float64(i*bgTileWidth/downscale), float64(j*bgTileWidth/downscale))
+				scaleToDimension(dimens{(bgTileWidth + 1) / downscale, (bgTileWidth + 1) / downscale}, im.sprite, opies, false)
 
-	for p := 0; p < worldWidth/chunkWidth; p++ {
-		for k := 0; k < worldWidth/chunkWidth; k++ {
-			minichunk, _ := ebiten.NewImage(chunkWidth, chunkWidth, ebiten.FilterDefault)
-			for i := 0; i <= tilesperChunk; i++ {
-				for j := 0; j <= tilesperChunk; j++ {
-					if im, ok := bgtilesNew[location{(tilesperChunk * p) + i, (tilesperChunk * k) + j}]; ok {
-						opies := &ebiten.DrawImageOptions{}
-						opies.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-						scaleToDimension(dimens{bgTileWidth + 1, bgTileWidth + 1}, im.sprite, opies, false)
-
-						if err := minichunk.DrawImage(im.sprite, opies); err != nil {
-							log.Fatal(err)
-						}
-					}
+				if err := images.minimap.DrawImage(im.sprite, opies); err != nil {
+					log.Fatal(err)
 				}
 			}
-			mapChunks[location{p, k}] = minichunk
 		}
 	}
+
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
 		connectToServer()
@@ -92,4 +85,26 @@ func main() {
 	}
 	closeConn()
 	log.Println("exited main")
+}
+
+func prepMapChunks() {
+	for p := 0; p < worldWidth/chunkWidth; p++ {
+		for k := 0; k < worldWidth/chunkWidth; k++ {
+			minichunk, _ := ebiten.NewImage(chunkWidth, chunkWidth, ebiten.FilterDefault)
+			for i := 0; i <= tilesperChunk; i++ {
+				for j := 0; j <= tilesperChunk; j++ {
+					if im, ok := bgtilesNew[location{(tilesperChunk * p) + i, (tilesperChunk * k) + j}]; ok {
+						opies := &ebiten.DrawImageOptions{}
+						opies.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+						scaleToDimension(dimens{bgTileWidth + 1, bgTileWidth + 1}, im.sprite, opies, false)
+
+						if err := minichunk.DrawImage(im.sprite, opies); err != nil {
+							log.Fatal(err)
+						}
+					}
+				}
+			}
+			mapChunks[location{p, k}] = minichunk
+		}
+	}
 }
