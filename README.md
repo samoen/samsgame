@@ -6,6 +6,7 @@ Join the fight! Be a contributor! :)
 
 Press x to spawn or swing your mighty axe.
 Use arrow keys or WASD to move around.
+Use r and f to zoom in and out
 
 # Dependencies
 

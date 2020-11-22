@@ -15,12 +15,12 @@ const (
 	axeArc         = 3.9
 	screenWidth    = 900
 	screenHeight   = 500
-	worldWidth     = 10000
+	worldWidth     = 4000
 	bgTileWidth    = 20
 	tilesperChunk  = 50
 	chunkWidth     = tilesperChunk * bgTileWidth
 	tilesAcross    = worldWidth / bgTileWidth
-	downscale      = 10
+	downscale      = 20.0
 )
 
 var interpTime = 1

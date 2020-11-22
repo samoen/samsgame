@@ -51,13 +51,13 @@ func main() {
 
 	tileRenderBuffer, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
 
-	images.minimap, _ = ebiten.NewImage(worldWidth/downscale, worldWidth/downscale, ebiten.FilterDefault)
+	images.minimap, _ = ebiten.NewImage(worldWidth/int(downscale), worldWidth/int(downscale), ebiten.FilterDefault)
 	for i := 0; i <= tilesAcross; i++ {
 		for j := 0; j <= tilesAcross; j++ {
 			if im, ok := bgtilesNew[location{i, j}]; ok {
 				opies := &ebiten.DrawImageOptions{}
-				opies.GeoM.Translate(float64(i*bgTileWidth/downscale), float64(j*bgTileWidth/downscale))
-				scaleToDimension(dimens{(bgTileWidth + 1) / downscale, (bgTileWidth + 1) / downscale}, im.sprite, opies, false)
+				opies.GeoM.Translate(float64((i*bgTileWidth)/downscale), float64((j*bgTileWidth)/downscale))
+				//scaleToDimension(dimens{(bgTileWidth + 1) / int(downscale), (bgTileWidth + 1) / int(downscale)}, im.sprite, opies, false)
 
 				if err := images.minimap.DrawImage(im.sprite, opies); err != nil {
 					log.Fatal(err)

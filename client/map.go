@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/hajimehoshi/ebiten"
+	"golang.org/x/image/colornames"
 	"log"
 	"math"
 )
@@ -36,10 +37,9 @@ func chuckStuff(screen *ebiten.Image) {
 
 func drawBufferedTiles(screen *ebiten.Image) {
 	ops := &ebiten.DrawImageOptions{}
-	if zoom < -50 {
-
+	if zoom < -90 {
+		screen.Fill(colornames.Blue)
 		//images.minimap.Fill(colornames.Blue)
-
 		//minx := mycenterpoint.x-(screenWidth/2)
 		//miny := mycenterpoint.y-(screenHeight/2)
 		//maxx := mycenterpoint.x+(screenWidth/2)
@@ -47,32 +47,11 @@ func drawBufferedTiles(screen *ebiten.Image) {
 		//window := images.minimap.SubImage(image.Rect(minx/downscale,miny/downscale,maxx/downscale,maxy/downscale)).(*ebiten.Image)
 		bs := &baseSprite{images.minimap, ops, 0}
 		fullRenderOp(bs, location{0, 0}, false, dimens{worldWidth, worldWidth}, 0, 0)
-		//scaleToDimension(dimens{worldWidth,worldWidth},window,ops,false)
 		if err := screen.DrawImage(images.minimap, ops); err != nil {
 			log.Fatal(err)
 		}
 		return
 	}
-	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func placeMap() {
-	worldBoundRect := rectangle{}
-	worldBoundRect.dimens = dimens{worldWidth, worldWidth}
-	worldBoundRect.refreshShape(location{0, 0})
-	wepBlockers[&worldBoundRect.shape] = true
-}
-
-func bufferTiles() {
-	tileRenderBuffer.Clear()
-
-	if zoom < -50 {
-
-		return
-	}
-
 	myCoordx := mycenterpoint.x / bgTileWidth
 	myCoordy := mycenterpoint.y / bgTileWidth
 	correctedZoom := 1 / math.Pow(1.01, zoom)
@@ -95,6 +74,21 @@ func bufferTiles() {
 			}
 		}
 	}
+	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func placeMap() {
+	worldBoundRect := rectangle{}
+	worldBoundRect.dimens = dimens{worldWidth, worldWidth}
+	worldBoundRect.refreshShape(location{0, 0})
+	wepBlockers[&worldBoundRect.shape] = true
+}
+
+func bufferTiles() {
+	//tileRenderBuffer.Clear()
+
 }
 
 func bgShapesWork() {
