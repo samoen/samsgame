@@ -5,6 +5,7 @@ import (
 	"golang.org/x/image/colornames"
 	"log"
 	"math"
+	"math/rand"
 )
 
 type backgroundTile struct {
@@ -30,6 +31,41 @@ func chuckStuff(screen *ebiten.Image) {
 			fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
 			if err := screen.DrawImage(v, bs.bOps); err != nil {
 				log.Fatal(err)
+			}
+		}
+	}
+}
+
+func initTiles() {
+	for i := -1; i < tilesAcross+1; i++ {
+		for j := -1; j < tilesAcross+1; j++ {
+			tileImage := images.tile1
+			passable := true
+			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
+				tileImage = images.tile2
+			} else if 98 < rand.Intn(100) {
+				passable = false
+				tileImage = images.tile2
+			}
+
+			bgBs := baseSprite{tileImage, &ebiten.DrawImageOptions{}, 0}
+			bgtilesNew[location{i, j}] = &backgroundTile{bgBs, passable}
+		}
+	}
+
+	tileRenderBuffer, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
+
+	images.minimap, _ = ebiten.NewImage(worldWidth/int(downscale), worldWidth/int(downscale), ebiten.FilterDefault)
+	for i := 0; i <= tilesAcross; i++ {
+		for j := 0; j <= tilesAcross; j++ {
+			if im, ok := bgtilesNew[location{i, j}]; ok {
+				opies := &ebiten.DrawImageOptions{}
+				opies.GeoM.Translate(float64((i*bgTileWidth)/downscale), float64((j*bgTileWidth)/downscale))
+				//scaleToDimension(dimens{(bgTileWidth + 1) / int(downscale), (bgTileWidth + 1) / int(downscale)}, im.sprite, opies, false)
+
+				if err := images.minimap.DrawImage(im.sprite, opies); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}
@@ -84,11 +120,6 @@ func placeMap() {
 	worldBoundRect.dimens = dimens{worldWidth, worldWidth}
 	worldBoundRect.refreshShape(location{0, 0})
 	wepBlockers[&worldBoundRect.shape] = true
-}
-
-func bufferTiles() {
-	//tileRenderBuffer.Clear()
-
 }
 
 func bgShapesWork() {

@@ -5,7 +5,6 @@ import (
 	"image/color"
 	_ "image/png"
 	"log"
-	"math/rand"
 	"time"
 )
 
@@ -32,39 +31,7 @@ func main() {
 	}
 
 	placeMap()
-
-	for i := -1; i < tilesAcross+1; i++ {
-		for j := -1; j < tilesAcross+1; j++ {
-			tileImage := images.tile1
-			passable := true
-			if j > tilesAcross-1 || i > tilesAcross-1 || j < 0 || i < 0 {
-				tileImage = images.tile2
-			} else if 98 < rand.Intn(100) {
-				passable = false
-				tileImage = images.tile2
-			}
-
-			bgBs := baseSprite{tileImage, &ebiten.DrawImageOptions{}, 0}
-			bgtilesNew[location{i, j}] = &backgroundTile{bgBs, passable}
-		}
-	}
-
-	tileRenderBuffer, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
-
-	images.minimap, _ = ebiten.NewImage(worldWidth/int(downscale), worldWidth/int(downscale), ebiten.FilterDefault)
-	for i := 0; i <= tilesAcross; i++ {
-		for j := 0; j <= tilesAcross; j++ {
-			if im, ok := bgtilesNew[location{i, j}]; ok {
-				opies := &ebiten.DrawImageOptions{}
-				opies.GeoM.Translate(float64((i*bgTileWidth)/downscale), float64((j*bgTileWidth)/downscale))
-				//scaleToDimension(dimens{(bgTileWidth + 1) / int(downscale), (bgTileWidth + 1) / int(downscale)}, im.sprite, opies, false)
-
-				if err := images.minimap.DrawImage(im.sprite, opies); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-	}
+	initTiles()
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)

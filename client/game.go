@@ -129,9 +129,7 @@ func (g *SamGame) Update(screen *ebiten.Image) error {
 }
 
 func (g *SamGame) Draw(screen *ebiten.Image) {
-	bufferTiles()
 	drawBufferedTiles(screen)
-
 	updateSprites()
 	renderEntSprites(screen)
 	drawHitboxes(screen)
