@@ -17,12 +17,13 @@ const (
 	screenHeight   = 500
 	worldWidth     = 4000
 	bgTileWidth    = 20
-	tilesperChunk  = 50
+	tilesperChunk  = 20
 	chunkWidth     = tilesperChunk * bgTileWidth
 	tilesAcross    = worldWidth / bgTileWidth
 	downscale      = 20.0
 )
 
+var stitchedChunks *ebiten.Image
 var interpTime = 1
 var receiveCount = 1
 var receiveDebug = ""

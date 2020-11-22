@@ -32,6 +32,7 @@ func main() {
 
 	placeMap()
 	initTiles()
+	prepMapChunks()
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
@@ -55,15 +56,20 @@ func main() {
 }
 
 func prepMapChunks() {
+	stitchedChunks, _ = ebiten.NewImage(screenWidth, screenHeight, ebiten.FilterDefault)
+	imW, imH := images.tile1.Size()
 	for p := 0; p < worldWidth/chunkWidth; p++ {
 		for k := 0; k < worldWidth/chunkWidth; k++ {
-			minichunk, _ := ebiten.NewImage(chunkWidth, chunkWidth, ebiten.FilterDefault)
+			//minichunk, _ := ebiten.NewImage(chunkWidth, chunkWidth, ebiten.FilterDefault)
+			minichunk, _ := ebiten.NewImage(imW*tilesperChunk, imH*tilesperChunk, ebiten.FilterDefault)
 			for i := 0; i <= tilesperChunk; i++ {
 				for j := 0; j <= tilesperChunk; j++ {
 					if im, ok := bgtilesNew[location{(tilesperChunk * p) + i, (tilesperChunk * k) + j}]; ok {
 						opies := &ebiten.DrawImageOptions{}
-						opies.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
-						scaleToDimension(dimens{bgTileWidth + 1, bgTileWidth + 1}, im.sprite, opies, false)
+
+						opies.GeoM.Translate(float64(i*imW), float64(j*imH))
+						//opies.GeoM.Translate(float64(i*bgTileWidth), float64(j*bgTileWidth))
+						//scaleToDimension(dimens{bgTileWidth + 1, bgTileWidth + 1}, im.sprite, opies, false)
 
 						if err := minichunk.DrawImage(im.sprite, opies); err != nil {
 							log.Fatal(err)
@@ -74,4 +80,15 @@ func prepMapChunks() {
 			mapChunks[location{p, k}] = minichunk
 		}
 	}
+	//testbuf,_ := ebiten.NewImage(screenWidth,screenHeight,ebiten.FilterDefault)
+	//go func() {
+	//	for k,v := range mapChunks{
+	//		ops := &ebiten.DrawImageOptions{}
+	//		bs := &baseSprite{v, ops, 0}
+	//		fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
+	//		if err := stitchedChunks.DrawImage(v, bs.bOps); err != nil {
+	//			log.Fatal(err)
+	//		}
+	//	}
+	//}()
 }

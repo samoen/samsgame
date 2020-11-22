@@ -4,7 +4,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"golang.org/x/image/colornames"
 	"log"
-	"math"
 	"math/rand"
 )
 
@@ -13,12 +12,18 @@ type backgroundTile struct {
 	passable bool
 }
 
+var stitchOp = &ebiten.DrawImageOptions{}
+
 func chuckStuff(screen *ebiten.Image) {
+	//stitchedChunks.Clear()
+	//if ebiten.CurrentFPS() < 50 {
+	//	return
+	//}
 	mychunkx := mycenterpoint.x / chunkWidth
 	mychunky := mycenterpoint.y / chunkWidth
-	correctedZoom := 1 / math.Pow(1.01, zoom)
-	numsee := int(correctedZoom/4) + 1
-
+	//correctedZoom := 1 / math.Pow(1.01, zoom)
+	//numsee := int(correctedZoom/1) + 1
+	numsee := 1
 	for i := mychunkx - numsee; i <= mychunkx+numsee; i++ {
 		for j := mychunky - numsee; j <= mychunky+numsee; j++ {
 			k := location{i, j}
@@ -26,10 +31,11 @@ func chuckStuff(screen *ebiten.Image) {
 			if !ok {
 				continue
 			}
-			ops := &ebiten.DrawImageOptions{}
-			bs := &baseSprite{v, ops, 0}
+			//ops := &ebiten.DrawImageOptions{}
+			stitchOp.GeoM.Reset()
+			bs := &baseSprite{v, stitchOp, 0}
 			fullRenderOp(bs, location{k.x * chunkWidth, k.y * chunkWidth}, false, dimens{chunkWidth, chunkWidth}, 0, 0)
-			if err := screen.DrawImage(v, bs.bOps); err != nil {
+			if err := stitchedChunks.DrawImage(v, bs.bOps); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -88,31 +94,33 @@ func drawBufferedTiles(screen *ebiten.Image) {
 		}
 		return
 	}
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-	correctedZoom := 1 / math.Pow(1.01, zoom)
-	numsee := int((23)*correctedZoom) + 2
-
-	for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
-		for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
-			if im, ok := bgtilesNew[location{i, j}]; ok {
-				fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
-				if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				ops := &ebiten.DrawImageOptions{}
-				bs := &baseSprite{images.water, ops, 0}
-				fullRenderOp(bs, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
-				if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
-					log.Fatal(err)
-				}
-			}
-		}
-	}
-	if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
-		log.Fatal(err)
-	}
+	chuckStuff(screen)
+	screen.DrawImage(stitchedChunks, &ebiten.DrawImageOptions{})
+	//myCoordx := mycenterpoint.x / bgTileWidth
+	//myCoordy := mycenterpoint.y / bgTileWidth
+	//correctedZoom := 1 / math.Pow(1.01, zoom)
+	//numsee := int((23)*correctedZoom) + 2
+	//
+	//for i := myCoordx - numsee; i < myCoordx+numsee; i++ {
+	//	for j := myCoordy - numsee; j < myCoordy+numsee; j++ {
+	//		if im, ok := bgtilesNew[location{i, j}]; ok {
+	//			fullRenderOp(&im.baseSprite, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
+	//			if err := tileRenderBuffer.DrawImage(im.sprite, im.bOps); err != nil {
+	//				log.Fatal(err)
+	//			}
+	//		} else {
+	//			ops := &ebiten.DrawImageOptions{}
+	//			bs := &baseSprite{images.water, ops, 0}
+	//			fullRenderOp(bs, location{i * bgTileWidth, j * bgTileWidth}, false, dimens{bgTileWidth + 1, bgTileWidth + 1}, 0, 0)
+	//			if err := tileRenderBuffer.DrawImage(bs.sprite, bs.bOps); err != nil {
+	//				log.Fatal(err)
+	//			}
+	//		}
+	//	}
+	//}
+	//if err := screen.DrawImage(tileRenderBuffer, ops); err != nil {
+	//	log.Fatal(err)
+	//}
 }
 
 func placeMap() {

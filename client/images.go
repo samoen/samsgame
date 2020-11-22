@@ -77,12 +77,14 @@ func fullRenderOp(im *baseSprite, loc location, flip bool, scaleto dimens, rot f
 
 	im.bOps.GeoM.Translate(float64(int(float64(screenWidth)/2)), float64(int(float64(screenHeight)/2)))
 
-	tx := im.bOps.GeoM.Element(0, 2)
-	ty := im.bOps.GeoM.Element(1, 2)
-	im.bOps.GeoM.Translate(-tx, -ty)
-	im.bOps.GeoM.Translate(-zoomScale*rotOffsetx, 0)
-	im.bOps.GeoM.Rotate(rot)
-	im.bOps.GeoM.Translate(tx, ty)
+	if rot != 0 {
+		tx := im.bOps.GeoM.Element(0, 2)
+		ty := im.bOps.GeoM.Element(1, 2)
+		im.bOps.GeoM.Translate(-tx, -ty)
+		im.bOps.GeoM.Translate(-zoomScale*rotOffsetx, 0)
+		im.bOps.GeoM.Rotate(rot)
+		im.bOps.GeoM.Translate(tx, ty)
+	}
 }
 
 func scaleToDimension(dims dimens, img *ebiten.Image, ops *ebiten.DrawImageOptions, flip bool) {
