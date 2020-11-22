@@ -98,10 +98,17 @@ func bufferTiles() {
 }
 
 func bgShapesWork() {
-	myCoordx := mycenterpoint.x / bgTileWidth
-	myCoordy := mycenterpoint.y / bgTileWidth
-
 	currentTShapes = make(map[location]shape)
+	addProximityShapes(myLocalPlayer.locEnt.lSlasher.rect)
+	for la, _ := range localAnimals {
+		addProximityShapes(la.locEnt.lSlasher.rect)
+	}
+}
+
+func addProximityShapes(rect rectangle) {
+	myCoordx := rect.rectCenterPoint().x / bgTileWidth
+	myCoordy := rect.rectCenterPoint().y / bgTileWidth
+
 	for i := -3; i <= 3; i++ {
 		for j := -3; j <= 3; j++ {
 			if v, ok := bgtilesNew[location{myCoordx + i, myCoordy + j}]; ok {
@@ -111,7 +118,7 @@ func bgShapesWork() {
 					r := rectangle{}
 					r.dimens = dimens{bgTileWidth, bgTileWidth}
 					r.refreshShape(location{impassShapeX * bgTileWidth, impassShapeY * bgTileWidth})
-					currentTShapes[location{i, j}] = r.shape
+					currentTShapes[location{impassShapeX, impassShapeY}] = r.shape
 				}
 			}
 		}
