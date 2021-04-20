@@ -1,4 +1,4 @@
-# Plains of Øyengard
+# A game by Sam
 
 A cool top down 2D pixel art game with adventures and online pvp in a big persistent world.
 
